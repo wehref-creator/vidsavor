@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Reels & Video Downloader - VidSavor | Fast HD MP4 Saver</title>
+<meta name="description" content="Download Instagram Reels, YouTube Shorts, TikTok videos, and Facebook clips in HD MP4 with VidSavor. 100% Free, No Watermark, No Login.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#7c3aed">
+<link rel="canonical" href="https://vidsavor.com/reels" />
+<link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<header>
+    <a href="/" class="logo-container">
+        <div class="logo-icon"><i class="fa-solid fa-play"></i></div>
+        <div class="logo-text">VidSavor<span class="logo-domain">.com</span></div>
+    </a>
+    <nav class="top-menu">
+        <a href="/reels" class="menu-box active"><i class="fa-solid fa-video"></i> <span>Video</span></a>
+        <a href="/audio" class="menu-box"><i class="fa-solid fa-music"></i> <span>Audio</span></a>
+        <a href="/photo" class="menu-box"><i class="fa-solid fa-image"></i> <span>Photo</span></a>
+    </nav>
+</header>
+
+<section class="hero">
+    <div class="hero-content">
+        <div class="badge"><i class="fa-solid fa-video"></i> HD & 4K Video Engine</div>
+        <h1 id="mainTitle"><span class="gradient">Reels & Video</span> Downloader</h1>
+        <p id="mainDesc">Save viral Instagram Reels, YouTube Shorts, TikTok HD clips, and Facebook videos directly in native MP4 resolution.</p>
+
+        <div class="search-box">
+            <div class="input-box">
+                <i class="fa-solid fa-link link-icon"></i>
+                <input type="search" id="videoUrl" placeholder="Paste video or reel link here..." autocomplete="off">
+                <button type="button" class="clear-btn" id="clearUrlBtn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <button class="paste-btn" type="button" onclick="pasteText()"><i class="fa-regular fa-paste"></i> <span>Paste</span></button>
+            <button class="download-btn" type="button" id="mainFetchBtn" onclick="downloadNow()"><i class="fa-solid fa-download"></i> <span>Download</span></button>
+        </div>
+
+        <div class="quick-text">Paste link from Instagram Reels, TikTok, YouTube, or Facebook and click Download</div>
+
+        <div class="source-platforms">
+            <a href="javascript:void(0)" onclick="scrollHero();" class="source-btn instagram"><i class="fa-brands fa-instagram" style="color:#e1306c;"></i> Instagram Reels</a>
+            <a href="javascript:void(0)" onclick="scrollHero();" class="source-btn tiktok"><i class="fa-brands fa-tiktok" style="color:#000000;"></i> TikTok HD</a>
+            <a href="javascript:void(0)" onclick="scrollHero();" class="source-btn youtube"><i class="fa-brands fa-youtube" style="color:#ff0000;"></i> YouTube Shorts</a>
+            <a href="javascript:void(0)" onclick="scrollHero();" class="source-btn facebook"><i class="fa-brands fa-facebook" style="color:#1877f2;"></i> Facebook Video</a>
+        </div>
+
+        <div id="resultBox" style="display:none;">
+            <div class="result-card-main">
+                <div class="preview-media-container" id="previewMediaContainer"></div>
+                <div class="result-header-row">
+                    <div class="result-title-wrap">
+                        <h3 id="videoTitle">Extracted Content</h3>
+                        <div class="media-meta-tags" id="mediaMetaContainer"></div>
+                    </div>
+                </div>
+                <div class="format-filter-tabs" id="formatFilterTabs" style="display:none;"></div>
+                <div id="downloadButtonsContainer"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- HOW TO STEPS -->
+<section class="steps-section">
+    <div class="steps-container">
+        <h2>How to Download Reels in 3 Steps</h2>
+        <div class="steps-grid-custom">
+            <div class="step-card-custom">
+                <div class="step-circle-custom">1</div>
+                <h3>Copy Link</h3>
+                <p>Tap Share on the reel or short and copy the link.</p>
+            </div>
+            <div class="step-card-custom">
+                <div class="step-circle-custom">2</div>
+                <h3>Paste into VidSavor</h3>
+                <p>Paste the copied URL in the search field above.</p>
+            </div>
+            <div class="step-card-custom">
+                <div class="step-circle-custom">3</div>
+                <h3>Save MP4</h3>
+                <p>Click Download to save the video directly to your gallery.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="footer-bottom">
+        <p>© 2026 <b>VidSavor</b> • Fast & HD Online Video Downloader</p>
+    </div>
+</footer>
+
+<div id="popupOverlay">
+    <div class="popup-box">
+        <button class="close-popup" onclick="closePopup()">×</button>
+        <h2 id="popupTitle"></h2>
+        <div id="popupContent"></div>
+    </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>

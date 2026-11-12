@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Online Photo & Carousel Saver - VidSavor | Full HD Image Downloader</title>
+<meta name="description" content="Download Instagram photos, carousel albums, Pinterest pins, and thumbnails in original HD quality with VidSavor. 100% Free.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#7c3aed">
+<link rel="canonical" href="https://vidsavor.com/photo" />
+<link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<header>
+    <a href="/" class="logo-container">
+        <div class="logo-icon"><i class="fa-solid fa-play"></i></div>
+        <div class="logo-text">VidSavor<span class="logo-domain">.com</span></div>
+    </a>
+    <nav class="top-menu">
+        <a href="/reels" class="menu-box"><i class="fa-solid fa-video"></i> <span>Video</span></a>
+        <a href="/audio" class="menu-box"><i class="fa-solid fa-music"></i> <span>Audio</span></a>
+        <a href="/photo" class="menu-box active"><i class="fa-solid fa-image"></i> <span>Photo</span></a>
+    </nav>
+</header>
+
+<section class="hero">
+    <div class="hero-content">
+        <div class="badge"><i class="fa-solid fa-image"></i> Original Image Preservation</div>
+        <h1 id="mainTitle"><span class="gradient">Online Photo</span> Saver</h1>
+        <p id="mainDesc">Save single photos, swipe carousel galleries, and profile images from networks in their genuine high resolution size.</p>
+
+        <div class="search-box">
+            <div class="input-box">
+                <i class="fa-solid fa-link link-icon"></i>
+                <input type="search" id="videoUrl" placeholder="Paste image or photo link path location here..." autocomplete="off">
+                <button type="button" class="clear-btn" id="clearUrlBtn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <button class="paste-btn" type="button" onclick="pasteText()"><i class="fa-regular fa-paste"></i> <span>Paste</span></button>
+            <button class="download-btn" type="button" id="mainFetchBtn" onclick="downloadNow()"><i class="fa-solid fa-download"></i> <span>Save Photo</span></button>
+        </div>
+
+        <div class="quick-text">Paste Instagram post or Pinterest pin link to extract original image files</div>
+
+        <div id="resultBox" style="display:none;">
+            <div class="result-card-main">
+                <div class="preview-media-container" id="previewMediaContainer"></div>
+                <div class="result-header-row">
+                    <div class="result-title-wrap">
+                        <h3 id="videoTitle">Extracted Photo Content</h3>
+                        <div class="media-meta-tags" id="mediaMetaContainer"></div>
+                    </div>
+                </div>
+                <div class="format-filter-tabs" id="formatFilterTabs" style="display:none;"></div>
+                <div id="downloadButtonsContainer"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="footer-bottom">
+        <p>© 2026 <b>VidSavor</b> • Fast & HD Online Video Downloader</p>
+    </div>
+</footer>
+
+<div id="popupOverlay">
+    <div class="popup-box">
+        <button class="close-popup" onclick="closePopup()">×</button>
+        <h2 id="popupTitle"></h2>
+        <div id="popupContent"></div>
+    </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+{
+  "name": "VidSavor - Fast & HD Video Downloader",
+  "short_name": "VidSavor",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait-primary",
+  "description": "Download online videos, reels, photos and audio in HD across multiple platforms with VidSavor.",
+  "icons": [
+    {
+      "src": "/static/assets/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Video & Reels",
+      "url": "/reels",
+      "description": "Download HD videos and reels"
+    },
+    {
+      "name": "Audio Extractor",
+      "url": "/audio",
+      "description": "Extract MP3 audio tracks"
+    },
+    {
+      "name": "Photo Saver",
+      "url": "/photo",
+      "description": "Download HD photos and carousels"
+    }
+  ]
+}
