@@ -102,22 +102,96 @@ async def proxy_download(url: str = Query(...), filename: str = Query("video.mp4
 def health():
     return {"status": "ok", "service": "VidSavor Core API v2.0"}
 
-# Page Routes for SEO and Multi-Mode Support
+# Page Routes for SEO and Multi-Platform Support
+def get_page_path(filename: str):
+    root_file = os.path.join(BASE_DIR, filename)
+    if os.path.exists(root_file):
+        return root_file
+    return os.path.join(STATIC_DIR, filename)
+
 @app.get("/", response_class=FileResponse)
 async def serve_home():
-    return FileResponse(os.path.join(BASE_DIR, "index.html") if os.path.exists(os.path.join(BASE_DIR, "index.html")) else os.path.join(STATIC_DIR, "index.html"))
+    return FileResponse(get_page_path("index.html"))
 
-@app.get("/reels/", response_class=FileResponse)
+@app.get("/instagram", response_class=FileResponse)
+@app.get("/instagram/", response_class=FileResponse)
 @app.get("/reels", response_class=FileResponse)
-async def serve_reels():
-    return FileResponse(os.path.join(BASE_DIR, "reels.html") if os.path.exists(os.path.join(BASE_DIR, "reels.html")) else os.path.join(STATIC_DIR, "reels.html"))
+@app.get("/reels/", response_class=FileResponse)
+async def serve_instagram():
+    return FileResponse(get_page_path("instagram.html"))
 
-@app.get("/audio/", response_class=FileResponse)
+@app.get("/youtube", response_class=FileResponse)
+@app.get("/youtube/", response_class=FileResponse)
+async def serve_youtube():
+    return FileResponse(get_page_path("youtube.html"))
+
+@app.get("/tiktok", response_class=FileResponse)
+@app.get("/tiktok/", response_class=FileResponse)
+async def serve_tiktok():
+    return FileResponse(get_page_path("tiktok.html"))
+
+@app.get("/facebook", response_class=FileResponse)
+@app.get("/facebook/", response_class=FileResponse)
+async def serve_facebook():
+    return FileResponse(get_page_path("facebook.html"))
+
+@app.get("/twitter", response_class=FileResponse)
+@app.get("/twitter/", response_class=FileResponse)
+async def serve_twitter():
+    return FileResponse(get_page_path("twitter.html"))
+
+@app.get("/pinterest", response_class=FileResponse)
+@app.get("/pinterest/", response_class=FileResponse)
+async def serve_pinterest():
+    return FileResponse(get_page_path("pinterest.html"))
+
+@app.get("/about-us", response_class=FileResponse)
+@app.get("/about-us/", response_class=FileResponse)
+@app.get("/about", response_class=FileResponse)
+async def serve_about():
+    return FileResponse(get_page_path("about-us.html"))
+
+@app.get("/faq", response_class=FileResponse)
+@app.get("/faq/", response_class=FileResponse)
+@app.get("/help", response_class=FileResponse)
+async def serve_faq():
+    return FileResponse(get_page_path("faq.html"))
+
+@app.get("/contact-us", response_class=FileResponse)
+@app.get("/contact-us/", response_class=FileResponse)
+@app.get("/contact", response_class=FileResponse)
+async def serve_contact():
+    return FileResponse(get_page_path("contact-us.html"))
+
+@app.get("/blog", response_class=FileResponse)
+@app.get("/blog/", response_class=FileResponse)
+async def serve_blog():
+    return FileResponse(get_page_path("blog.html"))
+
+@app.get("/dmca-policy", response_class=FileResponse)
+@app.get("/dmca-policy/", response_class=FileResponse)
+@app.get("/dmca", response_class=FileResponse)
+async def serve_dmca():
+    return FileResponse(get_page_path("dmca-policy.html"))
+
+@app.get("/privacy-policy", response_class=FileResponse)
+@app.get("/privacy-policy/", response_class=FileResponse)
+@app.get("/privacy", response_class=FileResponse)
+async def serve_privacy():
+    return FileResponse(get_page_path("privacy-policy.html"))
+
+@app.get("/terms-of-service", response_class=FileResponse)
+@app.get("/terms-of-service/", response_class=FileResponse)
+@app.get("/terms", response_class=FileResponse)
+async def serve_terms():
+    return FileResponse(get_page_path("terms-of-service.html"))
+
 @app.get("/audio", response_class=FileResponse)
+@app.get("/audio/", response_class=FileResponse)
 async def serve_audio():
-    return FileResponse(os.path.join(BASE_DIR, "audio.html") if os.path.exists(os.path.join(BASE_DIR, "audio.html")) else os.path.join(STATIC_DIR, "audio.html"))
+    return FileResponse(get_page_path("audio.html"))
 
-@app.get("/photo/", response_class=FileResponse)
 @app.get("/photo", response_class=FileResponse)
+@app.get("/photo/", response_class=FileResponse)
 async def serve_photo():
-    return FileResponse(os.path.join(BASE_DIR, "photo.html") if os.path.exists(os.path.join(BASE_DIR, "photo.html")) else os.path.join(STATIC_DIR, "photo.html"))
+    return FileResponse(get_page_path("photo.html"))

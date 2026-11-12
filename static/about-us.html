@@ -3,52 +3,330 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>About Us - VidSavor | The Universal Web Media Downloader</title>
-<meta name="description" content="Learn about VidSavor.com, our mission to provide lightning-fast, high-definition, and secure web media archiving tools for everyone.">
+
+<title>About Us | Meet Laxman A. Sapkota - Founder & Developer of VidSavor</title>
+<meta name="description" content="Discover the story and vision behind VidSavor. Created by Full-Stack Engineer Laxman A. Sapkota to deliver the fastest, cleanest, and 100% ad-free social media downloader for creators worldwide.">
+<meta name="keywords" content="Laxman A. Sapkota, VidSavor founder, about vidsavor, social media downloader developer, clean video downloader">
 <meta name="robots" content="index, follow">
-<meta name="theme-color" content="#7c3aed">
-<link rel="canonical" href="https://vidsavor.com/about-us" />
+<link rel="canonical" href="https://vidsavor.com/about-us">
+
+<!-- OpenGraph & Twitter -->
+<meta property="og:type" content="profile">
+<meta property="og:title" content="About Us | Meet Laxman A. Sapkota - Founder of VidSavor">
+<meta property="og:description" content="The story, mission, and technical architecture behind VidSavor by lead architect Laxman A. Sapkota.">
+<meta property="og:image" content="https://assamdirectory.com/wp-content/uploads/2026/09/Laxman-A.-Sapkota.jpeg">
+<meta property="og:url" content="https://vidsavor.com/about-us">
+
+<!-- Favicon & Styles -->
 <link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/css/style.css">
+
+<!-- Structured Person & Organization Schema (GEO / AEO) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://vidsavor.com/#founder",
+      "name": "Laxman A. Sapkota",
+      "jobTitle": "Founder & Lead Developer",
+      "image": "https://assamdirectory.com/wp-content/uploads/2026/09/Laxman-A.-Sapkota.jpeg",
+      "sameAs": [
+        "https://grapweb.com/about/"
+      ],
+      "knowsAbout": ["Full-Stack Engineering", "Web Architecture", "Media Processing Systems", "Privacy Systems"]
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://vidsavor.com/#organization",
+      "name": "VidSavor",
+      "url": "https://vidsavor.com/",
+      "founder": { "@id": "https://vidsavor.com/#founder" },
+      "logo": "https://vidsavor.com/static/assets/logo.svg"
+    }
+  ]
+}
+</script>
+
+<style>
+.about-hero-wrap {
+    padding: 70px 6% 40px;
+    text-align: center;
+    background: radial-gradient(circle at 50% 20%, rgba(124, 58, 237, 0.08) 0%, transparent 70%);
+}
+.about-card-founder {
+    max-width: 960px;
+    margin: 30px auto;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 28px;
+    padding: 40px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.06);
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 40px;
+    align-items: center;
+    text-align: left;
+}
+.founder-photo-wrap {
+    text-align: center;
+}
+.founder-img {
+    width: 240px;
+    height: 240px;
+    object-fit: cover;
+    border-radius: 24px;
+    box-shadow: 0 16px 36px rgba(124, 58, 237, 0.2);
+    border: 4px solid #ffffff;
+}
+.founder-badge-role {
+    display: inline-block;
+    margin-top: 14px;
+    background: #f5f3ff;
+    color: #7c3aed;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    border: 1px solid #ddd6fe;
+}
+.mission-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    max-width: 1040px;
+    margin: 40px auto;
+}
+.mission-card {
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 22px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+    text-align: left;
+    transition: transform 0.2s ease;
+}
+.mission-card:hover {
+    transform: translateY(-4px);
+}
+.mission-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    margin-bottom: 18px;
+}
+@media (max-width: 800px) {
+    .about-card-founder {
+        grid-template-columns: 1fr;
+        padding: 24px;
+        text-align: center;
+    }
+    .founder-photo-wrap {
+        margin-bottom: 20px;
+    }
+    .about-hero-wrap {
+        padding: 40px 16px 20px;
+    }
+}
+</style>
 </head>
+
 <body>
 
+<!-- HEADER (Google Antigravity Style) -->
 <header>
-    <a href="/" class="logo-container">
-        <div class="logo-icon"><i class="fa-solid fa-play"></i></div>
-        <div class="logo-text">VidSavor<span class="logo-domain">.com</span></div>
-    </a>
-    <nav class="top-menu">
-        <a href="/reels" class="menu-box"><i class="fa-solid fa-video"></i> <span>Video</span></a>
-        <a href="/audio" class="menu-box"><i class="fa-solid fa-music"></i> <span>Audio</span></a>
-        <a href="/photo" class="menu-box"><i class="fa-solid fa-image"></i> <span>Photo</span></a>
-    </nav>
+    <div class="header-left">
+        <a href="/" class="logo-container" aria-label="VidSavor Home">
+            <div class="logo-icon">
+                <i class="fa-solid fa-play"></i>
+            </div>
+            <div class="logo-text">
+                VidSavor<span class="logo-domain">.com</span>
+            </div>
+        </a>
+
+        <!-- ANTIGRAVITY DROP DOWN NAV -->
+        <nav class="antigravity-nav" aria-label="Main Navigation">
+            <div class="antigravity-dropdown-wrapper">
+                <button type="button" class="antigravity-nav-btn">
+                    <span>All Platforms</span>
+                    <i class="fa-solid fa-chevron-down caret-icon"></i>
+                </button>
+                <div class="antigravity-mega-menu">
+                    <div class="agy-teaser-col">
+                        <div>
+                            <div class="agy-teaser-title">Explore our platforms</div>
+                            <div class="agy-teaser-desc">Download videos, reels, photos & audio in original HD without watermarks.</div>
+                        </div>
+                        <a href="/#supportedPlatforms" class="agy-teaser-btn"><span>Overview</span> <i class="fa-solid fa-arrow-right"></i></a>
+                    </div>
+                    <div class="agy-list-col">
+                        <div class="agy-list-header">Platforms</div>
+                        <a href="/instagram" class="agy-menu-item"><div class="agy-item-icon" style="color:#e1306c; background:#fdf2f8;"><i class="fa-brands fa-instagram"></i></div><div class="agy-item-content"><span class="agy-item-title">Instagram</span><span class="agy-item-desc">Reels, Stories & Photos</span></div></a>
+                        <a href="/youtube" class="agy-menu-item"><div class="agy-item-icon" style="color:#ff0000; background:#fef2f2;"><i class="fa-brands fa-youtube"></i></div><div class="agy-item-content"><span class="agy-item-title">YouTube</span><span class="agy-item-desc">4K Video & MP3 Audio</span></div></a>
+                        <a href="/tiktok" class="agy-menu-item"><div class="agy-item-icon" style="color:#000000; background:#f3f4f6;"><i class="fa-brands fa-tiktok"></i></div><div class="agy-item-content"><span class="agy-item-title">TikTok</span><span class="agy-item-desc">No Watermark & Sound</span></div></a>
+                        <a href="/facebook" class="agy-menu-item"><div class="agy-item-icon" style="color:#1877f2; background:#eff6ff;"><i class="fa-brands fa-facebook"></i></div><div class="agy-item-content"><span class="agy-item-title">Facebook</span><span class="agy-item-desc">Public Videos & Reels</span></div></a>
+                        <a href="/twitter" class="agy-menu-item"><div class="agy-item-icon" style="color:#0f172a; background:#f1f5f9;"><i class="fa-brands fa-x-twitter"></i></div><div class="agy-item-content"><span class="agy-item-title">Twitter / X</span><span class="agy-item-desc">Clips & Video Media</span></div></a>
+                        <a href="/pinterest" class="agy-menu-item"><div class="agy-item-icon" style="color:#e60023; background:#fef2f2;"><i class="fa-brands fa-pinterest"></i></div><div class="agy-item-content"><span class="agy-item-title">Pinterest</span><span class="agy-item-desc">Pins & Aesthetic MP4</span></div></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="antigravity-dropdown-wrapper">
+                <button type="button" class="antigravity-nav-btn">
+                    <span>Resources</span>
+                    <i class="fa-solid fa-chevron-down caret-icon"></i>
+                </button>
+                <div class="antigravity-mega-menu resources-menu">
+                    <div class="agy-teaser-col">
+                        <div>
+                            <div class="agy-teaser-title">Helpful Resources</div>
+                            <div class="agy-teaser-desc">Guides, creator documentation, FAQs, and developer story by Laxman A. Sapkota.</div>
+                        </div>
+                        <a href="/blog" class="agy-teaser-btn"><span>Read Guides</span> <i class="fa-solid fa-arrow-right"></i></a>
+                    </div>
+                    <div class="agy-list-col">
+                        <div class="agy-list-header">Navigation</div>
+                        <a href="/blog" class="agy-menu-item"><div class="agy-item-icon" style="color:#7c3aed; background:#f5f3ff;"><i class="fa-solid fa-newspaper"></i></div><div class="agy-item-content"><span class="agy-item-title">Blog</span><span class="agy-item-desc">Guides & Tutorials</span></div></a>
+                        <a href="/about-us" class="agy-menu-item"><div class="agy-item-icon" style="color:#2563eb; background:#eff6ff;"><i class="fa-solid fa-user-astronaut"></i></div><div class="agy-item-content"><span class="agy-item-title">About Us</span><span class="agy-item-desc">Meet Laxman A. Sapkota</span></div></a>
+                        <a href="/faq" class="agy-menu-item"><div class="agy-item-icon" style="color:#059669; background:#ecfdf5;"><i class="fa-solid fa-circle-question"></i></div><div class="agy-item-content"><span class="agy-item-title">Help & FAQ</span><span class="agy-item-desc">Common Questions</span></div></a>
+                        <a href="/contact-us" class="agy-menu-item"><div class="agy-item-icon" style="color:#d97706; background:#fffbeb;"><i class="fa-solid fa-envelope"></i></div><div class="agy-item-content"><span class="agy-item-title">Contact</span><span class="agy-item-desc">Support & Inquiries</span></div></a>
+                        <a href="/dmca-policy" class="agy-menu-item"><div class="agy-item-icon" style="color:#dc2626; background:#fef2f2;"><i class="fa-solid fa-scale-balanced"></i></div><div class="agy-item-content"><span class="agy-item-title">Copyright & DMCA</span><span class="agy-item-desc">Intellectual Property</span></div></a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <div class="header-actions">
+        <span class="antigravity-badge-free"><i class="fa-solid fa-circle-check"></i> 100% Free</span>
+        <a href="/" class="antigravity-pill-btn"><span>Download Now</span> <i class="fa-solid fa-download"></i></a>
+        <button type="button" class="mobile-menu-toggle" onclick="toggleMobileNav()"><i class="fa-solid fa-bars"></i></button>
+    </div>
 </header>
 
-<div style="max-width: 900px; margin: 50px auto 80px; padding: 45px 35px; background: white; border-radius: 28px; box-shadow: var(--shadow-sm); border: 1px solid #f1f5f9; line-height: 1.85;">
-    <h1 style="font-size: 34px; font-weight: 800; margin-bottom: 20px; color: #111827;">About VidSavor</h1>
-    <p style="font-size: 16.5px; color: #4b5563; margin-bottom: 20px;">
-        <strong>VidSavor</strong> was built with a single goal: to provide the fastest, cleanest, and most reliable web-based media extractor without intrusive popups, forced software installs, or login barriers.
+<section class="about-hero-wrap">
+    <div class="badge"><i class="fa-solid fa-sparkles"></i> The Person & Vision Behind VidSavor</div>
+    <h1 style="font-size: 42px; font-weight: 800; letter-spacing: -1px; margin-bottom: 16px;">
+        Building the Fastest, Cleanest Media Suite for Creators Worldwide
+    </h1>
+    <p style="max-width: 720px; margin: 0 auto; color: #64748b; font-size: 16.5px; line-height: 1.7;">
+        I created VidSavor to eliminate slow, ad-ridden video tools with a sleek, private, and 100% free web utility that puts user experience and clean engineering first.
     </p>
 
-    <h3 style="font-size: 20px; margin-top: 30px; margin-bottom: 12px; color: #1e293b;">Our Technology Philosophy</h3>
-    <p style="color: #4b5563;">
-        We believe that online media archiving should be private, instantaneous, and high-fidelity. By optimizing stream parsing algorithms, VidSavor allows users to preserve public videos in their native original 1080p and 4K bitrates, as well as isolate audio tracks into high quality 320kbps MP3s.
-    </p>
+    <!-- Founder Card -->
+    <div class="about-card-founder">
+        <div class="founder-photo-wrap">
+            <img src="https://assamdirectory.com/wp-content/uploads/2026/09/Laxman-A.-Sapkota.jpeg" alt="Laxman A. Sapkota - Founder & Lead Developer of VidSavor" class="founder-img" loading="eager">
+            <div>
+                <span class="founder-badge-role"><i class="fa-solid fa-code"></i> Full-Stack Engineer</span>
+            </div>
+        </div>
+        <div>
+            <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #7c3aed; margin-bottom: 6px;">
+                Founder & Lead Architect
+            </div>
+            <h2 style="font-size: 28px; font-weight: 800; color: #0f172a; margin-bottom: 14px;">
+                Laxman A. Sapkota
+            </h2>
+            <p style="color: #475569; line-height: 1.75; font-size: 15px; margin-bottom: 16px;">
+                Hello! I’m <strong>Laxman A. Sapkota</strong>. Welcome to VidSavor — a platform I personally architected, coded, and maintain from the ground up.
+            </p>
+            <p style="color: #475569; line-height: 1.75; font-size: 15px; margin-bottom: 16px;">
+                My journey creating VidSavor began out of sheer frustration with existing video downloaders. Every time I needed to save a reel, research video, or educational clip, I was bombarded with deceptive "Download" buttons, malware warnings, intrusive popups, and artificial speed limits. I knew creators, researchers, editors, and everyday internet users deserved far better.
+            </p>
+            <p style="color: #475569; line-height: 1.75; font-size: 15px; margin-bottom: 20px;">
+                I set out to engineer a modern, elegant, and blazing-fast media tool that respects your privacy: <strong>no forced registrations, zero tracking, no file storage on our servers, and zero paywalls</strong>. Today, VidSavor provides instant downloads for Instagram, YouTube, TikTok, Facebook, and Pinterest.
+            </p>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <span class="media-meta-badge"><i class="fa-solid fa-bolt" style="color:#7c3aed;"></i> High-Performance Systems</span>
+                <span class="media-meta-badge"><i class="fa-solid fa-shield-halved" style="color:#059669;"></i> Zero-Log Privacy</span>
+                <span class="media-meta-badge"><i class="fa-solid fa-code" style="color:#2563eb;"></i> Full-Stack Engineering</span>
+            </div>
+        </div>
+    </div>
 
-    <h3 style="font-size: 20px; margin-top: 30px; margin-bottom: 12px; color: #1e293b;">Supported Platforms</h3>
-    <p style="color: #4b5563;">
-        VidSavor supports extracting public media from Instagram, YouTube, TikTok, Facebook, Twitter / X, Pinterest, and hundreds of standard media platforms.
-    </p>
-</div>
+    <!-- Mission & Core Direction -->
+    <div style="margin-top: 60px;">
+        <h2 style="font-size: 32px; font-weight: 800; color: #0f172a; margin-bottom: 12px;">Purpose & Core Direction</h2>
+        <p style="color: #64748b; font-size: 16px;">Every line of code in VidSavor is guided by three foundational commitments.</p>
 
+        <div class="mission-grid">
+            <div class="mission-card">
+                <div class="mission-icon" style="background:#f5f3ff; color:#7c3aed;"><i class="fa-solid fa-bullseye"></i></div>
+                <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 10px; color:#0f172a;">My Mission</h3>
+                <p style="color:#64748b; font-size: 14.5px; line-height: 1.65;">
+                    To democratize high-resolution media extraction for creators, students, and everyday users. I eliminate digital friction by engineering instant, reliable, and completely free web utilities that make accessing public media safe and effortless.
+                </p>
+            </div>
+
+            <div class="mission-card">
+                <div class="mission-icon" style="background:#eff6ff; color:#2563eb;"><i class="fa-solid fa-compass"></i></div>
+                <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 10px; color:#0f172a;">My Vision</h3>
+                <p style="color:#64748b; font-size: 14.5px; line-height: 1.65;">
+                    To establish VidSavor as the most trusted creator productivity tool worldwide. Beyond fast media downloads, I am actively building audio extractors, high-bitrate converters, and multimedia tools inside a clean, distraction-free interface.
+                </p>
+            </div>
+
+            <div class="mission-card">
+                <div class="mission-icon" style="background:#ecfdf5; color:#059669;"><i class="fa-solid fa-gauge-high"></i></div>
+                <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 10px; color:#0f172a;">My Aim</h3>
+                <p style="color:#64748b; font-size: 14.5px; line-height: 1.65;">
+                    Uncompromised excellence: sub-second processing speeds, 100% free accessibility without paywalls, true zero-log privacy, and dependable uptime across all supported platforms.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
 <footer>
+    <div class="footer-grid">
+        <div class="footer-box">
+            <h3>Download Tools</h3>
+            <a href="/instagram"><i class="fa-brands fa-instagram" style="color: #e1306c;"></i> Instagram Reels Downloader</a>
+            <a href="/youtube"><i class="fa-brands fa-youtube" style="color: #ff0000;"></i> YouTube 4K & Shorts Saver</a>
+            <a href="/tiktok"><i class="fa-brands fa-tiktok" style="color: #000000;"></i> TikTok No Watermark Saver</a>
+            <a href="/audio"><i class="fa-solid fa-music" style="color: #7c3aed;"></i> High Bitrate MP3 Extractor</a>
+        </div>
+        <div class="footer-box">
+            <h3>Supported Platforms</h3>
+            <a href="/facebook"><i class="fa-brands fa-facebook" style="color: #1877f2;"></i> Facebook Video Downloader</a>
+            <a href="/twitter"><i class="fa-brands fa-x-twitter" style="color: #0f172a;"></i> Twitter / X Media Saver</a>
+            <a href="/pinterest"><i class="fa-brands fa-pinterest" style="color: #e60023;"></i> Pinterest Pin & Image Saver</a>
+            <a href="/photo"><i class="fa-solid fa-images" style="color: #ff4db8;"></i> Photo & Carousel Extractor</a>
+        </div>
+        <div class="footer-box">
+            <h3>Resources & About</h3>
+            <a href="/about-us"><i class="fa-solid fa-user-astronaut" style="color: #2563eb;"></i> About Founder & Story</a>
+            <a href="/blog"><i class="fa-solid fa-newspaper" style="color: #7c3aed;"></i> Blog & Tutorials</a>
+            <a href="/faq"><i class="fa-solid fa-circle-question" style="color: #059669;"></i> Help & Frequently Asked Questions</a>
+            <a href="/contact-us"><i class="fa-solid fa-envelope" style="color: #d97706;"></i> Contact Support Desk</a>
+        </div>
+        <div class="footer-box">
+            <h3>Legal & Safety</h3>
+            <a href="/privacy-policy">Privacy Policy (Zero Log)</a>
+            <a href="/terms-of-service">Terms of Service</a>
+            <a href="/dmca-policy">Copyright & DMCA Compliance</a>
+            <a href="mailto:support@vidsavor.com" style="font-weight: 500; margin-top: 6px;">
+                <i class="fa-regular fa-envelope" style="color: #7c3aed;"></i> support@vidsavor.com
+            </a>
+        </div>
+    </div>
     <div class="footer-bottom">
-        <p>© 2026 <b>VidSavor</b> • Fast & HD Online Video Downloader</p>
+        <p style="margin-bottom: 8px;">© 2026 <b>VidSavor</b> • Architected by Laxman A. Sapkota • All Rights Reserved</p>
     </div>
 </footer>
 
+<script src="/static/js/app.js"></script>
 </body>
 </html>

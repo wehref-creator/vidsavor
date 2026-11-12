@@ -1,6 +1,7 @@
 import re
 import math
 import logging
+import urllib.parse
 import requests
 import yt_dlp
 from typing import Dict, Any, List, Optional
@@ -105,10 +106,19 @@ class MediaExtractor:
         if fallback_res:
             return fallback_res
 
-        # 3. Informative, user-friendly error response (matching FreeVideoSave)
+        # 3. Informative, user-friendly error response
+        if platform == 'instagram':
+            msg = "Instagram media not found or inaccessible. Please verify the account is public (not private), the post hasn't been deleted, and retry."
+        elif platform == 'tiktok':
+            msg = "TikTok video not found. Please ensure the link is a valid public TikTok video URL and try again."
+        elif platform == 'youtube':
+            msg = "YouTube video not found. Please verify the link is public and accessible."
+        else:
+            msg = "Media not found! Please check that the link is valid and from a public post, then retry."
+
         return {
             "status": "error",
-            "message": "Media not found! Sometimes private or unstable links take a few attempts. Please retry 2–3 times or make sure the post is from a public account."
+            "message": msg
         }
 
     def _parse_info(self, info: Dict[str, Any], platform: str, url: str) -> Dict[str, Any]:
@@ -305,10 +315,79 @@ class MediaExtractor:
         }
 
     def _fallback_extract(self, url: str, platform: str) -> Optional[Dict[str, Any]]:
-        """Fallback extractors using HTML metadata, OpenGraph, or platform APIs."""
-        try:
-            # 1. Twitter / X fallback via FixupX
-            if platform == 'twitter':
+        """Fallback extractors using platform-specific APIs and HTML metadata."""
+        # 1. TikTok fallback via TikWM
+        if platform == 'tiktok':
+            try:
+                twm_res = requests.get(f"https://www.tikwm.com/api/?url={urllib.parse.quote(url)}", timeout=8, headers={'User-Agent': 'Mozilla/5.0'})
+                if twm_res.status_code == 200:
+                    tdata = twm_res.json()
+                    if tdata.get('code') == 0 and tdata.get('data'):
+                        d = tdata['data']
+                        results = []
+                        play_url = d.get('play') or d.get('wmplay')
+                        hdplay = d.get('hdplay')
+                        music = d.get('music')
+                        cover = d.get('cover') or d.get('origin_cover')
+                        title = d.get('title') or "TikTok Video Without Watermark"
+                        author = d.get('author', {}).get('nickname') or d.get('author', {}).get('unique_id') or "TikTok Creator"
+                        duration_s = d.get('duration') or 0
+
+                        if hdplay:
+                            results.append({
+                                "url": hdplay,
+                                "type": "video",
+                                "quality": "1080p HD (No Watermark)",
+                                "format": "mp4",
+                                "size": human_filesize(d.get('size')),
+                                "thumbnail": cover
+                            })
+                        if play_url:
+                            results.append({
+                                "url": play_url,
+                                "type": "video",
+                                "quality": "HD Video (No Watermark)",
+                                "format": "mp4",
+                                "size": human_filesize(d.get('size')),
+                                "thumbnail": cover
+                            })
+                        if music:
+                            results.append({
+                                "url": music,
+                                "type": "audio",
+                                "quality": "Original Audio MP3",
+                                "format": "mp3",
+                                "size": "Audio Stream",
+                                "thumbnail": cover
+                            })
+                        if cover:
+                            results.append({
+                                "url": cover,
+                                "type": "photo",
+                                "quality": "Cover Photo",
+                                "format": "jpg",
+                                "size": "Original",
+                                "thumbnail": cover
+                            })
+
+                        if results:
+                            return {
+                                "status": "success",
+                                "title": title[:100],
+                                "thumbnail": cover or "",
+                                "type": "video",
+                                "download": results[0]['url'],
+                                "author": author,
+                                "duration": format_duration(duration_s),
+                                "platform": "tiktok",
+                                "results": results
+                            }
+            except Exception as e:
+                logger.warning(f"TikWM fallback failed: {e}")
+
+        # 2. Twitter / X fallback via FixupX
+        if platform == 'twitter':
+            try:
                 tw_match = re.search(r'status/(\d+)', url)
                 if tw_match:
                     tweet_id = tw_match.group(1)
@@ -353,8 +432,40 @@ class MediaExtractor:
                                 "platform": "twitter",
                                 "results": results
                             }
+            except Exception as e:
+                logger.warning(f"Twitter fallback failed: {e}")
 
-            # 2. General OpenGraph scraping fallback
+        # 3. Instagram oEmbed fallback
+        if platform == 'instagram':
+            try:
+                oembed_res = requests.get(f"https://api.instagram.com/oembed/?url={urllib.parse.quote(url)}", timeout=5, headers={'User-Agent': 'Mozilla/5.0'})
+                if oembed_res.status_code == 200:
+                    odata = oembed_res.json()
+                    thumb = odata.get('thumbnail_url')
+                    if thumb:
+                        return {
+                            "status": "success",
+                            "title": odata.get('title') or "Instagram Media",
+                            "thumbnail": thumb,
+                            "type": "photo",
+                            "download": thumb,
+                            "author": odata.get('author_name') or "Instagram User",
+                            "duration": "",
+                            "platform": "instagram",
+                            "results": [{
+                                "url": thumb,
+                                "type": "photo",
+                                "quality": "High-Res Image / Cover",
+                                "format": "jpg",
+                                "size": "Source Quality",
+                                "thumbnail": thumb
+                            }]
+                        }
+            except Exception as e:
+                logger.warning(f"Instagram oEmbed fallback failed: {e}")
+
+        # 4. General OpenGraph scraping fallback
+        try:
             resp = requests.get(url, timeout=8, headers={
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'

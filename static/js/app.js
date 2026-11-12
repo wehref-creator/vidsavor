@@ -46,24 +46,44 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Input clear button handler
+    // Input clear and auto-fetch on paste handler
     const urlInput = document.getElementById('videoUrl');
     const clearBtn = document.getElementById('clearUrlBtn');
-    if (urlInput && clearBtn) {
+    if (urlInput) {
         urlInput.addEventListener('input', () => {
-            clearBtn.style.display = urlInput.value.trim() ? 'block' : 'none';
+            if (clearBtn) clearBtn.style.display = urlInput.value.trim() ? 'block' : 'none';
         });
-        clearBtn.addEventListener('click', () => {
-            urlInput.value = '';
-            clearBtn.style.display = 'none';
-            urlInput.focus();
+
+        // Automatically start fetching when user pastes into the input!
+        urlInput.addEventListener('paste', () => {
+            setTimeout(() => {
+                const val = urlInput.value.trim();
+                if (val.startsWith('http://') || val.startsWith('https://')) {
+                    if (clearBtn) clearBtn.style.display = 'block';
+                    downloadNow();
+                }
+            }, 60);
         });
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                urlInput.value = '';
+                clearBtn.style.display = 'none';
+                urlInput.focus();
+            });
+        }
     }
 });
 
 // 2. Navigation & UI Helpers
 function scrollHero() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const el = document.getElementById('downloadSection') || document.querySelector('.hero');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+}
+
+function toggleMobileNav() {
+    const nav = document.querySelector('.antigravity-nav');
+    if (nav) nav.classList.toggle('mobile-active');
 }
 
 async function pasteText() {
@@ -74,8 +94,16 @@ async function pasteText() {
 
     try {
         const text = await navigator.clipboard.readText();
-        input.value = text.trim();
-        if (clearBtn) clearBtn.style.display = input.value ? 'block' : 'none';
+        const clean = text.trim();
+        input.value = clean;
+        if (clearBtn) clearBtn.style.display = clean ? 'block' : 'none';
+        
+        // Auto-fetch immediately upon clicking Paste if valid URL!
+        if (clean.startsWith('http://') || clean.startsWith('https://')) {
+            downloadNow();
+            return;
+        }
+
         input.blur();
         setTimeout(() => {
             input.focus();
@@ -87,6 +115,27 @@ async function pasteText() {
         input.focus();
         window.scrollTo(scrollX, scrollY);
         alert('Please paste manually using Ctrl+V or your device paste menu.');
+    }
+}
+
+function copyMediaLink() {
+    const urlInput = document.getElementById('videoUrl')?.value.trim();
+    if (urlInput) {
+        navigator.clipboard.writeText(urlInput).then(() => {
+            alert('Post link copied to clipboard!');
+        });
+    }
+}
+
+function shareMedia() {
+    const urlInput = document.getElementById('videoUrl')?.value.trim();
+    if (navigator.share && urlInput) {
+        navigator.share({
+            title: document.getElementById('videoTitle')?.textContent || 'VidSavor Download',
+            url: urlInput
+        }).catch(() => {});
+    } else {
+        copyMediaLink();
     }
 }
 
