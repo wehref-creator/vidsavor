@@ -6,25 +6,164 @@
 <title>Online Photo & Carousel Saver - VidSavor | Full HD Image Downloader</title>
 <meta name="description" content="Download Instagram photos, carousel albums, Pinterest pins, and thumbnails in original HD quality with VidSavor. 100% Free.">
 <meta name="robots" content="index, follow">
-<meta name="theme-color" content="#7c3aed">
+<meta name="theme-color" content="#121317">
 <link rel="canonical" href="https://vidsavor.com/photo" />
 <link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,slnt,wdth,wght,ROND@8..144,-10..0,25..150,400..800,0..100&family=Google+Sans+Code:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
 
 <header>
-    <a href="/" class="logo-container">
-        <div class="logo-icon"><i class="fa-solid fa-play"></i></div>
-        <div class="logo-text">VidSavor<span class="logo-domain">.com</span></div>
-    </a>
-    <nav class="top-menu">
-        <a href="/reels" class="menu-box"><i class="fa-solid fa-video"></i> <span>Video</span></a>
-        <a href="/audio" class="menu-box"><i class="fa-solid fa-music"></i> <span>Audio</span></a>
-        <a href="/photo" class="menu-box active"><i class="fa-solid fa-image"></i> <span>Photo</span></a>
-    </nav>
+    <div class="header-left">
+        <a href="/" class="logo-container" aria-label="VidSavor Home">
+            <div class="logo-icon">
+                <i class="fa-solid fa-play"></i>
+            </div>
+            <div class="logo-text">
+                VidSavor<span class="logo-domain">.com</span>
+            </div>
+        </a>
+
+        <!-- ANTIGRAVITY DROP DOWN NAV -->
+        <nav class="antigravity-nav" aria-label="Main Navigation">
+            <!-- Menu 1: All Platforms -->
+            <div class="antigravity-dropdown-wrapper">
+                <button type="button" class="antigravity-nav-btn" aria-haspopup="true">
+                    <span>All Platforms</span>
+                    <i class="fa-solid fa-chevron-down caret-icon"></i>
+                </button>
+                <div class="antigravity-mega-menu">
+                    <div class="agy-teaser-col">
+                        <div>
+                            <div class="agy-teaser-title">Explore our supported platforms</div>
+                            <div class="agy-teaser-desc">Download videos, reels, photos & audio in original HD without watermarks or login.</div>
+                        </div>
+                        <a href="#supportedPlatforms" class="agy-teaser-btn">
+                            <span>See Overview</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="agy-list-col">
+                        <div class="agy-list-header">Platforms</div>
+                        <a href="/instagram" class="agy-menu-item">
+                            <div class="agy-item-icon" style="color:#e1306c; background:#fdf2f8;"><i class="fa-brands fa-instagram"></i></div>
+                            <div class="agy-item-content">
+                                <span class="agy-item-title">Instagram Downloader</span>
+                                <span class="agy-item-desc">Reels, Stories, Photos & Carousels</span>
+                            </div>
+                        </a>
+                        <a href="/youtube" class="agy-menu-item">
+                            <div class="agy-item-icon" style="color:#ff0000; background:#fef2f2;"><i class="fa-brands fa-youtube"></i></div>
+                            <div class="agy-item-content">
+                                <span class="agy-item-title">YouTube Downloader</span>
+                                <span class="agy-item-desc">4K Videos, Shorts & 320k MP3 Audio</span>
+                            </div>
+                        </a>
+                        <a href="/tiktok" class="agy-menu-item">
+                            <div class="agy-item-icon" style="color:#000000; background:#f3f4f6;"><i class="fa-brands fa-tiktok"></i></div>
+                            <div class="agy-item-content">
+                                <span class="agy-item-title">TikTok Downloader</span>
+                                <span class="agy-item-desc">HD Videos with No Watermark & Sound</span>
+                            </div>
+                        </a>
+                        <a href="/facebook" class="agy-menu-item">
+                            <div class="agy-item-icon" style="color:#1877f2; background:#eff6ff;"><i class="fa-brands fa-facebook"></i></div>
+                            <div class="agy-item-content">
+                                <span class="agy-item-title">Facebook Downloader</span>
+                                <span class="agy-item-desc">Public Videos, Watch & HD Reels</span>
+                            </div>
+                        </a>
+                        <a href="/twitter" class="agy-menu-item">
+                            <div class="agy-item-icon" style="color:#0f172a; background:#f1f5f9;"><i class="fa-brands fa-x-twitter"></i></div>
+                            <div class="agy-item-content">
+                                <span class="agy-item-title">Twitter / X Downloader</span>
+                                <span class="agy-item-desc">Clips, Videos, Photos & GIFs</span>
+                            </div>
+                        </a>
+                        <a href="/pinterest" class="agy-menu-item">
+                            <div class="agy-item-icon" style="color:#e60023; background:#fef2f2;"><i class="fa-brands fa-pinterest"></i></div>
+                            <div class="agy-item-content">
+                                <span class="agy-item-title">Pinterest Downloader</span>
+                                <span class="agy-item-desc">Pins, Aesthetic Images & MP4</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Menu 2: Resources -->
+            <div class="antigravity-dropdown-wrapper">
+                <button type="button" class="antigravity-nav-btn" aria-haspopup="true">
+                    <span>Resources</span>
+                    <i class="fa-solid fa-chevron-down caret-icon"></i>
+                </button>
+                <div class="antigravity-mega-menu resources-menu">
+                    <div class="agy-teaser-col">
+                        <div>
+                            <div class="agy-teaser-title">Helpful Resources</div>
+                            <div class="agy-teaser-desc">Guides, creator documentation, FAQs, and developer mission by Laxman A. Sapkota.</div>
+                        </div>
+                        <a href="/about-us" class="agy-teaser-btn">
+                            <span>Our Story</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="agy-list-col">
+                        <div class="agy-list-header">Navigation</div>
+                        <a href="/blog" class="agy-menu-item">
+                            <div class="agy-item-icon" style="color:#7c3aed; background:#f5f3ff;"><i class="fa-solid fa-newspaper"></i></div>
+                            <div class="agy-item-content">
+                                <span class="agy-item-title">Blog & Tutorials</span>
+                                <span class="agy-item-desc">Tips on saving reels, 4K & MP3</span>
+                            </div>
+                        </a>
+                        <a href="/about-us" class="agy-menu-item">
+                            <div class="agy-item-icon" style="color:#2563eb; background:#eff6ff;"><i class="fa-solid fa-user-astronaut"></i></div>
+                            <div class="agy-item-content">
+                                <span class="agy-item-title">About Us</span>
+                                <span class="agy-item-desc">Meet Laxman A. Sapkota & Vision</span>
+                            </div>
+                        </a>
+                        <a href="/faq" class="agy-menu-item">
+                            <div class="agy-item-icon" style="color:#059669; background:#ecfdf5;"><i class="fa-solid fa-circle-question"></i></div>
+                            <div class="agy-item-content">
+                                <span class="agy-item-title">Help & FAQ</span>
+                                <span class="agy-item-desc">Frequently asked questions & guides</span>
+                            </div>
+                        </a>
+                        <a href="/contact-us" class="agy-menu-item">
+                            <div class="agy-item-icon" style="color:#d97706; background:#fffbeb;"><i class="fa-solid fa-envelope"></i></div>
+                            <div class="agy-item-content">
+                                <span class="agy-item-title">Contact Us</span>
+                                <span class="agy-item-desc">Support & partnership inquiries</span>
+                            </div>
+                        </a>
+                        <a href="/dmca-policy" class="agy-menu-item">
+                            <div class="agy-item-icon" style="color:#dc2626; background:#fef2f2;"><i class="fa-solid fa-scale-balanced"></i></div>
+                            <div class="agy-item-content">
+                                <span class="agy-item-title">Copyright & DMCA</span>
+                                <span class="agy-item-desc">Fair use policies & takedown notices</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Header Actions (Antigravity Style) -->
+    <div class="header-actions">
+        <span class="antigravity-badge-free"><i class="fa-solid fa-circle-check"></i> 100% Free</span>
+        <a href="#downloadSection" onclick="scrollHero();" class="antigravity-pill-btn">
+            <span>Download</span>
+            <i class="fa-solid fa-download"></i>
+        </a>
+        <button type="button" class="mobile-menu-toggle" onclick="toggleMobileNav()" aria-label="Toggle navigation menu">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+    </div>
 </header>
 
 <section class="hero">
@@ -61,9 +200,67 @@
     </div>
 </section>
 
-<footer>
-    <div class="footer-bottom">
-        <p>© 2026 <b>VidSavor</b> • Fast & HD Online Video Downloader</p>
+<footer class="footer-antigravity-layout">
+    <div class="footer-top-grid">
+        <div class="footer-hero-col">
+            <h2 class="footer-title">Experience VidSavor</h2>
+            <p class="footer-sub">
+                Download high-definition videos, reels, photos & audio instantly from all major platforms without limits, watermarks, or ads.
+            </p>
+        </div>
+
+        <div class="footer-nav-col">
+            <span class="caption">Platforms</span>
+            <a href="/instagram">Instagram Downloader</a>
+            <a href="/youtube">YouTube Downloader</a>
+            <a href="/tiktok">TikTok Downloader</a>
+            <a href="/facebook">Facebook Downloader</a>
+            <a href="/twitter">Twitter / X Downloader</a>
+            <a href="/pinterest">Pinterest Downloader</a>
+            <a href="/audio">Audio MP3 Extractor</a>
+        </div>
+
+        <div class="footer-nav-col">
+            <span class="caption">Resources</span>
+            <a href="/blog">Blog & Tutorials</a>
+            <a href="/about-us">About Us</a>
+            <a href="/faq">Help & FAQ</a>
+            <a href="/contact-us">Contact Support</a>
+            <a href="/dmca-policy">DMCA & Copyright</a>
+            <a href="/privacy-policy">Privacy Policy</a>
+            <a href="/terms-of-service">Terms of Service</a>
+        </div>
+    </div>
+
+    <!-- Massive Google Antigravity Style Giant Wordmark -->
+    <div class="footer-wordmark-container">
+        <h1 class="footer-giant-wordmark">VidSavor</h1>
+    </div>
+
+    <!-- Footer Bottom Bar -->
+    <div class="footer-bottom-bar">
+        <div class="footer-bottom-left">
+            <a href="/" class="footer-bottom-logo">
+                <i class="fa-solid fa-play" style="font-size: 13px;"></i>
+                <span>VidSavor</span>
+            </a>
+            <span>© 2026 VidSavor. Built by Laxman A. Sapkota. All rights reserved.</span>
+        </div>
+
+        <div class="footer-bottom-links">
+            <a href="/about-us">About Us</a>
+            <a href="/privacy-policy">Privacy</a>
+            <a href="/terms-of-service">Terms</a>
+            <a href="/dmca-policy">DMCA</a>
+            <a href="/contact-us">Contact</a>
+        </div>
+
+        <div class="footer-social-links">
+            <a href="https://x.com" target="_blank" rel="noopener noreferrer" aria-label="X / Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
+            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+            <a href="https://github.com/wehref-creator/vidsavor" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+        </div>
     </div>
 </footer>
 

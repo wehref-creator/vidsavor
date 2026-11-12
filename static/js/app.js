@@ -1,6 +1,6 @@
 /**
  * VidSavor.com - Core Client Engine
- * Complete feature parity with FreeVideoSave.com + Modern Enhancements
+ * Google Antigravity Particle Physics, Mega Menus, Auto-Fetch & Downloader
  */
 
 // 1. Service Worker & PWA Installation Engine
@@ -16,39 +16,283 @@ let deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    console.log("VidSavor PWA: Official Google Install Prompt cached.");
 });
 
 window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
-    console.log('VidSavor PWA: App installed successfully.');
 });
 
-// Deferred PWA install prompt trigger after user initiates download
-window.addEventListener('DOMContentLoaded', () => {
-    document.body.addEventListener('click', (event) => {
-        const isDownloadClick = event.target.closest('#downloadButtonsContainer') || 
-                                event.target.closest('.btn-download-new') || 
-                                event.target.classList.contains('btn-download-new');
+// ==========================================================================
+// 2. GOOGLE ANTIGRAVITY HERO MOUSE PARTICLE PHYSICS SIMULATION
+// ==========================================================================
+function initHeroParticles() {
+    const canvas = document.getElementById('antigravityCanvas');
+    if (!canvas) return;
 
-        if (isDownloadClick && deferredPrompt) {
-            setTimeout(() => {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then((choiceResult) => {
-                        if (choiceResult.outcome === 'accepted') {
-                            console.log('User accepted VidSavor PWA install.');
-                        }
-                        deferredPrompt = null;
-                    });
-                }
-            }, 8000);
+    const ctx = canvas.getContext('2d');
+    let width = 0;
+    let height = 0;
+    let dpr = window.devicePixelRatio || 1;
+    let animationFrameId = null;
+
+    // Mouse coordinates and tracking
+    const mouse = {
+        x: -9999,
+        y: -9999,
+        targetX: -9999,
+        targetY: -9999,
+        radius: 130, // Influence radius
+        isHovered: false
+    };
+
+    // Google Antigravity Color Palette
+    const colors = [
+        '#4285F4', // Google Blue
+        '#EA4335', // Google Red
+        '#FBBC04', // Google Yellow
+        '#34A853', // Google Green
+        '#5F6368', // Slate
+        '#9AA0A6'  // Light Grey
+    ];
+
+    class Particle {
+        constructor(x, y) {
+            this.originX = x;
+            this.originY = y;
+            this.x = x;
+            this.y = y;
+            this.vx = (Math.random() - 0.5) * 0.4;
+            this.vy = (Math.random() - 0.5) * 0.4;
+            this.radius = Math.random() * 2.2 + 1.2;
+            this.color = colors[Math.floor(Math.random() * colors.length)];
+            this.alpha = Math.random() * 0.4 + 0.35;
+            this.spring = 0.035;   // Pull back towards equilibrium
+            this.damping = 0.90;  // Momentum damping
+            this.oscSpeed = Math.random() * 0.02 + 0.01;
+            this.oscRadius = Math.random() * 6 + 2;
+            this.angle = Math.random() * Math.PI * 2;
         }
+
+        update() {
+            // Ambient zero-gravity floating oscillation
+            this.angle += this.oscSpeed;
+            const targetOriginX = this.originX + Math.cos(this.angle) * this.oscRadius;
+            const targetOriginY = this.originY + Math.sin(this.angle) * this.oscRadius;
+
+            // Distance from mouse cursor
+            const dx = this.x - mouse.x;
+            const dy = this.y - mouse.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            // Antigravity Mouse Repulsion Force
+            if (mouse.isHovered && dist < mouse.radius && dist > 0) {
+                const force = (1 - dist / mouse.radius) * 3.2;
+                const angle = Math.atan2(dy, dx);
+                this.vx += Math.cos(angle) * force;
+                this.vy += Math.sin(angle) * force;
+            }
+
+            // Restoring spring force towards equilibrium
+            const homeDx = targetOriginX - this.x;
+            const homeDy = targetOriginY - this.y;
+            this.vx += homeDx * this.spring;
+            this.vy += homeDy * this.spring;
+
+            // Apply damping / inertia
+            this.vx *= this.damping;
+            this.vy *= this.damping;
+
+            this.x += this.vx;
+            this.y += this.vy;
+        }
+
+        draw() {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = this.alpha;
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    let particles = [];
+
+    function resize() {
+        const hero = canvas.parentElement;
+        if (!hero) return;
+
+        width = hero.clientWidth;
+        height = hero.clientHeight;
+
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.scale(dpr, dpr);
+
+        initParticles();
+    }
+
+    function initParticles() {
+        particles = [];
+        // Spawn 80 particles distributed across hero space
+        const count = Math.min(Math.floor((width * height) / 9000), 85);
+        for (let i = 0; i < count; i++) {
+            const x = Math.random() * width;
+            const y = Math.random() * height;
+            particles.push(new Particle(x, y));
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, width, height);
+
+        // Update & draw particles
+        for (let i = 0; i < particles.length; i++) {
+            particles[i].update();
+            particles[i].draw();
+
+            // Connect nearby particles with subtle gossamer lines
+            for (let j = i + 1; j < particles.length; j++) {
+                const p1 = particles[i];
+                const p2 = particles[j];
+                const dx = p1.x - p2.x;
+                const dy = p1.y - p2.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < 75) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.strokeStyle = '#5f6368';
+                    ctx.globalAlpha = (1 - dist / 75) * 0.12;
+                    ctx.lineWidth = 0.8;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+        }
+
+        animationFrameId = requestAnimationFrame(animate);
+    }
+
+    // Hero Mouse Movement Listeners
+    const hero = canvas.parentElement;
+    if (hero) {
+        hero.addEventListener('mousemove', (e) => {
+            const rect = hero.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+            mouse.isHovered = true;
+        });
+
+        hero.addEventListener('mouseleave', () => {
+            mouse.isHovered = false;
+            mouse.x = -9999;
+            mouse.y = -9999;
+        });
+
+        // Touch support for mobile devices
+        hero.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) {
+                const rect = hero.getBoundingClientRect();
+                mouse.x = e.touches[0].clientX - rect.left;
+                mouse.y = e.touches[0].clientY - rect.top;
+                mouse.isHovered = true;
+            }
+        }, { passive: true });
+
+        hero.addEventListener('touchend', () => {
+            mouse.isHovered = false;
+            mouse.x = -9999;
+            mouse.y = -9999;
+        });
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    animate();
+}
+
+// ==========================================================================
+// 3. SEAMLESS MEGA DROPDOWN MENU INTERACTION
+// ==========================================================================
+function initMegaMenus() {
+    const wrappers = document.querySelectorAll('.antigravity-dropdown-wrapper');
+
+    wrappers.forEach(wrapper => {
+        const btn = wrapper.querySelector('.antigravity-nav-btn');
+        if (!btn) return;
+
+        // Toggle on click
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = wrapper.classList.contains('open');
+
+            // Close other wrappers
+            wrappers.forEach(w => {
+                if (w !== wrapper) w.classList.remove('open');
+            });
+
+            wrapper.classList.toggle('open', !isOpen);
+        });
     });
 
-    // Input clear and auto-fetch on paste handler
+    // Close any open dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        wrappers.forEach(wrapper => {
+            if (!wrapper.contains(e.target)) {
+                wrapper.classList.remove('open');
+            }
+        });
+    });
+
+    // Close on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            wrappers.forEach(wrapper => wrapper.classList.remove('open'));
+        }
+    });
+}
+
+// ==========================================================================
+// 4. FAQ ACCORDION INTERACTION
+// ==========================================================================
+function initFaqAccordion() {
+    const faqItems = document.querySelectorAll('.faq-item');
+    faqItems.forEach(item => {
+        const btn = item.querySelector('.faq-question');
+        if (!btn) return;
+
+        btn.addEventListener('click', () => {
+            const isActive = item.classList.contains('active');
+            
+            // Optionally keep one open at a time
+            faqItems.forEach(other => {
+                if (other !== item) other.classList.remove('active');
+            });
+
+            item.classList.toggle('active', !isActive);
+        });
+    });
+}
+
+// ==========================================================================
+// 5. INPUT, AUTO-FETCH ON PASTE & EXTRACTION PIPELINE
+// ==========================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Initialize Google Antigravity interactive features
+    initHeroParticles();
+    initMegaMenus();
+    initFaqAccordion();
+
+    // 2. Input clear & auto-fetch listeners
     const urlInput = document.getElementById('videoUrl');
     const clearBtn = document.getElementById('clearUrlBtn');
+
     if (urlInput) {
         urlInput.addEventListener('input', () => {
             if (clearBtn) clearBtn.style.display = urlInput.value.trim() ? 'block' : 'none';
@@ -72,10 +316,17 @@ window.addEventListener('DOMContentLoaded', () => {
                 urlInput.focus();
             });
         }
+
+        // Enter key submit
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                urlInput.blur();
+                downloadNow();
+            }
+        });
     }
 });
 
-// 2. Navigation & UI Helpers
 function scrollHero() {
     const el = document.getElementById('downloadSection') || document.querySelector('.hero');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -89,32 +340,22 @@ function toggleMobileNav() {
 async function pasteText() {
     const input = document.getElementById('videoUrl');
     const clearBtn = document.getElementById('clearUrlBtn');
-    const scrollY = window.scrollY;
-    const scrollX = window.scrollX;
 
     try {
         const text = await navigator.clipboard.readText();
         const clean = text.trim();
         input.value = clean;
         if (clearBtn) clearBtn.style.display = clean ? 'block' : 'none';
-        
+
         // Auto-fetch immediately upon clicking Paste if valid URL!
         if (clean.startsWith('http://') || clean.startsWith('https://')) {
             downloadNow();
             return;
         }
-
-        input.blur();
-        setTimeout(() => {
-            input.focus();
-            input.setSelectionRange(0, 0);
-            input.scrollLeft = 0;
-            window.scrollTo(scrollX, scrollY);
-        }, 10);
+        input.focus();
     } catch (err) {
         input.focus();
-        window.scrollTo(scrollX, scrollY);
-        alert('Please paste manually using Ctrl+V or your device paste menu.');
+        alert('Please paste using Ctrl+V or your device paste option.');
     }
 }
 
@@ -139,60 +380,11 @@ function shareMedia() {
     }
 }
 
-// 3. Platform & Mode Switcher
-function changeMode(type) {
-    const title = document.getElementById('mainTitle');
-    const desc = document.getElementById('mainDesc');
-    const input = document.getElementById('videoUrl');
-
-    const configs = {
-        'video': {
-            title: '<span class="gradient">VidSavor</span> Downloader',
-            desc: 'Download high quality videos, reels, photos & audio instantly from multiple social media platforms.',
-            placeholder: 'Paste video, reel, or short link here...'
-        },
-        'audio': {
-            title: '<span class="gradient">VidSavor</span> Audio Extractor',
-            desc: 'Extract sound files, background music, and audio tracks directly into high-quality MP3 format instantly.',
-            placeholder: 'Paste video or music link to extract MP3 audio...'
-        },
-        'photo': {
-            title: '<span class="gradient">VidSavor</span> Photo Saver',
-            desc: 'Save photos, carousel galleries, and thumbnails from Instagram, Pinterest, and Twitter in original HD quality.',
-            placeholder: 'Paste image or photo post link here...'
-        }
-    }
-
-    if (configs[type]) {
-        if (title) title.innerHTML = configs[type].title;
-        if (desc) desc.innerHTML = configs[type].desc;
-        if (input) input.placeholder = configs[type].placeholder;
-    }
-
-    // Update active state in top-menu
-    document.querySelectorAll('.menu-box').forEach(el => el.classList.remove('active'));
-    const targetLink = document.querySelector(`.menu-box[data-mode="${type}"]`);
-    if (targetLink) targetLink.classList.add('active');
-}
-
-// Enter key submit
-document.addEventListener('DOMContentLoaded', () => {
-    const input = document.getElementById('videoUrl');
-    if (input) {
-        input.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                this.blur();
-                downloadNow();
-            }
-        });
-    }
-});
-
-// Cache for extracted media results to support category filtering
+// Category cache for extracted media results
 let currentResults = [];
 let currentTitle = "Extracted Content";
 
-// 4. Primary Extraction Pipeline
+// Primary extraction pipeline
 async function downloadNow() {
     const urlInput = document.getElementById('videoUrl').value.trim();
     const btn = document.getElementById('mainFetchBtn');
@@ -215,8 +407,8 @@ async function downloadNow() {
             body: JSON.stringify({ url: urlInput })
         });
 
-        // Fallback to /fetch if /api/fetch returned 404
-        if (response.status === 404) {
+        // Fallback to /fetch if /api/fetch returned 404 or 405
+        if (!response.ok) {
             response = await fetch('/fetch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -249,278 +441,104 @@ async function downloadNow() {
                 }
             }
 
-            // Render Title & Badges
-            document.getElementById('videoTitle').textContent = currentTitle;
-            
-            const metaContainer = document.getElementById('mediaMetaContainer');
-            if (metaContainer) {
-                let badges = '';
-                if (data.platform) {
-                    badges += `<span class="media-meta-badge"><i class="fa-solid fa-globe"></i> ${data.platform.toUpperCase()}</span>`;
-                }
-                if (data.author) {
-                    badges += `<span class="media-meta-badge"><i class="fa-solid fa-user"></i> ${data.author}</span>`;
-                }
-                if (data.duration) {
-                    badges += `<span class="media-meta-badge"><i class="fa-solid fa-clock"></i> ${data.duration}</span>`;
-                }
-                metaContainer.innerHTML = badges;
+            // Set Title & Details
+            const titleEl = document.getElementById('videoTitle');
+            if (titleEl) titleEl.textContent = currentTitle;
+
+            const durationEl = document.getElementById('videoDuration');
+            if (durationEl) {
+                durationEl.textContent = data.duration ? `Duration: ${data.duration}` : 'HD Quality Available';
             }
 
-            // Clear previous buttons
-            container.innerHTML = '';
-
-            // If multi-item carousel or multiple streams, show "Download All" option
-            if (data.results && data.results.length > 1) {
-                const downloadAllBtn = document.createElement('button');
-                downloadAllBtn.className = "download-btn";
-                downloadAllBtn.style.width = "100%";
-                downloadAllBtn.style.marginBottom = "20px";
-                downloadAllBtn.style.justifyContent = "center";
-                downloadAllBtn.innerHTML = `<i class="fa-solid fa-layer-group"></i> Download All Files (${data.results.length})`;
-                downloadAllBtn.onclick = () => downloadEverything(data.results, currentTitle);
-                container.appendChild(downloadAllBtn);
+            const platformBadge = document.getElementById('platformBadge');
+            if (platformBadge) {
+                platformBadge.textContent = data.source ? data.source.toUpperCase() : 'MEDIA';
             }
 
-            // Render category filter tabs if we have multiple kinds of media
-            renderFilterTabs(data.results || []);
+            // Render 2-Column Download Buttons
+            if (container) {
+                container.innerHTML = '';
 
-            // Render individual format/file cards
-            renderResultCards(data.results || [], container, currentTitle);
+                // Handle single stream download
+                if (data.download && (!data.results || data.results.length === 0)) {
+                    const singleBtn = document.createElement('a');
+                    const cleanName = encodeURIComponent((currentTitle || 'video').slice(0, 50).replace(/[^a-zA-Z0-9_-]/g, '_') + '.mp4');
+                    singleBtn.href = `/api/proxy-download?url=${encodeURIComponent(data.download)}&filename=${cleanName}`;
+                    singleBtn.className = 'btn-download-new primary-download';
+                    singleBtn.innerHTML = `
+                        <div class="btn-left">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Download Full HD MP4</span>
+                        </div>
+                        <span class="btn-badge">1080p HD</span>
+                    `;
+                    singleBtn.setAttribute('download', 'video.mp4');
+                    container.appendChild(singleBtn);
+                }
 
-            // Display and smoothly scroll to results
+                // Handle multi-resolution streams
+                if (data.results && data.results.length > 0) {
+                    data.results.forEach((item, index) => {
+                        const btnEl = document.createElement('a');
+                        const isPrimary = index === 0;
+                        const ext = item.ext || (item.format === 'audio' ? 'mp3' : 'mp4');
+                        const cleanName = encodeURIComponent((currentTitle || 'media').slice(0, 50).replace(/[^a-zA-Z0-9_-]/g, '_') + '.' + ext);
+                        
+                        btnEl.href = `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${cleanName}`;
+                        btnEl.className = `btn-download-new ${isPrimary ? 'primary-download' : ''}`;
+
+                        let iconClass = 'fa-solid fa-video';
+                        if (item.format === 'audio' || item.type === 'audio') iconClass = 'fa-solid fa-music';
+                        if (item.format === 'photo' || item.type === 'photo') iconClass = 'fa-solid fa-image';
+
+                        btnEl.innerHTML = `
+                            <div class="btn-left">
+                                <i class="${iconClass}"></i>
+                                <span>Download ${item.quality || 'HD'} ${ext.toUpperCase()}</span>
+                            </div>
+                            <span class="btn-badge">${item.size || 'Direct Link'}</span>
+                        `;
+                        btnEl.setAttribute('download', `vidsavor_${index}.${ext}`);
+                        container.appendChild(btnEl);
+                    });
+                }
+
+                // Always offer direct Cover/Thumbnail download
+                if (data.thumbnail) {
+                    const thumbBtn = document.createElement('a');
+                    thumbBtn.href = data.thumbnail;
+                    thumbBtn.target = '_blank';
+                    thumbBtn.className = 'btn-download-new';
+                    thumbBtn.innerHTML = `
+                        <div class="btn-left">
+                            <i class="fa-regular fa-image"></i>
+                            <span>Save High-Res Cover Image</span>
+                        </div>
+                        <span class="btn-badge">HD JPG</span>
+                    `;
+                    container.appendChild(thumbBtn);
+                }
+            }
+
+            // Show 2-Column Result Box smoothly
             resultBox.style.display = 'block';
-            setTimeout(() => {
-                resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
-
+            resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } else {
-            const msg = (data.message || '').toLowerCase();
-            if (msg.includes('not found') || msg.includes('media') || msg.includes('private') || !data.message) {
-                alert('Media not found! Sometimes private or unstable links take a few attempts. Please retry 2–3 times or make sure the post is from a public account.');
-            } else {
-                alert('Error: ' + data.message);
-            }
+            alert('Error: ' + (data.message || 'Unable to extract media from this link.'));
         }
     } catch (err) {
-        console.error("VidSavor Fetch Error:", err);
-        alert('Server connection error. Please verify the VidSavor backend is running.');
+        console.error("Extraction error:", err);
+        alert('Server communication error. Please verify the URL and try again.');
     } finally {
-        btn.innerHTML = '<i class="fa-solid fa-download"></i> Download';
+        btn.innerHTML = '<i class="fa-solid fa-download"></i> <span>Download</span>';
         btn.disabled = false;
     }
 }
 
-// 5. Render Result Cards
-function renderResultCards(items, container, title) {
-    if (!items || items.length === 0) {
-        container.innerHTML += '<p style="color:#6b7280; font-size:14px; text-align:center; padding:20px;">No streams available for this post.</p>';
-        return;
-    }
-
-    items.forEach((item, index) => {
-        const card = document.createElement('div');
-        card.className = "media-item-card";
-        card.setAttribute('data-type', item.type || 'video');
-
-        const left = document.createElement('div');
-        left.className = "media-info-left";
-
-        let iconClass = "fa-solid fa-file-video";
-        let typeBadgeClass = "";
-        if (item.type === 'audio') {
-            iconClass = "fa-solid fa-music";
-            typeBadgeClass = "audio";
-        } else if (item.type === 'photo') {
-            iconClass = "fa-solid fa-image";
-            typeBadgeClass = "photo";
-        }
-
-        left.innerHTML = `
-            <div class="media-type-icon ${typeBadgeClass}">
-                <i class="${iconClass}"></i>
-            </div>
-            <div class="media-details">
-                <h4>${item.quality || (item.type ? item.type.toUpperCase() : 'Media')}</h4>
-                <span>${item.format ? item.format.toUpperCase() : 'MP4'} • ${item.size || 'HD Direct'}</span>
-            </div>
-        `;
-
-        const dlBtn = document.createElement('button');
-        dlBtn.className = "btn-download-new";
-        dlBtn.innerHTML = `<i class="fa-solid fa-circle-down"></i> Download`;
-        dlBtn.onclick = () => {
-            const ext = item.format || (item.type === 'video' ? 'mp4' : (item.type === 'audio' ? 'mp3' : 'jpg'));
-            const filename = `VidSavor_${sanitizeFilename(title)}_${item.quality || 'File'}.${ext}`;
-            triggerDirectDownload(item.url, item.type, filename);
-        };
-
-        card.appendChild(left);
-        card.appendChild(dlBtn);
-        container.appendChild(card);
-    });
-}
-
-// Render format filter tabs (All, Videos, Audio, Photos)
-function renderFilterTabs(items) {
-    const tabsContainer = document.getElementById('formatFilterTabs');
-    if (!tabsContainer) return;
-
-    const types = new Set(items.map(i => i.type || 'video'));
-    if (types.size <= 1) {
-        tabsContainer.style.display = 'none';
-        return;
-    }
-
-    tabsContainer.style.display = 'flex';
-    tabsContainer.innerHTML = `
-        <button class="tab-pill active" onclick="filterResults('all')">All Files (${items.length})</button>
-        ${types.has('video') ? `<button class="tab-pill" onclick="filterResults('video')"><i class="fa-solid fa-video"></i> Videos</button>` : ''}
-        ${types.has('audio') ? `<button class="tab-pill" onclick="filterResults('audio')"><i class="fa-solid fa-music"></i> Audio MP3</button>` : ''}
-        ${types.has('photo') ? `<button class="tab-pill" onclick="filterResults('photo')"><i class="fa-solid fa-image"></i> Photos</button>` : ''}
-    `;
-}
-
-function filterResults(type) {
-    document.querySelectorAll('.tab-pill').forEach(btn => btn.classList.remove('active'));
-    if (event && event.target) event.target.classList.add('active');
-
-    const cards = document.querySelectorAll('.media-item-card');
-    cards.forEach(card => {
-        if (type === 'all' || card.getAttribute('data-type') === type) {
-            card.style.display = 'flex';
-        } else {
-            card.style.display = 'none';
-        }
-    });
-}
-
-function sanitizeFilename(name) {
-    return (name || 'Media').replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 40);
-}
-
-// 6. Direct Client & Proxy Download Trigger
-async function triggerDirectDownload(url, type, filename) {
-    try {
-        // Use our proxy-download endpoint to avoid CORS issues and force instant disk saving
-        const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
-        
-        // Attempt fetch blob first for silent download
-        const response = await fetch(proxyUrl);
-        if (response.ok) {
-            const blob = await response.blob();
-            const blobUrl = window.URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = filename;
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            
-            setTimeout(() => {
-                window.URL.revokeObjectURL(blobUrl);
-                document.body.removeChild(a);
-            }, 500);
-            return;
-        }
-    } catch (err) {
-        console.warn("Direct blob download failed, falling back to window.open:", err);
-    }
-
-    // Fallback: Direct link navigation
-    const a = document.createElement('a');
-    a.href = `/api/proxy-download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-}
-
-// Sequential batch download for albums / carousels
-async function downloadEverything(files, title) {
-    for (let i = 0; i < files.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 600));
-        const item = files[i];
-        const ext = item.format || (item.type === 'video' ? 'mp4' : (item.type === 'audio' ? 'mp3' : 'jpg'));
-        const filename = `VidSavor_${sanitizeFilename(title)}_Part_${i + 1}.${ext}`;
-        await triggerDirectDownload(item.url, item.type, filename);
-    }
-}
-
-// 7. Legal Modal Popup Controller
-function openLegal(type) {
-    const popup = document.getElementById('popupOverlay');
-    const title = document.getElementById('popupTitle');
-    const content = document.getElementById('popupContent');
-    if (!popup || !title || !content) return;
-
-    popup.style.display = 'flex';
-
-    if (type === 'privacy') {
-        title.innerHTML = 'Privacy Policy';
-        content.innerHTML = `
-            <p>At <strong>VidSavor</strong>, user privacy is our highest priority. We do not require accounts, logins, personal identity credentials, or passwords.</p>
-            <h3>Information Usage</h3>
-            <ul>
-                <li>We only process publicly accessible media links requested directly by the user.</li>
-                <li>No downloaded media or user video streams are stored on our servers.</li>
-                <li>We never sell, rent, or share personal data with third-party brokers.</li>
-            </ul>
-            <h3>Client-Side Security</h3>
-            <p>All extraction requests run in client sandbox environments or transient proxy pipelines without persistent database logs.</p>
-        `;
-    } else if (type === 'terms') {
-        title.innerHTML = 'Terms of Service';
-        content.innerHTML = `
-            <p>By using <strong>VidSavor.com</strong>, you agree to use our web utility responsibly and solely for lawful personal archiving purposes.</p>
-            <h3>User Responsibilities</h3>
-            <ul>
-                <li>Do not download copyrighted content without explicit authorization from original rights holders.</li>
-                <li>Respect original content creators, public usage limits, and platform terms of service.</li>
-            </ul>
-            <h3>Service Availability</h3>
-            <p>VidSavor provides this web tool free of charge and as-is. Features may be updated, enhanced, or maintained periodically without prior notice.</p>
-        `;
-    } else if (type === 'dmca') {
-        title.innerHTML = 'DMCA Copyright Policy';
-        content.innerHTML = `
-            <p><strong>VidSavor</strong> complies with 17 U.S.C. § 512 and adheres to the Digital Millennium Copyright Act (DMCA).</p>
-            <h3>No Hosting Policy</h3>
-            <p>VidSavor does not host, store, or re-transmit copyrighted video or audio content on its servers. All extraction is done transiently from public third-party addresses.</p>
-            <h3>Takedown Requests</h3>
-            <p>If you are a copyright owner or authorized agent and wish to restrict links to your content, please reach out to our copyright agent at: <strong>support@vidsavor.com</strong>.</p>
-        `;
-    } else if (type === 'help') {
-        title.innerHTML = 'Help Center';
-        content.innerHTML = `
-            <h3>How To Download Any Video?</h3>
-            <ul>
-                <li><strong>Step 1:</strong> Copy the public link of the video, reel, post, or photo from your app or browser.</li>
-                <li><strong>Step 2:</strong> Paste the copied link into the VidSavor search box above.</li>
-                <li><strong>Step 3:</strong> Click the "Download" button to generate direct HD download links.</li>
-            </ul>
-            <h3>Need Assistance?</h3>
-            <p>Contact our support team at: <b>support@vidsavor.com</b></p>
-        `;
-    } else if (type === 'about') {
-        title.innerHTML = 'About VidSavor';
-        content.innerHTML = `
-            <p><strong>VidSavor</strong> is an ultra-fast, modern online media utility designed to extract public videos, short clips, reels, photos, and audio files in high clarity.</p>
-            <p>Our platform operates without requiring any software installations or logins, making web media archiving effortless across mobile and desktop devices.</p>
-        `;
-    }
-}
-
-function closePopup() {
-    const popup = document.getElementById('popupOverlay');
-    if (popup) popup.style.display = 'none';
-}
-
-window.addEventListener('click', (e) => {
-    const popup = document.getElementById('popupOverlay');
-    if (e.target === popup) {
-        popup.style.display = 'none';
-    }
-});
+// Expose functions globally for inline HTML onclick handlers
+window.downloadNow = downloadNow;
+window.pasteText = pasteText;
+window.scrollHero = scrollHero;
+window.toggleMobileNav = toggleMobileNav;
+window.copyMediaLink = copyMediaLink;
+window.shareMedia = shareMedia;

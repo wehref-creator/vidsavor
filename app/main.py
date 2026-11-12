@@ -45,153 +45,130 @@ async def fetch_media(req: FetchRequest):
     result = extractor.extract(req.url.strip())
     return JSONResponse(status_code=200, content=result)
 
-# Fallback catch-all POST route for Vercel serverless rewrites
-@app.post("/{catch_all:path}")
-async def catch_all_post(catch_all: str, request: Request):
-    try:
-        data = await request.json()
-        target_url = data.get("url")
-        if target_url and target_url.strip():
-            result = extractor.extract(target_url.strip())
-            return JSONResponse(status_code=200, content=result)
-    except Exception as e:
-        pass
-    return JSONResponse(status_code=200, content={"status": "error", "message": "Please provide a valid media link."})
-
-@app.get("/api/proxy-download")
-@app.get("/proxy-download")
-async def proxy_download(url: str = Query(...), filename: str = Query("video.mp4")):
-    """
-    Stream download proxy to bypass CORS, anti-hotlinking, 
-    and force attachment download directly to user's local disk.
-    """
-    try:
-        clean_filename = urllib.parse.unquote(filename).replace('"', '')
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-            'Accept': '*/*',
-        }
-        
-        req = requests.get(url, headers=headers, stream=True, timeout=30)
-        if req.status_code != 200:
-            raise HTTPException(status_code=req.status_code, detail="Failed to fetch media from source server.")
-
-        def iter_stream():
-            for chunk in req.iter_content(chunk_size=65536):
-                if chunk:
-                    yield chunk
-
-        content_type = req.headers.get("Content-Type", "application/octet-stream")
-        content_length = req.headers.get("Content-Length")
-
-        resp_headers = {
-            "Content-Disposition": f'attachment; filename="{clean_filename}"',
-            "Access-Control-Allow-Origin": "*",
-        }
-        if content_length:
-            resp_headers["Content-Length"] = content_length
-
-        return StreamingResponse(iter_stream(), media_type=content_type, headers=resp_headers)
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Download proxy error: {str(e)}")
-
-@app.get("/health")
-@app.get("/api/health")
-@app.get("/api/index.py")
-def health():
-    return {"status": "ok", "service": "VidSavor Core API v2.0"}
-
 # Page Routes for SEO and Multi-Platform Support
 def get_page_path(filename: str):
     root_file = os.path.join(BASE_DIR, filename)
     if os.path.exists(root_file):
         return root_file
-    return os.path.join(STATIC_DIR, filename)
+    static_file = os.path.join(STATIC_DIR, filename)
+    if os.path.exists(static_file):
+        return static_file
+    return os.path.join(BASE_DIR, "index.html")
 
-@app.get("/", response_class=FileResponse)
+def serve_html_file(filename: str):
+    path = get_page_path(filename)
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read(), status_code=200)
+    return HTMLResponse(content="<h1>Page Not Found</h1>", status_code=404)
+
+@app.get("/", response_class=HTMLResponse)
 async def serve_home():
-    return FileResponse(get_page_path("index.html"))
+    return serve_html_file("index.html")
 
-@app.get("/instagram", response_class=FileResponse)
-@app.get("/instagram/", response_class=FileResponse)
-@app.get("/reels", response_class=FileResponse)
-@app.get("/reels/", response_class=FileResponse)
+@app.get("/instagram", response_class=HTMLResponse)
+@app.get("/instagram/", response_class=HTMLResponse)
+@app.get("/reels", response_class=HTMLResponse)
+@app.get("/reels/", response_class=HTMLResponse)
 async def serve_instagram():
-    return FileResponse(get_page_path("instagram.html"))
+    return serve_html_file("instagram.html")
 
-@app.get("/youtube", response_class=FileResponse)
-@app.get("/youtube/", response_class=FileResponse)
+@app.get("/youtube", response_class=HTMLResponse)
+@app.get("/youtube/", response_class=HTMLResponse)
 async def serve_youtube():
-    return FileResponse(get_page_path("youtube.html"))
+    return serve_html_file("youtube.html")
 
-@app.get("/tiktok", response_class=FileResponse)
-@app.get("/tiktok/", response_class=FileResponse)
+@app.get("/tiktok", response_class=HTMLResponse)
+@app.get("/tiktok/", response_class=HTMLResponse)
 async def serve_tiktok():
-    return FileResponse(get_page_path("tiktok.html"))
+    return serve_html_file("tiktok.html")
 
-@app.get("/facebook", response_class=FileResponse)
-@app.get("/facebook/", response_class=FileResponse)
+@app.get("/facebook", response_class=HTMLResponse)
+@app.get("/facebook/", response_class=HTMLResponse)
 async def serve_facebook():
-    return FileResponse(get_page_path("facebook.html"))
+    return serve_html_file("facebook.html")
 
-@app.get("/twitter", response_class=FileResponse)
-@app.get("/twitter/", response_class=FileResponse)
+@app.get("/twitter", response_class=HTMLResponse)
+@app.get("/twitter/", response_class=HTMLResponse)
 async def serve_twitter():
-    return FileResponse(get_page_path("twitter.html"))
+    return serve_html_file("twitter.html")
 
-@app.get("/pinterest", response_class=FileResponse)
-@app.get("/pinterest/", response_class=FileResponse)
+@app.get("/pinterest", response_class=HTMLResponse)
+@app.get("/pinterest/", response_class=HTMLResponse)
 async def serve_pinterest():
-    return FileResponse(get_page_path("pinterest.html"))
+    return serve_html_file("pinterest.html")
 
-@app.get("/about-us", response_class=FileResponse)
-@app.get("/about-us/", response_class=FileResponse)
-@app.get("/about", response_class=FileResponse)
+@app.get("/about-us", response_class=HTMLResponse)
+@app.get("/about-us/", response_class=HTMLResponse)
+@app.get("/about", response_class=HTMLResponse)
 async def serve_about():
-    return FileResponse(get_page_path("about-us.html"))
+    return serve_html_file("about-us.html")
 
-@app.get("/faq", response_class=FileResponse)
-@app.get("/faq/", response_class=FileResponse)
-@app.get("/help", response_class=FileResponse)
+@app.get("/faq", response_class=HTMLResponse)
+@app.get("/faq/", response_class=HTMLResponse)
+@app.get("/help", response_class=HTMLResponse)
 async def serve_faq():
-    return FileResponse(get_page_path("faq.html"))
+    return serve_html_file("faq.html")
 
-@app.get("/contact-us", response_class=FileResponse)
-@app.get("/contact-us/", response_class=FileResponse)
-@app.get("/contact", response_class=FileResponse)
+@app.get("/contact-us", response_class=HTMLResponse)
+@app.get("/contact-us/", response_class=HTMLResponse)
+@app.get("/contact", response_class=HTMLResponse)
 async def serve_contact():
-    return FileResponse(get_page_path("contact-us.html"))
+    return serve_html_file("contact-us.html")
 
-@app.get("/blog", response_class=FileResponse)
-@app.get("/blog/", response_class=FileResponse)
+@app.get("/blog", response_class=HTMLResponse)
+@app.get("/blog/", response_class=HTMLResponse)
 async def serve_blog():
-    return FileResponse(get_page_path("blog.html"))
+    return serve_html_file("blog.html")
 
-@app.get("/dmca-policy", response_class=FileResponse)
-@app.get("/dmca-policy/", response_class=FileResponse)
-@app.get("/dmca", response_class=FileResponse)
+@app.get("/dmca-policy", response_class=HTMLResponse)
+@app.get("/dmca-policy/", response_class=HTMLResponse)
+@app.get("/dmca", response_class=HTMLResponse)
 async def serve_dmca():
-    return FileResponse(get_page_path("dmca-policy.html"))
+    return serve_html_file("dmca-policy.html")
 
-@app.get("/privacy-policy", response_class=FileResponse)
-@app.get("/privacy-policy/", response_class=FileResponse)
-@app.get("/privacy", response_class=FileResponse)
+@app.get("/privacy-policy", response_class=HTMLResponse)
+@app.get("/privacy-policy/", response_class=HTMLResponse)
+@app.get("/privacy", response_class=HTMLResponse)
 async def serve_privacy():
-    return FileResponse(get_page_path("privacy-policy.html"))
+    return serve_html_file("privacy-policy.html")
 
-@app.get("/terms-of-service", response_class=FileResponse)
-@app.get("/terms-of-service/", response_class=FileResponse)
-@app.get("/terms", response_class=FileResponse)
+@app.get("/terms-of-service", response_class=HTMLResponse)
+@app.get("/terms-of-service/", response_class=HTMLResponse)
+@app.get("/terms", response_class=HTMLResponse)
 async def serve_terms():
-    return FileResponse(get_page_path("terms-of-service.html"))
+    return serve_html_file("terms-of-service.html")
 
-@app.get("/audio", response_class=FileResponse)
-@app.get("/audio/", response_class=FileResponse)
+@app.get("/audio", response_class=HTMLResponse)
+@app.get("/audio/", response_class=HTMLResponse)
 async def serve_audio():
-    return FileResponse(get_page_path("audio.html"))
+    return serve_html_file("audio.html")
 
-@app.get("/photo", response_class=FileResponse)
-@app.get("/photo/", response_class=FileResponse)
+@app.get("/photo", response_class=HTMLResponse)
+@app.get("/photo/", response_class=HTMLResponse)
 async def serve_photo():
-    return FileResponse(get_page_path("photo.html"))
+    return serve_html_file("photo.html")
+
+# UNIVERSAL CATCH-ALL ROUTE FOR GET AND POST (Zero 405 Method Not Allowed)
+@app.api_route("/{catch_all:path}", methods=["GET", "POST"])
+async def universal_catch_all(catch_all: str, request: Request):
+    if request.method == "POST":
+        try:
+            data = await request.json()
+            target_url = data.get("url")
+            if target_url and target_url.strip():
+                result = extractor.extract(target_url.strip())
+                return JSONResponse(status_code=200, content=result)
+        except Exception:
+            pass
+        return JSONResponse(status_code=200, content={"status": "error", "message": "Please provide a valid media link."})
+
+    # If GET request: resolve to the corresponding html page
+    clean = catch_all.strip("/").replace(".html", "")
+    target = f"{clean}.html"
+    for folder in [BASE_DIR, STATIC_DIR]:
+        candidate = os.path.join(folder, target)
+        if os.path.exists(candidate):
+            return serve_html_file(target)
+    # Default fallback to home
+    return serve_html_file("index.html")

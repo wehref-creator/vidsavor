@@ -51,35 +51,43 @@
     },
     {
       "@type": "Question",
-      "name": "What output resolution will my downloaded videos have?",
+      "name": "What output resolution will my downloaded video have?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "VidSavor preserves original source quality. If the original post is uploaded in 1080p, 2K, or 4K HD, our system delivers direct links for that maximum available resolution."
+        "text": "We preserve and provide maximum source resolution, delivering 4K, 2K, 1080p Full HD, or 720p HD depending on original upload quality."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does VidSavor leave watermarks on saved media?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, all media downloaded through VidSavor is free of added watermarks, logos, or promotional branding."
       }
     }
   ]
 }
 </script>
 
-<meta name="description" content="Fastest VidSavor tool to download videos, reels, photos, and audio in HD across Instagram, YouTube, TikTok, Facebook, Twitter, and Pinterest. 100% Free, No Watermark, No Login.">
+<meta name="description" content="Download Social Media Instantly. No Ads. No Watermarks. VidSavor lets you download unlimited, watermark-free content across Instagram, YouTube, TikTok, Facebook, Twitter, and Pinterest.">
 <meta name="keywords" content="vidsavor, video downloader, reels downloader, HD video download, save online videos, mp4 downloader, tiktok no watermark, youtube video saver, instagram reels download">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-<meta name="theme-color" content="#7c3aed">
+<meta name="theme-color" content="#121317">
 <meta name="author" content="VidSavor">
 <meta name="language" content="English">
 
 <!-- OpenGraph Social Tags -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://vidsavor.com/">
-<meta property="og:title" content="VidSavor - Fast & HD Online Video Downloader">
-<meta property="og:description" content="Save Reels, Shorts, and Videos in HD quality instantly. Works on Android, iOS, and PC. No login required.">
+<meta property="og:title" content="VidSavor - Download Social Media Instantly. No Ads. No Watermarks.">
+<meta property="og:description" content="From viral reels to high-res photos and crystal-clear audio, VidSavor lets you download unlimited, watermark-free content across all major social networks instantly.">
 <meta property="og:image" content="https://vidsavor.com/static/assets/logo.svg">
 
 <!-- Twitter Card -->
 <meta property="twitter:card" content="summary_large_image">
 <meta property="twitter:url" content="https://vidsavor.com/">
-<meta property="twitter:title" content="VidSavor - Fast & Free HD Video Downloads">
-<meta property="twitter:description" content="Save online videos in HD quality instantly. Free, fast, and secure.">
+<meta property="twitter:title" content="VidSavor - Download Social Media Instantly">
+<meta property="twitter:description" content="Save online videos in HD quality instantly. Free, fast, watermark-free, and secure.">
 <meta property="twitter:image" content="https://vidsavor.com/static/assets/logo.svg">
 
 <link rel="canonical" href="https://vidsavor.com/" />
@@ -89,10 +97,10 @@
 <link rel="apple-touch-icon" href="/static/assets/favicon.svg">
 <link rel="manifest" href="/manifest.json">
 
-<!-- Fonts & FontAwesome -->
+<!-- Google Fonts (Google Sans Flex & Code matching Google Antigravity) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,slnt,wdth,wght,ROND@8..144,-10..0,25..150,400..800,0..100&family=Google+Sans+Code:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 
 <!-- VidSavor Stylesheet -->
@@ -253,8 +261,10 @@
     </div>
 </header>
 
-<!-- HERO SECTION -->
+<!-- HERO SECTION WITH INTERACTIVE ANTIGRAVITY MOUSE CANVAS -->
 <section class="hero" id="downloadSection">
+    <canvas id="antigravityCanvas" class="hero-particles-canvas"></canvas>
+
     <div class="hero-content">
         <div class="badge">
             <i class="fa-solid fa-shield-heart"></i>
@@ -326,38 +336,37 @@
             </a>
         </div>
 
-        <!-- DYNAMIC TWO-COLUMN RESULT CONTAINER -->
+        <!-- DYNAMIC TWO-COLUMN RESULT VIEW (AFTER PASTE / FETCH) -->
         <div id="resultBox" style="display:none;">
-            <div class="result-card-main">
-                <div class="result-two-column-grid">
-                    <!-- LEFT COLUMN: Download options & batch download -->
-                    <div class="result-downloads-col">
-                        <div class="downloads-col-header">
-                            <div class="downloads-col-title">
-                                <i class="fa-solid fa-download" style="color:var(--primary);"></i> Download Options
-                            </div>
-                            <span class="downloads-count-badge" id="downloadsCountBadge">Ready</span>
+            <div class="result-two-column-grid">
+                <!-- LEFT COLUMN: Download options -->
+                <div class="result-col-downloads">
+                    <div class="result-section-header">
+                        <div class="result-section-title">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Download Options</span>
                         </div>
-
-                        <!-- Format Filter Tabs (All, Videos, Audio, Photos) -->
-                        <div class="format-filter-tabs" id="formatFilterTabs" style="display:none;"></div>
-
-                        <!-- Stream Download Cards -->
-                        <div id="downloadButtonsContainer"></div>
+                        <span class="result-badge-ready" id="platformBadge">READY</span>
                     </div>
 
-                    <!-- RIGHT COLUMN: Media Preview & Post Details -->
-                    <div class="result-preview-col">
-                        <div class="preview-media-container" id="previewMediaContainer"></div>
-                        <div class="preview-details-wrap">
-                            <h3 id="videoTitle">Extracted Content</h3>
-                            <div class="media-meta-tags" id="mediaMetaContainer"></div>
+                    <!-- Stream Download Cards -->
+                    <div class="download-options-list" id="downloadButtonsContainer"></div>
+                </div>
+
+                <!-- RIGHT COLUMN: Media Preview & Post Details -->
+                <div class="result-col-preview">
+                    <div class="preview-media-wrapper" id="previewMediaContainer"></div>
+                    <div class="preview-details">
+                        <div class="preview-title" id="videoTitle">Extracted Content</div>
+                        <div class="preview-meta">
+                            <span class="preview-meta-pill" id="videoDuration">HD Quality Available</span>
+                            <span class="preview-meta-pill">Watermark Free</span>
                         </div>
-                        <div class="preview-actions-bar">
-                            <button type="button" class="btn-preview-action" onclick="copyMediaLink()" title="Copy link to clipboard">
+                        <div class="preview-actions">
+                            <button type="button" class="btn-action-small" onclick="copyMediaLink()" title="Copy link to clipboard">
                                 <i class="fa-regular fa-copy"></i> Copy Link
                             </button>
-                            <button type="button" class="btn-preview-action" onclick="shareMedia()" title="Share media">
+                            <button type="button" class="btn-action-small" onclick="shareMedia()" title="Share media">
                                 <i class="fa-solid fa-share-nodes"></i> Share
                             </button>
                         </div>
@@ -369,31 +378,31 @@
     </div>
 </section>
 
-<!-- HOW TO STEPS SECTION -->
+<!-- HOW TO STEPS SECTION (CLEAN GOOGLE CARDS) -->
 <section class="steps-section">
     <div class="steps-container">
-        <div class="badge">
+        <div class="section-label">
             <i class="fa-solid fa-wand-magic-sparkles"></i>
             Super Simple 3-Step Process
         </div>
         <h2>Steps to Download Videos & Reels</h2>
-        <p class="about-text">Here’s a quick and effortless way to save your favorite media for offline viewing:</p>
+        <p class="section-subhead">Here's a quick and effortless way to save your favorite media for offline viewing:</p>
 
-        <div class="steps-grid-custom">
-            <div class="step-card-custom">
-                <div class="step-circle-custom">1</div>
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
                 <h3>Copy Link</h3>
                 <p>Copy the public link of the video, reel, post, or short from your favorite social platform.</p>
             </div>
 
-            <div class="step-card-custom">
-                <div class="step-circle-custom">2</div>
+            <div class="step-card">
+                <div class="step-number">2</div>
                 <h3>Paste Link</h3>
                 <p>Paste the copied link into the VidSavor input box above using the one-click Paste button.</p>
             </div>
 
-            <div class="step-card-custom">
-                <div class="step-circle-custom">3</div>
+            <div class="step-card">
+                <div class="step-number">3</div>
                 <h3>Download</h3>
                 <p>Choose your desired resolution (4K, 1080p, 720p, or MP3) and download instantly to your device.</p>
             </div>
@@ -401,465 +410,226 @@
     </div>
 </section>
 
-<!-- ADVANCED 6-CARD FEATURES SECTION -->
+<!-- ADVANCED FEATURES SECTION (CLEAN GOOGLE CARDS) -->
 <section class="advanced-features-section">
-    <div class="adv-container">
-        <div class="adv-header">
-            <span class="adv-badge-tag"><i class="fa-solid fa-layer-group"></i> Advanced Media Engine & Features</span>
-            <h2>Smart Link Parsing & Multi-Format Extraction Technology</h2>
-            <p>Discover how VidSavor transforms a single URL into a complete media package with flexible single and bulk download options.</p>
+    <div class="features-container">
+        <div class="section-label">
+            <i class="fa-solid fa-star"></i>
+            Platform Capabilities
         </div>
+        <h2>Engineered for Performance & Speed</h2>
+        <p class="section-subhead">Explore why millions of users trust VidSavor for high-resolution social downloads:</p>
 
-        <div class="adv-grid-6">
-            <!-- Card 1 -->
-            <div class="adv-card">
-                <div class="adv-card-icon">
-                    <i class="fa-solid fa-layer-group"></i>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon-box">
+                    <i class="fa-solid fa-bolt"></i>
                 </div>
-                <div class="adv-card-body">
-                    <span class="adv-cat">Complete Parsing</span>
-                    <h3>Single-Link Multi-Asset Extraction</h3>
-                    <p>Paste any public link to automatically extract high-resolution <strong>thumbnails/images</strong>, official <strong>titles</strong>, descriptive captions, direct video streams, and audio tracks simultaneously.</p>
-                    <div class="adv-tags">
-                        <span>#Thumbnails</span>
-                        <span>#Metadata</span>
-                        <span>#MultiStream</span>
-                    </div>
-                </div>
+                <h3>Instant Auto-Extraction</h3>
+                <p>Paste any valid link and our cloud engine instantly resolves video streams without delay or redundant page loads.</p>
             </div>
 
-            <!-- Card 2: Featured -->
-            <div class="adv-card featured-adv-card">
-                <div class="adv-card-icon accent-adv-icon">
-                    <i class="fa-solid fa-download"></i>
+            <div class="feature-card">
+                <div class="feature-icon-box">
+                    <i class="fa-solid fa-ban"></i>
                 </div>
-                <div class="adv-card-body">
-                    <span class="adv-cat accent-adv-cat">Flexible Options</span>
-                    <h3>Single & Bulk Download Flexibility</h3>
-                    <p>Choose your preferred mode! Download individual items separately or use the <strong>"Download All Files"</strong> option when saving carousel albums, multi-part reels, or image galleries.</p>
-                    <div class="adv-tags">
-                        <span>#BatchDownload</span>
-                        <span>#SingleClick</span>
-                        <span>#FastArchive</span>
-                    </div>
-                </div>
+                <h3>No Ads & No Watermarks</h3>
+                <p>Save pure original media untouched by intrusive logos, third-party watermarks, or degrading compression artifacts.</p>
             </div>
 
-            <!-- Card 3 -->
-            <div class="adv-card">
-                <div class="adv-card-icon speed-adv-icon">
-                    <i class="fa-solid fa-bolt-lightning"></i>
+            <div class="feature-card">
+                <div class="feature-icon-box">
+                    <i class="fa-solid fa-film"></i>
                 </div>
-                <div class="adv-card-body">
-                    <span class="adv-cat speed-adv-cat">Cloud Routing</span>
-                    <h3>Lightning-Fast Server Speed</h3>
-                    <p>Powered by optimized streaming pipelines, VidSavor processes high-bitrate multi-megabyte (MB) video files and high-definition streams in mere seconds without buffering.</p>
-                    <div class="adv-tags">
-                        <span>#HighMBHandling</span>
-                        <span>#RealTimeSpeed</span>
-                        <span>#ZeroLag</span>
-                    </div>
-                </div>
+                <h3>4K & Full HD Quality</h3>
+                <p>Preserve maximum source quality with multiple selectable resolutions including 4K UHD, 1080p, and 720p 60FPS.</p>
             </div>
 
-            <!-- Card 4 -->
-            <div class="adv-card">
-                <div class="adv-card-icon quality-adv-icon">
-                    <i class="fa-solid fa-award"></i>
+            <div class="feature-card">
+                <div class="feature-icon-box">
+                    <i class="fa-solid fa-music"></i>
                 </div>
-                <div class="adv-card-body">
-                    <span class="adv-cat quality-adv-cat">Lossless Output</span>
-                    <h3>Original HD & 4K Quality Preservation</h3>
-                    <p>We ensure that your media files are saved in their absolute native source resolution—whether crisp 1080p, 2K, or 4K Ultra HD—without lossy re-compression or quality degradation.</p>
-                    <div class="adv-tags">
-                        <span>#HDQuality</span>
-                        <span>#ZeroCompression</span>
-                        <span>#CrystalClear</span>
-                    </div>
-                </div>
+                <h3>320kbps MP3 Audio</h3>
+                <p>Extract background tracks, trending songs, and voice clips straight to high-fidelity MP3 sound files effortlessly.</p>
             </div>
 
-            <!-- Card 5 -->
-            <div class="adv-card">
-                <div class="adv-card-icon privacy-adv-icon">
-                    <i class="fa-solid fa-shield-halved"></i>
+            <div class="feature-card">
+                <div class="feature-icon-box">
+                    <i class="fa-solid fa-user-shield"></i>
                 </div>
-                <div class="adv-card-body">
-                    <span class="adv-cat privacy-adv-cat">Privacy Focused</span>
-                    <h3>Zero Login & 100% Secure Usage</h3>
-                    <p>No sign-ups, passwords, or personal credentials required. All link parsing happens safely through secure client-side browser protocols with complete anonymity.</p>
-                    <div class="adv-tags">
-                        <span>#NoLoginNeeded</span>
-                        <span>#SecureSandbox</span>
-                        <span>#100%Private</span>
-                    </div>
-                </div>
+                <h3>Zero Login & 100% Private</h3>
+                <p>No account creation, cookies tracking, or personal passwords needed. Your downloading history stays completely private.</p>
             </div>
 
-            <!-- Card 6 -->
-            <div class="adv-card">
-                <div class="adv-card-icon device-adv-icon">
-                    <i class="fa-solid fa-mobile-screen-button"></i>
+            <div class="feature-card">
+                <div class="feature-icon-box">
+                    <i class="fa-solid fa-mobile-screen"></i>
                 </div>
-                <div class="adv-card-body">
-                    <span class="adv-cat device-adv-cat">Cross-Platform</span>
-                    <h3>Universal Device Compatibility</h3>
-                    <p>Enjoy a seamless, lightweight experience across Android smartphones, Apple iOS iPhones, iPads, tablets, and desktop PC browsers without installing extra apps.</p>
-                    <div class="adv-tags">
-                        <span>#ResponsiveWeb</span>
-                        <span>#AllDevices</span>
-                        <span>#PWAEnabled</span>
-                    </div>
-                </div>
+                <h3>All Devices & Platforms</h3>
+                <p>Engineered for seamless cross-platform performance on iPhone iOS Safari, Android Chrome, Windows, Mac, and Linux.</p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- ABOUT & UTILITY SECTIONS -->
-<section class="about-section">
-    <div class="logo-icon" style="margin: 0 auto 20px; width: 50px; height: 50px;">
-        <i class="fa-solid fa-ranking-star"></i>
-    </div>
-    <h2>Online HD Media Saver</h2>
-    <p class="about-text">
-        VidSavor provides a streamlined solution for archiving public media content for offline viewing. Whether you need videos, audio loops, or images, our system handles requests quickly and securely.
-    </p>
-
-    <div class="about-grid">
-        <div class="about-card">
-            <div class="about-icon"><i class="fa-solid fa-bolt"></i></div>
-            <p>High-speed processing tailored for modern web standards.</p>
-        </div>
-        <div class="about-card">
-            <div class="about-icon"><i class="fa-solid fa-circle-play"></i></div>
-            <p>Save public videos in standard MP4 formats.</p>
-        </div>
-        <div class="about-card">
-            <div class="about-icon"><i class="fa-solid fa-image"></i></div>
-            <p>Easily download image files and galleries.</p>
-        </div>
-        <div class="about-card">
-            <div class="about-icon"><i class="fa-solid fa-music"></i></div>
-            <p>Extract background soundtrack MP3s directly.</p>
-        </div>
-    </div>
-</section>
-
-<section class="format-section" style="background: #fff;">
-    <div class="logo-icon" style="margin: 0 auto 20px; width: 50px; height: 50px; background: var(--gradient-brand);">
-        <i class="fa-solid fa-magnifying-glass-chart"></i>
-    </div>
-    <h2>Universal Online Utility</h2>
-    <p class="about-text">
-        Whether you are using a mobile phone, tablet, or desktop PC, VidSavor delivers a clean interface for extracting web media directly from public URLs.
-    </p>
-
-    <div class="format-grid">
-        <div class="format-box">
-            <i class="fa-solid fa-video"></i>
-            <h3>High-Quality Saving</h3>
-            <p>Download online video content while preserving source video quality.</p>
-        </div>
-        <div class="format-box">
-            <i class="fa-solid fa-eye-slash"></i>
-            <h3>Private & Secure</h3>
-            <p>Process links safely without logging into any personal account.</p>
-        </div>
-        <div class="format-box">
-            <i class="fa-solid fa-infinity"></i>
-            <h3>Unlimited Usage</h3>
-            <p>Enjoy web extraction tools with no artificial usage limits or daily caps.</p>
-        </div>
-    </div>
-</section>
-
-<!-- KNOWLEDGE BASE SECTION -->
-<section class="knowledge-base-section">
-    <div class="kb-container">
-        <div class="kb-header">
-            <span class="kb-badge"><i class="fa-solid fa-graduation-cap"></i> Digital Knowledge Base & Insights</span>
-            <h2>Understanding Web Stream Archiving & Modern Media Protocols</h2>
-            <p>An educational overview of how online content transmission works across global social networks and the technology behind safe web media preservation.</p>
-        </div>
-
-        <div class="kb-content-grid">
-            <div class="kb-card">
-                <div class="kb-icon-wrap"><i class="fa-solid fa-network-wired"></i></div>
-                <h3>The Architecture of Public Cloud Streams</h3>
-                <p>
-                    Modern web platforms utilize Content Delivery Networks (CDNs) to distribute high-definition video packets across global endpoints. When users share media links, these URLs act as dynamic pointers to stream manifests. Understanding how browsers parse these manifests safely allows developers to build efficient, client-side tools that retrieve media in its native clarity without modifying source datasets.
-                </p>
-                <div class="kb-tags">
-                    <span>#CloudCDNs</span> <span>#StreamParsing</span> <span>#WebProtocols</span>
-                </div>
-            </div>
-
-            <div class="kb-card">
-                <div class="kb-icon-wrap accent-kb"><i class="fa-solid fa-shield-halved"></i></div>
-                <h3>Data Privacy & Client-Side Processing Principles</h3>
-                <p>
-                    A critical aspect of secure web engineering is client-side execution. Unlike traditional server-heavy applications that store user inputs and downloaded copies, modern privacy-focused utilities process links transiently. This means all decoding and extraction happen directly within the user's browser sandbox environment, ensuring zero data retention, complete anonymity, and strict adherence to global web safety standards.
-                </p>
-                <div class="kb-tags">
-                    <span>#DataPrivacy</span> <span>#ClientSide</span> <span>#ZeroRetention</span>
-                </div>
-            </div>
-
-            <div class="kb-card">
-                <div class="kb-icon-wrap"><i class="fa-solid fa-file-waveform"></i></div>
-                <h3>Decoding Video Containers and Audio Codecs</h3>
-                <p>
-                    Digital storage relies heavily on container formats like MP4, MKV, and audio streams like MP3 or AAC. Each container packages compressed video frames, audio tracks, and metadata together. Knowing how codecs like H.264, VP9, or AV1 compress visual information helps users appreciate why high-resolution preservation requires optimized download pipelines to prevent visual distortion or quality loss.
-                </p>
-                <div class="kb-tags">
-                    <span>#VideoCodecs</span> <span>#MP4Standards</span> <span>#AudioExtraction</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- 12 FAQS SECTION -->
-<section class="custom-faq-section">
+<!-- FREQUENTLY ASKED QUESTIONS (CLEAN GOOGLE ACCORDION) -->
+<section class="custom-faq-section" id="faqSection">
     <div class="faq-container-custom">
         <div class="faq-header-custom">
-            <div class="logo-icon" style="margin: 0 auto 20px; width: 50px; height: 50px;">
+            <div class="section-label">
                 <i class="fa-solid fa-circle-question"></i>
+                Knowledge Base
             </div>
             <h2>Frequently Asked Questions</h2>
-            <p>Everything you need to know about using VidSavor.com</p>
+            <p class="section-subhead">Everything you need to know about using VidSavor.com</p>
         </div>
 
-        <div class="faq-grid-custom">
-            <div class="faq-card-item">
-                <div class="faq-card-top">
-                    <div class="faq-q-icon"><i class="fa-solid fa-question"></i></div>
-                    <h3>Is VidSavor completely free to use?</h3>
+        <div class="faq-accordion">
+            <div class="faq-item active">
+                <button type="button" class="faq-question">
+                    <span>Is VidSavor completely free to use?</span>
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </button>
+                <div class="faq-answer">
+                    Yes, VidSavor is a 100% free web utility. You can process and download unlimited videos, reels, photos, and audio tracks without any subscription, credits, or hidden fees.
                 </div>
-                <p>Yes, VidSavor is a 100% free web utility. You can process and download unlimited videos, reels, and photos without any subscription or hidden fees.</p>
-                <div class="faq-badge-tag"><i class="fa-solid fa-newspaper"></i> Web Utility Guide</div>
             </div>
 
-            <div class="faq-card-item">
-                <div class="faq-card-top">
-                    <div class="faq-q-icon"><i class="fa-solid fa-question"></i></div>
-                    <h3>Do I need to install any additional app or software?</h3>
+            <div class="faq-item">
+                <button type="button" class="faq-question">
+                    <span>Do I need to install any app or software?</span>
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </button>
+                <div class="faq-answer">
+                    No software installation is required. VidSavor works entirely inside your web browser across mobile phones, tablets, and desktop operating systems without taking up local storage.
                 </div>
-                <p>No software installation is required. VidSavor works completely inside your web browser across mobile phones, tablets, and desktop operating systems.</p>
             </div>
 
-            <div class="faq-card-item">
-                <div class="faq-card-top">
-                    <div class="faq-q-icon"><i class="fa-solid fa-question"></i></div>
-                    <h3>What output resolution will my downloaded media have?</h3>
+            <div class="faq-item">
+                <button type="button" class="faq-question">
+                    <span>What output resolution will my downloaded media have?</span>
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </button>
+                <div class="faq-answer">
+                    We extract content in its original source quality. If the original post is uploaded in 1080p, 2K, or 4K HD, our system provides direct download links for that maximum available resolution.
                 </div>
-                <p>We extract content in its original source quality. If the original post is uploaded in 1080p, 2K, or 4K HD, our system provides direct links for that maximum available resolution.</p>
             </div>
 
-            <div class="faq-card-item">
-                <div class="faq-card-top">
-                    <div class="faq-q-icon"><i class="fa-solid fa-question"></i></div>
-                    <h3>Can I extract content from private social media accounts?</h3>
+            <div class="faq-item">
+                <button type="button" class="faq-question">
+                    <span>Can I extract content from private social media accounts?</span>
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </button>
+                <div class="faq-answer">
+                    To respect user privacy and adhere to platform security standards, our online tool exclusively supports extracting public posts, reels, and media content.
                 </div>
-                <p>To respect user privacy and adhere to platform security standards, our online tool exclusively supports extracting public posts, reels, and media content.</p>
             </div>
 
-            <div class="faq-card-item">
-                <div class="faq-card-top">
-                    <div class="faq-q-icon"><i class="fa-solid fa-question"></i></div>
-                    <h3>Where are downloaded files saved on my device?</h3>
+            <div class="faq-item">
+                <button type="button" class="faq-question">
+                    <span>Where are downloaded files saved on my device?</span>
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </button>
+                <div class="faq-answer">
+                    Downloaded files are placed directly in your device's default 'Downloads' folder, easily accessible via your browser's download manager, iPhone Files app, or Android Gallery.
                 </div>
-                <p>Downloaded files are placed directly in your device’s default 'Downloads' directory or accessible via your mobile phone's native Gallery or Files app.</p>
             </div>
 
-            <div class="faq-card-item">
-                <div class="faq-card-top">
-                    <div class="faq-q-icon"><i class="fa-solid fa-question"></i></div>
-                    <h3>Do I need to provide any account login credentials?</h3>
+            <div class="faq-item">
+                <button type="button" class="faq-question">
+                    <span>Do you store copies or logs of downloaded videos?</span>
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </button>
+                <div class="faq-answer">
+                    No media files or user activity histories are retained on our servers. All parsing happens transiently directly from public source servers in real time under zero-log architecture.
                 </div>
-                <p>Never. VidSavor operates independently without requiring your social media logins, passwords, or personal identity details.</p>
-                <div class="faq-badge-tag"><i class="fa-solid fa-shield-halved"></i> Privacy First Engine</div>
-            </div>
-
-            <div class="faq-card-item">
-                <div class="faq-card-top">
-                    <div class="faq-q-icon"><i class="fa-solid fa-question"></i></div>
-                    <h3>Is there a daily limit on media extraction requests?</h3>
-                </div>
-                <p>There are no usage caps or daily boundaries. Users can fetch and archive public videos, audio tracks, and images endlessly for free.</p>
-            </div>
-
-            <div class="faq-card-item">
-                <div class="faq-card-top">
-                    <div class="faq-q-icon"><i class="fa-solid fa-question"></i></div>
-                    <h3>Is using this online web service safe for my device?</h3>
-                </div>
-                <p>Yes, it is entirely safe and secure. Since all operations run through modern web protocols, your device remains protected from harmful executable downloads.</p>
-            </div>
-
-            <div class="faq-card-item">
-                <div class="faq-card-top">
-                    <div class="faq-q-icon"><i class="fa-solid fa-question"></i></div>
-                    <h3>Do you store copy archives of downloaded videos?</h3>
-                </div>
-                <p>No media files or user activity histories are retained on our servers. All parsing happens transiently directly from public source servers in real time.</p>
-            </div>
-
-            <div class="faq-card-item">
-                <div class="faq-card-top">
-                    <div class="faq-q-icon"><i class="fa-solid fa-question"></i></div>
-                    <h3>Is VidSavor fully compatible with mobile devices?</h3>
-                </div>
-                <p>Yes, our web application features a fully responsive layout engineered for smooth performance across iOS Safari, Android Chrome, and desktop web browsers.</p>
-            </div>
-
-            <div class="faq-card-item">
-                <div class="faq-card-top">
-                    <div class="faq-q-icon"><i class="fa-solid fa-question"></i></div>
-                    <h3>Can I convert online video clips into MP3 audio tracks?</h3>
-                </div>
-                <p>Yes, whenever audio extraction streams are detected, our tool gives you a direct option to save the sound file as an optimized MP3 audio track.</p>
-                <div class="faq-badge-tag"><i class="fa-solid fa-music"></i> Audio Converter</div>
-            </div>
-
-            <div class="faq-card-item">
-                <div class="faq-card-top">
-                    <div class="faq-q-icon"><i class="fa-solid fa-question"></i></div>
-                    <h3>How can I reach customer support if I face any errors?</h3>
-                </div>
-                <p>If you experience any issues parsing specific links, you can easily reach out to our dedicated support team via our official contact page or email address.</p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- DMCA SECTION -->
+<!-- DMCA & COMPLIANCE SECTION -->
 <section class="dmca">
     <div class="dmca-box-styled">
-        <div style="margin-bottom: 20px;">
-            <i class="fa-solid fa-shield-halved" style="font-size: 42px; color: var(--primary);"></i>
-        </div>
+        <i class="fa-solid fa-shield-halved" style="font-size: 38px; color: var(--text-main); margin-bottom: 12px;"></i>
         <h2>DMCA & Copyright Compliance</h2>
         <p>
-            <b>VidSavor</b> complies with 17 U.S.C. § 512 & respects intellectual property rights, strictly adhering to the Digital Millennium Copyright Act (DMCA). We do not host, store, or re-transmit copyrighted video or audio content on our servers. All processing is conducted client-side or transiently using public third-party web addresses.
+            <b>VidSavor</b> respects intellectual property rights and strictly adheres to 17 U.S.C. § 512 (DMCA). We do not host, store, or re-transmit copyrighted video or audio content on our servers. All processing is conducted transiently using public third-party web addresses.
         </p>
-        <p style="margin-top: 15px;">
-            If you are a copyright owner or an authorized representative and wish to request link restrictions or removal, please contact our support desk.
+        <p>
+            If you are a copyright owner or an authorized representative and wish to request link restrictions, please contact our support desk.
         </p>
-        <a href="/contact-us.html" class="dmca-cta-btn">
-            Contact Us for Removal
+        <a href="/dmca-policy" class="dmca-cta-btn">
+            <span>Review DMCA Policy</span>
+            <i class="fa-solid fa-arrow-right"></i>
         </a>
     </div>
 </section>
 
-<!-- FOOTER -->
-<footer>
-    <div class="footer-grid">
-        <div class="footer-box">
-            <h3>Download Tools</h3>
-            <a href="/instagram"><i class="fa-brands fa-instagram" style="color: #e1306c;"></i> Instagram Reels Downloader</a>
-            <a href="/youtube"><i class="fa-brands fa-youtube" style="color: #ff0000;"></i> YouTube 4K & Shorts Saver</a>
-            <a href="/tiktok"><i class="fa-brands fa-tiktok" style="color: #000000;"></i> TikTok No Watermark Saver</a>
-            <a href="/audio"><i class="fa-solid fa-music" style="color: #7c3aed;"></i> High Bitrate MP3 Extractor</a>
+<!-- GOOGLE ANTIGRAVITY FOOTER ARCHITECTURE -->
+<footer class="footer-antigravity-layout">
+    <div class="footer-top-grid">
+        <div class="footer-hero-col">
+            <h2 class="footer-title">Experience VidSavor</h2>
+            <p class="footer-sub">
+                Download high-definition videos, reels, photos & audio instantly from all major platforms without limits, watermarks, or ads.
+            </p>
         </div>
 
-        <div class="footer-box">
-            <h3>Supported Platforms</h3>
-            <a href="/facebook"><i class="fa-brands fa-facebook" style="color: #1877f2;"></i> Facebook Video Downloader</a>
-            <a href="/twitter"><i class="fa-brands fa-x-twitter" style="color: #0f172a;"></i> Twitter / X Media Saver</a>
-            <a href="/pinterest"><i class="fa-brands fa-pinterest" style="color: #e60023;"></i> Pinterest Pin & Image Saver</a>
-            <a href="/photo"><i class="fa-solid fa-images" style="color: #ff4db8;"></i> Photo & Carousel Extractor</a>
+        <div class="footer-nav-col">
+            <span class="caption">Platforms</span>
+            <a href="/instagram">Instagram Downloader</a>
+            <a href="/youtube">YouTube Downloader</a>
+            <a href="/tiktok">TikTok Downloader</a>
+            <a href="/facebook">Facebook Downloader</a>
+            <a href="/twitter">Twitter / X Downloader</a>
+            <a href="/pinterest">Pinterest Downloader</a>
+            <a href="/audio">Audio MP3 Extractor</a>
         </div>
 
-        <div class="footer-box">
-            <h3>Resources & About</h3>
-            <a href="/about-us"><i class="fa-solid fa-user-astronaut" style="color: #2563eb;"></i> About Founder & Story</a>
-            <a href="/blog"><i class="fa-solid fa-newspaper" style="color: #7c3aed;"></i> Blog & Tutorials</a>
-            <a href="/faq"><i class="fa-solid fa-circle-question" style="color: #059669;"></i> Help & Frequently Asked Questions</a>
-            <a href="/contact-us"><i class="fa-solid fa-envelope" style="color: #d97706;"></i> Contact Support Desk</a>
-        </div>
-
-        <div class="footer-box">
-            <h3>Legal & Safety</h3>
-            <a href="/privacy-policy">Privacy Policy (Zero Log)</a>
+        <div class="footer-nav-col">
+            <span class="caption">Resources</span>
+            <a href="/blog">Blog & Tutorials</a>
+            <a href="/about-us">About Us</a>
+            <a href="/faq">Help & FAQ</a>
+            <a href="/contact-us">Contact Support</a>
+            <a href="/dmca-policy">DMCA & Copyright</a>
+            <a href="/privacy-policy">Privacy Policy</a>
             <a href="/terms-of-service">Terms of Service</a>
-            <a href="/dmca-policy">Copyright & DMCA Compliance</a>
-            <a href="mailto:support@vidsavor.com" style="font-weight: 500; margin-top: 6px;">
-                <i class="fa-regular fa-envelope" style="color: #7c3aed;"></i> support@vidsavor.com
-            </a>
         </div>
     </div>
 
-    <!-- Pro Download Tools Tags Cloud -->
-    <div class="pro-tools-cloud">
-        <h4><i class="fa-solid fa-circle-nodes" style="color: #7c3aed;"></i> VidSavor.com - Multi-Platform Media Suite</h4>
-        <div class="pro-tools-tags">
-            <a href="/youtube" class="pro-pill">
-                <i class="fa-brands fa-youtube" style="color: #ff0000;"></i> YouTube 4K Video Downloader
-            </a>
-            <a href="/instagram" class="pro-pill">
-                <i class="fa-brands fa-instagram" style="color: #e1306c;"></i> Instagram Reels & Stories Saver
-            </a>
-            <a href="/facebook" class="pro-pill">
-                <i class="fa-brands fa-facebook" style="color: #1877f2;"></i> Facebook HD Video Downloader
-            </a>
-            <a href="/tiktok" class="pro-pill">
-                <i class="fa-brands fa-tiktok" style="color: #000000;"></i> TikTok No Watermark Saver
-            </a>
-            <a href="/twitter" class="pro-pill">
-                <i class="fa-brands fa-x-twitter" style="color: #000000;"></i> Twitter / X Media Downloader
-            </a>
-            <a href="/pinterest" class="pro-pill">
-                <i class="fa-brands fa-pinterest" style="color: #bd081c;"></i> Pinterest Pin & Image Saver
-            </a>
-            <a href="/audio" class="pro-pill">
-                <i class="fa-solid fa-music" style="color: #7c3aed;"></i> High Quality MP3 & Audio Extractor
-            </a>
-            <a href="/about-us" class="pro-pill">
-                <i class="fa-solid fa-shield-halved" style="color: #7c3aed;"></i> 100% Free & No Registration
-            </a>
-        </div>
+    <!-- Massive Google Antigravity Style Giant Wordmark -->
+    <div class="footer-wordmark-container">
+        <h1 class="footer-giant-wordmark">VidSavor</h1>
     </div>
 
-    <div class="footer-bottom">
-        <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <div class="logo-icon" style="width: 26px; height: 26px; font-size: 11px; border-radius: 8px;">
-                <i class="fa-solid fa-play"></i>
-            </div>
-            <b style="font-size: 17px; font-weight: 800; background: var(--gradient-brand); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">VidSavor</b>
+    <!-- Footer Bottom Bar -->
+    <div class="footer-bottom-bar">
+        <div class="footer-bottom-left">
+            <a href="/" class="footer-bottom-logo">
+                <i class="fa-solid fa-play" style="font-size: 13px;"></i>
+                <span>VidSavor</span>
+            </a>
+            <span>© 2026 VidSavor. Built by Laxman A. Sapkota. All rights reserved.</span>
         </div>
-        <p style="margin-bottom: 8px;">© 2026 <b>VidSavor</b> • Architected by Laxman A. Sapkota • All Rights Reserved</p>
-        <p style="font-size: 11.5px; opacity: 0.7; max-width: 650px; margin: 0 auto;">
-            Third-party platform names and trademarks belong to their respective copyright owners. VidSavor is an independent tool that is not affiliated with, endorsed, or sponsored by any social media network.
-        </p>
+
+        <div class="footer-bottom-links">
+            <a href="/about-us">About Us</a>
+            <a href="/privacy-policy">Privacy</a>
+            <a href="/terms-of-service">Terms</a>
+            <a href="/dmca-policy">DMCA</a>
+            <a href="/contact-us">Contact</a>
+        </div>
+
+        <div class="footer-social-links">
+            <a href="https://x.com" target="_blank" rel="noopener noreferrer" aria-label="X / Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
+            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+            <a href="https://github.com/wehref-creator/vidsavor" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+        </div>
     </div>
 </footer>
-
-<!-- BRAND DARK BANNER SECTION -->
-<section class="brand-section">
-    <h2>About VidSavor</h2>
-    <div class="brand-box">
-        <p>
-            <strong style="color: #fff;">VidSavor</strong> is a fast, secure, and user-friendly online service designed to extract public videos, short clips, photos, and audio files in high quality.
-            <br>
-            No software installation or account login required — simply paste your URL link to save your media files instantly.
-        </p>
-        <div class="brand-divider"></div>
-        <p class="disclaimer">
-            Disclaimer: We do not host copyrighted content on our servers. All extracted content belongs to its respective copyright owners. Please respect copyright laws and original creators.
-        </p>
-    </div>
-</section>
-
-<!-- LEGAL MODAL POPUP OVERLAY -->
-<div id="popupOverlay">
-    <div class="popup-box">
-        <button class="close-popup" onclick="closePopup()">×</button>
-        <h2 id="popupTitle"></h2>
-        <div id="popupContent"></div>
-    </div>
-</div>
 
 <!-- VidSavor Client Engine -->
 <script src="/static/js/app.js"></script>
