@@ -23,28 +23,43 @@ app.add_middleware(
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 
-# Mount static files
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+# Mount static files if static folder exists
+if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 class FetchRequest(BaseModel):
     url: str
 
 @app.post("/fetch")
+@app.post("/api/fetch")
+@app.post("/api/index.py")
+@app.post("/api")
 async def fetch_media(req: FetchRequest):
     """Primary extraction endpoint matching freevideosave.com contract."""
     if not req.url or not req.url.strip():
         return JSONResponse(
-            status_code=400,
+            status_code=200,
             content={"status": "error", "message": "Please paste a valid video or post link."}
         )
     
     result = extractor.extract(req.url.strip())
-    if result.get("status") == "error":
-        return JSONResponse(status_code=200, content=result)
-    
     return JSONResponse(status_code=200, content=result)
 
+# Fallback catch-all POST route for Vercel serverless rewrites
+@app.post("/{catch_all:path}")
+async def catch_all_post(catch_all: str, request: Request):
+    try:
+        data = await request.json()
+        target_url = data.get("url")
+        if target_url and target_url.strip():
+            result = extractor.extract(target_url.strip())
+            return JSONResponse(status_code=200, content=result)
+    except Exception as e:
+        pass
+    return JSONResponse(status_code=200, content={"status": "error", "message": "Please provide a valid media link."})
+
 @app.get("/api/proxy-download")
+@app.get("/proxy-download")
 async def proxy_download(url: str = Query(...), filename: str = Query("video.mp4")):
     """
     Stream download proxy to bypass CORS, anti-hotlinking, 
@@ -82,71 +97,27 @@ async def proxy_download(url: str = Query(...), filename: str = Query("video.mp4
         raise HTTPException(status_code=500, detail=f"Download proxy error: {str(e)}")
 
 @app.get("/health")
+@app.get("/api/health")
+@app.get("/api/index.py")
 def health():
     return {"status": "ok", "service": "VidSavor Core API v2.0"}
 
 # Page Routes for SEO and Multi-Mode Support
 @app.get("/", response_class=FileResponse)
 async def serve_home():
-    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+    return FileResponse(os.path.join(BASE_DIR, "index.html") if os.path.exists(os.path.join(BASE_DIR, "index.html")) else os.path.join(STATIC_DIR, "index.html"))
 
 @app.get("/reels/", response_class=FileResponse)
 @app.get("/reels", response_class=FileResponse)
 async def serve_reels():
-    return FileResponse(os.path.join(STATIC_DIR, "reels.html"))
+    return FileResponse(os.path.join(BASE_DIR, "reels.html") if os.path.exists(os.path.join(BASE_DIR, "reels.html")) else os.path.join(STATIC_DIR, "reels.html"))
 
 @app.get("/audio/", response_class=FileResponse)
 @app.get("/audio", response_class=FileResponse)
 async def serve_audio():
-    return FileResponse(os.path.join(STATIC_DIR, "audio.html"))
+    return FileResponse(os.path.join(BASE_DIR, "audio.html") if os.path.exists(os.path.join(BASE_DIR, "audio.html")) else os.path.join(STATIC_DIR, "audio.html"))
 
 @app.get("/photo/", response_class=FileResponse)
 @app.get("/photo", response_class=FileResponse)
 async def serve_photo():
-    return FileResponse(os.path.join(STATIC_DIR, "photo.html"))
-
-@app.get("/privacy-policy.html", response_class=FileResponse)
-@app.get("/privacy-policy", response_class=FileResponse)
-async def serve_privacy():
-    return FileResponse(os.path.join(STATIC_DIR, "privacy-policy.html"))
-
-@app.get("/terms-of-service.html", response_class=FileResponse)
-@app.get("/terms-of-service", response_class=FileResponse)
-async def serve_terms():
-    return FileResponse(os.path.join(STATIC_DIR, "terms-of-service.html"))
-
-@app.get("/dmca-policy.html", response_class=FileResponse)
-@app.get("/dmca-policy", response_class=FileResponse)
-async def serve_dmca():
-    return FileResponse(os.path.join(STATIC_DIR, "dmca-policy.html"))
-
-@app.get("/contact-us.html", response_class=FileResponse)
-@app.get("/contact-us", response_class=FileResponse)
-async def serve_contact():
-    return FileResponse(os.path.join(STATIC_DIR, "contact-us.html"))
-
-@app.get("/about-us.html", response_class=FileResponse)
-@app.get("/about-us", response_class=FileResponse)
-async def serve_about():
-    return FileResponse(os.path.join(STATIC_DIR, "about-us.html"))
-
-@app.get("/blog.html", response_class=FileResponse)
-@app.get("/blog", response_class=FileResponse)
-async def serve_blog():
-    return FileResponse(os.path.join(STATIC_DIR, "blog.html"))
-
-@app.get("/manifest.json", response_class=FileResponse)
-async def serve_manifest():
-    return FileResponse(os.path.join(STATIC_DIR, "manifest.json"))
-
-@app.get("/sw.js", response_class=FileResponse)
-async def serve_sw():
-    return FileResponse(os.path.join(STATIC_DIR, "sw.js"))
-
-@app.get("/robots.txt", response_class=FileResponse)
-async def serve_robots():
-    return FileResponse(os.path.join(STATIC_DIR, "robots.txt"))
-
-@app.get("/script.js", response_class=FileResponse)
-async def serve_script_alias():
-    return FileResponse(os.path.join(STATIC_DIR, "js", "app.js"))
+    return FileResponse(os.path.join(BASE_DIR, "photo.html") if os.path.exists(os.path.join(BASE_DIR, "photo.html")) else os.path.join(STATIC_DIR, "photo.html"))

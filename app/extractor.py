@@ -50,14 +50,23 @@ def detect_platform(url: str) -> str:
         return 'threads'
     return 'universal'
 
-def unshorten_url(url: str) -> str:
-    """Follow redirects for short links (pin.it, youtu.be, fb.watch, t.co)."""
+def clean_media_url(raw_url: str) -> str:
+    """Remove tracking query strings and follow short-links."""
+    url = raw_url.strip()
+    # Unshorten known redirects
     try:
         if any(short in url.lower() for short in ['pin.it', 'fb.watch', 't.co', 'bit.ly', 'vm.tiktok.com', 'vt.tiktok.com']):
             resp = requests.head(url, allow_redirects=True, timeout=5, headers={'User-Agent': 'Mozilla/5.0'})
-            return resp.url
-    except Exception as e:
-        logger.debug(f"Unshorten error: {e}")
+            url = resp.url
+    except Exception:
+        pass
+
+    # Strip Instagram tracking params (igsh, utm_source, etc.)
+    if 'instagram.com' in url.lower():
+        url = re.sub(r'[?&](igsh|utm_[^&]+|ig_mid)=[^&#]*', '', url)
+        if url.endswith('?') or url.endswith('&'):
+            url = url[:-1]
+
     return url
 
 class MediaExtractor:
@@ -74,27 +83,33 @@ class MediaExtractor:
 
     def extract(self, raw_url: str) -> Dict[str, Any]:
         """Main entry point to extract media from URL."""
-        url = raw_url.strip()
-        if not url:
+        if not raw_url or not raw_url.strip():
             return {"status": "error", "message": "Please provide a valid video link."}
 
-        url = unshorten_url(url)
+        url = clean_media_url(raw_url)
         platform = detect_platform(url)
 
-        # Primary extraction using yt-dlp
+        # 1. Primary: yt-dlp Extraction
         try:
             ydl_opts = dict(self.ydl_opts_base)
-            # Default options allow extracting all formats
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
-                if not info:
-                    raise Exception("No media information retrieved")
-
-                return self._parse_info(info, platform, url)
-
+                if info:
+                    return self._parse_info(info, platform, url)
         except Exception as e:
-            logger.warning(f"yt-dlp extraction failed for {url}: {e}. Trying fallback...")
-            return self._fallback_extract(url, platform, str(e))
+            logger.warning(f"yt-dlp extraction failed for {url}: {e}. Trying fallback engines...")
+            pass
+
+        # 2. Secondary: Specialized Platform Fallbacks
+        fallback_res = self._fallback_extract(url, platform)
+        if fallback_res:
+            return fallback_res
+
+        # 3. Informative, user-friendly error response (matching FreeVideoSave)
+        return {
+            "status": "error",
+            "message": "Media not found! Sometimes private or unstable links take a few attempts. Please retry 2–3 times or make sure the post is from a public account."
+        }
 
     def _parse_info(self, info: Dict[str, Any], platform: str, url: str) -> Dict[str, Any]:
         """Convert yt-dlp info dictionary to standard VidSavor format."""
@@ -175,7 +190,7 @@ class MediaExtractor:
                 seen_h.add(h)
                 results.append(v)
 
-        # If combined videos are fewer than 2, offer the highest resolution video streams as well
+        # Include high-resolution streams if combined streams are limited
         if len(results) < 2 and video_only:
             video_only.sort(key=lambda x: x.get('height', 0), reverse=True)
             for v in video_only:
@@ -243,11 +258,9 @@ class MediaExtractor:
         for idx, entry in enumerate(entries):
             if not entry:
                 continue
-            entry_title = entry.get('title') or f"Slide {idx + 1}"
             entry_thumb = entry.get('thumbnail') or thumbnail
             entry_formats = entry.get('formats') or []
             
-            # Find direct video or direct image
             stream_url = None
             media_type = 'photo'
             size_bytes = None
@@ -291,7 +304,7 @@ class MediaExtractor:
             "results": results
         }
 
-    def _fallback_extract(self, url: str, platform: str, error_msg: str) -> Dict[str, Any]:
+    def _fallback_extract(self, url: str, platform: str) -> Optional[Dict[str, Any]]:
         """Fallback extractors using HTML metadata, OpenGraph, or platform APIs."""
         try:
             # 1. Twitter / X fallback via FixupX
@@ -390,21 +403,9 @@ class MediaExtractor:
                 }
 
         except Exception as fallback_err:
-            logger.error(f"Fallback scraper also failed: {fallback_err}")
+            logger.error(f"Fallback scraper failed: {fallback_err}")
 
-        # Construct informative, helpful error message
-        friendly_msg = "Media not found! Please check that the URL is public and not from a private or deleted post."
-        if 'private' in error_msg.lower():
-            friendly_msg = "This media belongs to a private account and cannot be downloaded."
-        elif 'login' in error_msg.lower():
-            friendly_msg = "This platform requires authentication for this link. Please verify the link is publicly accessible."
-        elif '404' in error_msg or 'not found' in error_msg.lower():
-            friendly_msg = "Content was not found or has been removed by the creator."
-
-        return {
-            "status": "error",
-            "message": friendly_msg
-        }
+        return None
 
 # Global extractor singleton
 extractor = MediaExtractor()

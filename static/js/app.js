@@ -160,11 +160,20 @@ async function downloadNow() {
     btn.disabled = true;
 
     try {
-        const response = await fetch('/fetch', {
+        let response = await fetch('/api/fetch', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: urlInput })
         });
+
+        // Fallback to /fetch if /api/fetch returned 404
+        if (response.status === 404) {
+            response = await fetch('/fetch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: urlInput })
+            });
+        }
 
         const data = await response.json();
 
@@ -238,10 +247,10 @@ async function downloadNow() {
 
         } else {
             const msg = (data.message || '').toLowerCase();
-            if (msg.includes('not found') || msg.includes('media') || msg.includes('private')) {
-                alert('Media not found! Please check that the URL is from a public account or post, and verify the link.');
+            if (msg.includes('not found') || msg.includes('media') || msg.includes('private') || !data.message) {
+                alert('Media not found! Sometimes private or unstable links take a few attempts. Please retry 2–3 times or make sure the post is from a public account.');
             } else {
-                alert('Error: ' + (data.message || 'Unable to extract media from this link.'));
+                alert('Error: ' + data.message);
             }
         }
     } catch (err) {
