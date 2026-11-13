@@ -384,7 +384,7 @@ function shareMedia() {
 let currentResults = [];
 let currentTitle = "Extracted Content";
 
-// Instant Direct Download Engine (No new tabs, no page redirection, SaveFrom UX)
+// Instant Direct Download Engine (Guaranteed zero tab redirection, in-page native download)
 async function triggerInstantDownload(streamUrl, filename, btnElement) {
     if (!streamUrl) {
         alert('Download stream URL not found.');
@@ -392,103 +392,50 @@ async function triggerInstantDownload(streamUrl, filename, btnElement) {
     }
 
     const originalHTML = btnElement.innerHTML;
-    btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Saving...</span>';
+    btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Starting...</span>';
     btnElement.disabled = true;
 
-    const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(streamUrl)}&filename=${encodeURIComponent(filename)}`;
-
-    // STRATEGY 1: Fetch through proxy with streaming blob (Prevents any page redirection, saves directly to disk)
-    try {
-        const response = await fetch(proxyUrl);
-        const contentType = response.headers.get('content-type') || '';
-        
-        // Ensure the response is valid binary media, NOT an error or HTML page!
-        if (response.ok && !contentType.includes('text/html') && !contentType.includes('application/json')) {
-            const blob = await response.blob();
-            if (blob.size > 2048) { // Valid binary media
-                const blobUrl = window.URL.createObjectURL(blob);
-                const tempLink = document.createElement('a');
-                tempLink.style.display = 'none';
-                tempLink.href = blobUrl;
-                tempLink.download = filename;
-                document.body.appendChild(tempLink);
-                tempLink.click();
-                
-                setTimeout(() => {
-                    window.URL.revokeObjectURL(blobUrl);
-                    tempLink.remove();
-                }, 1000);
-
-                btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Done!</span>';
-                setTimeout(() => {
-                    btnElement.innerHTML = originalHTML;
-                    btnElement.disabled = false;
-                }, 3000);
-                return;
-            }
-        }
-    } catch (fetchErr) {
-        console.warn("Proxy blob fetch failed, checking alternatives:", fetchErr);
+    // Grab original post URL to send as referer header for strict platform CDNs (TikTok, Instagram)
+    const currentPostUrl = document.getElementById('videoUrl')?.value?.trim() || '';
+    const params = new URLSearchParams({
+        url: streamUrl,
+        filename: filename
+    });
+    if (currentPostUrl) {
+        params.set('referer', currentPostUrl);
     }
+    const proxyUrl = `/api/proxy-download?${params.toString()}`;
 
-    // STRATEGY 2: Direct CORS fetch from CDN (if supported by origin CDN)
-    try {
-        const directRes = await fetch(streamUrl, { mode: 'cors' });
-        if (directRes.ok) {
-            const blob = await directRes.blob();
-            if (blob.size > 2048) {
-                const blobUrl = window.URL.createObjectURL(blob);
-                const tempLink = document.createElement('a');
-                tempLink.style.display = 'none';
-                tempLink.href = blobUrl;
-                tempLink.download = filename;
-                document.body.appendChild(tempLink);
-                tempLink.click();
-
-                setTimeout(() => {
-                    window.URL.revokeObjectURL(blobUrl);
-                    tempLink.remove();
-                }, 1000);
-
-                btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Done!</span>';
-                setTimeout(() => {
-                    btnElement.innerHTML = originalHTML;
-                    btnElement.disabled = false;
-                }, 3000);
-                return;
-            }
-        }
-    } catch (corsErr) {
-        console.warn("Direct CORS stream not allowed by CDN:", corsErr);
+    // METHOD 1: Invisible Download Frame & Anchor (Fastest, zero RAM buffering, native Chrome download shelf)
+    // Because /api/proxy-download returns 'Content-Disposition: attachment; filename="..."',
+    // the browser immediately saves the file to the Downloads folder without leaving or reloading the page.
+    let dlFrame = document.getElementById('vidsavor-download-frame');
+    if (!dlFrame) {
+        dlFrame = document.createElement('iframe');
+        dlFrame.id = 'vidsavor-download-frame';
+        dlFrame.style.display = 'none';
+        dlFrame.style.width = '0px';
+        dlFrame.style.height = '0px';
+        dlFrame.style.border = 'none';
+        document.body.appendChild(dlFrame);
     }
+    dlFrame.src = proxyUrl;
 
-    // STRATEGY 3: Direct browser attachment trigger
-    // If serverless proxy was blocked by CDN (e.g. TikTok CDN geo-blocking datacenter IPs),
-    // the user's browser direct connection can download the video directly!
-    try {
-        const directLink = document.createElement('a');
-        directLink.style.display = 'none';
-        directLink.href = streamUrl;
-        directLink.setAttribute('download', filename);
-        directLink.setAttribute('rel', 'noreferrer noopener');
-        directLink.setAttribute('target', '_blank');
-        document.body.appendChild(directLink);
-        directLink.click();
-        setTimeout(() => directLink.remove(), 1500);
+    // Trigger hidden anchor click with download attribute (ensures full cross-browser download trigger)
+    const dlAnchor = document.createElement('a');
+    dlAnchor.style.display = 'none';
+    dlAnchor.href = proxyUrl;
+    dlAnchor.setAttribute('download', filename);
+    // CRITICAL: NEVER set target="_blank" — prevents opening any new tabs
+    document.body.appendChild(dlAnchor);
+    dlAnchor.click();
+    setTimeout(() => dlAnchor.remove(), 2000);
 
-        btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Downloaded!</span>';
-        setTimeout(() => {
-            btnElement.innerHTML = originalHTML;
-            btnElement.disabled = false;
-        }, 3000);
-        return;
-    } catch (directErr) {
-        console.error("Direct trigger failed:", directErr);
-    }
-
-    btnElement.innerHTML = originalHTML;
-    btnElement.disabled = false;
-    alert('Unable to initiate download for this stream. Please try an alternate quality or format.');
+    btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Download Started!</span>';
+    setTimeout(() => {
+        btnElement.innerHTML = originalHTML;
+        btnElement.disabled = false;
+    }, 3500);
 }
 
 // Primary extraction pipeline

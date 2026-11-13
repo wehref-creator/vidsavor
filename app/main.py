@@ -3,7 +3,7 @@ import urllib.parse
 import logging
 import requests
 from typing import Optional
-from fastapi import FastAPI, Request, HTTPException, Query
+from fastapi import FastAPI, Request, HTTPException, Query, Response
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -52,7 +52,12 @@ async def fetch_media(req: FetchRequest):
 @app.api_route("/api/proxy-download", methods=["GET", "HEAD"])
 @app.api_route("/proxy-download", methods=["GET", "HEAD"])
 @app.api_route("/api/index.py", methods=["GET", "HEAD"])
-async def proxy_download(request: Request, url: Optional[str] = Query(None), filename: Optional[str] = Query("video.mp4")):
+async def proxy_download(
+    request: Request,
+    url: Optional[str] = Query(None),
+    filename: Optional[str] = Query("video.mp4"),
+    referer: Optional[str] = Query(None)
+):
     """
     High-performance binary streaming proxy that forces direct attachment download
     to the user's local disk with zero page redirection.
@@ -67,63 +72,90 @@ async def proxy_download(request: Request, url: Optional[str] = Query(None), fil
     if not clean_filename:
         clean_filename = "vidsavor_video.mp4"
 
+    client_ref = referer or request.query_params.get("referer") or ""
+
     try:
         parsed = urllib.parse.urlparse(target_url)
         domain = (parsed.netloc or "").lower()
 
-        # Determine optimal platform Referer to avoid anti-hotlinking 403 Forbidden
-        if any(k in domain for k in ["tiktok", "byteoversea", "ibytedtos", "musical.ly"]):
-            referer = "https://www.tiktok.com/"
-        elif any(k in domain for k in ["instagram", "cdninstagram"]):
-            referer = "https://www.instagram.com/"
-        elif any(k in domain for k in ["googlevideo", "youtube", "ytimg"]):
-            referer = "https://www.youtube.com/"
-        elif any(k in domain for k in ["facebook", "fbcdn"]):
-            referer = "https://www.facebook.com/"
-        elif any(k in domain for k in ["twimg", "twitter", "x.com"]):
-            referer = "https://x.com/"
-        elif any(k in domain for k in ["pinimg", "pinterest"]):
-            referer = "https://www.pinterest.com/"
-        else:
-            referer = f"{parsed.scheme}://{parsed.netloc}/" if parsed.netloc else ""
-
-        headers = {
+        base_headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
             'Accept': '*/*',
             'Accept-Encoding': 'identity',
-            'Referer': referer
+            'Range': 'bytes=0-',
+            'Sec-Fetch-Dest': 'video',
+            'Sec-Fetch-Mode': 'no-cors',
+            'Sec-Fetch-Site': 'cross-site'
         }
-        
-        req = requests.get(target_url, headers=headers, stream=True, timeout=35)
-        
-        # If 403 Forbidden with platform Referer, retry with Range header and empty Referer (bypasses TikTok/Instagram CDN blocks)
-        if req.status_code == 403:
-            headers_fallback = dict(headers)
-            headers_fallback['Referer'] = ''
-            headers_fallback['Range'] = 'bytes=0-'
-            req_fb = requests.get(target_url, headers=headers_fallback, stream=True, timeout=35)
-            if req_fb.status_code in (200, 206):
-                req = req_fb
 
-        # Verify target stream status
-        if req.status_code not in (200, 206):
-            logger.warning(f"Target CDN returned HTTP {req.status_code} for {target_url}")
+        # Build list of candidate header strategies for strict platform CDNs (TikTok, Instagram, YouTube)
+        candidate_headers = []
+        if any(k in domain for k in ["tiktok", "byteoversea", "ibytedtos", "musical.ly"]):
+            if client_ref and "tiktok.com" in client_ref:
+                candidate_headers.append({**base_headers, 'Referer': client_ref})
+            candidate_headers.append({**base_headers, 'Referer': 'https://www.tiktok.com/'})
+            candidate_headers.append(base_headers)
+        elif any(k in domain for k in ["instagram", "cdninstagram"]):
+            if client_ref and "instagram.com" in client_ref:
+                candidate_headers.append({**base_headers, 'Referer': client_ref})
+            candidate_headers.append({**base_headers, 'Referer': 'https://www.instagram.com/'})
+            candidate_headers.append(base_headers)
+        elif any(k in domain for k in ["googlevideo", "youtube", "ytimg"]):
+            candidate_headers.append({**base_headers, 'Referer': 'https://www.youtube.com/'})
+            candidate_headers.append(base_headers)
+        else:
+            if client_ref:
+                candidate_headers.append({**base_headers, 'Referer': client_ref})
+            candidate_headers.append(base_headers)
+
+        req = None
+        for h in candidate_headers:
+            try:
+                r = requests.get(target_url, headers=h, stream=True, timeout=25)
+                if r.status_code in (200, 206):
+                    req = r
+                    break
+            except Exception as conn_err:
+                logger.warning(f"Connection attempt failed: {conn_err}")
+
+        # Fallback to yt-dlp urlopen if direct requests were blocked by CDN
+        ydl_stream = None
+        if req is None or req.status_code not in (200, 206):
+            try:
+                import yt_dlp
+                ydl = yt_dlp.YoutubeDL({'quiet': True, 'no_warnings': True})
+                ydl_res = ydl.urlopen(target_url)
+                code = getattr(ydl_res, 'status', getattr(ydl_res, 'code', 200))
+                if code in (200, 206):
+                    ydl_stream = ydl_res
+            except Exception as ydl_err:
+                logger.warning(f"yt-dlp proxy fallback error: {ydl_err}")
+
+        # If neither engine could acquire stream, return clean error response
+        if req is None and ydl_stream is None:
+            logger.warning(f"All proxy attempts failed for {target_url}")
             return JSONResponse(
                 {
                     "status": "error",
-                    "code": req.status_code,
-                    "message": f"Source stream returned HTTP {req.status_code}. Stream might be geo-restricted or expired.",
-                    "direct_url": target_url
+                    "message": "Source video stream could not be loaded or has expired. Please choose another quality."
                 },
-                status_code=req.status_code
+                status_code=400
             )
 
-        # Determine accurate Content-Type
-        content_type = req.headers.get("Content-Type")
+        # Determine accurate Content-Type and Length
+        content_type = None
+        content_length = None
+        if req is not None:
+            content_type = req.headers.get("Content-Type")
+            content_length = req.headers.get("Content-Length")
+        elif ydl_stream is not None:
+            content_type = ydl_stream.headers.get("Content-Type")
+            content_length = ydl_stream.headers.get("Content-Length")
+
         if not content_type or "text/html" in content_type:
-            if clean_filename.endswith(".mp3") or clean_filename.endswith(".m4a"):
+            if clean_filename.endswith((".mp3", ".m4a")):
                 content_type = "audio/mpeg"
-            elif clean_filename.endswith(".jpg") or clean_filename.endswith(".jpeg"):
+            elif clean_filename.endswith((".jpg", ".jpeg")):
                 content_type = "image/jpeg"
             elif clean_filename.endswith(".png"):
                 content_type = "image/png"
@@ -141,19 +173,7 @@ async def proxy_download(request: Request, url: Optional[str] = Query(None), fil
             else:
                 clean_filename += ".mp4"
 
-        def iter_stream():
-            try:
-                for chunk in req.iter_content(chunk_size=131072): # 128KB chunks
-                    if chunk:
-                        yield chunk
-            except Exception as stream_err:
-                logger.error(f"Streaming error: {stream_err}")
-            finally:
-                req.close()
-
-        content_length = req.headers.get("Content-Length")
-
-        # CRITICAL HEADERS TO FORCE BROWSER ATTACHMENT DOWNLOAD RIGHT ON THE PAGE
+        # CRITICAL HEADERS TO FORCE BROWSER ATTACHMENT DOWNLOAD DIRECTLY IN-PAGE
         resp_headers = {
             "Content-Disposition": f'attachment; filename="{clean_filename}"',
             "Content-Type": content_type,
@@ -162,7 +182,41 @@ async def proxy_download(request: Request, url: Optional[str] = Query(None), fil
             "Cache-Control": "public, max-age=3600"
         }
         if content_length:
-            resp_headers["Content-Length"] = content_length
+            resp_headers["Content-Length"] = str(content_length)
+
+        # Handle HEAD requests immediately without streaming body
+        if request.method == "HEAD":
+            if req is not None:
+                req.close()
+            if ydl_stream is not None:
+                try:
+                    ydl_stream.close()
+                except Exception:
+                    pass
+            return Response(status_code=200, headers=resp_headers)
+
+        def iter_stream():
+            try:
+                if req is not None:
+                    for chunk in req.iter_content(chunk_size=131072): # 128KB chunks
+                        if chunk:
+                            yield chunk
+                elif ydl_stream is not None:
+                    while True:
+                        chunk = ydl_stream.read(131072)
+                        if not chunk:
+                            break
+                        yield chunk
+            except Exception as stream_err:
+                logger.error(f"Streaming error: {stream_err}")
+            finally:
+                if req is not None:
+                    req.close()
+                if ydl_stream is not None:
+                    try:
+                        ydl_stream.close()
+                    except Exception:
+                        pass
 
         return StreamingResponse(iter_stream(), media_type=content_type, headers=resp_headers)
 
