@@ -73,6 +73,24 @@ export default async function handler(request) {
       });
     }
 
+    // High-Reliability Fallback: Use user's dedicated grapweb.com/tiktok/download.php engine for TikTok
+    if (!cdnRes.ok && (domain.includes('tiktok') || domain.includes('byteoversea') || domain.includes('tikwm') || domain.includes('ibytedtos'))) {
+      try {
+        const ext = cleanFilename.split('.').pop() || 'mp4';
+        const grapwebUrl = `https://grapweb.com/tiktok/download.php?url=${encodeURIComponent(targetUrl)}&title=${encodeURIComponent(cleanFilename)}&ext=${encodeURIComponent(ext)}`;
+        const grapRes = await fetch(grapwebUrl, {
+          method: request.method === 'HEAD' ? 'HEAD' : 'GET',
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
+          redirect: 'follow',
+        });
+        if (grapRes.ok || grapRes.status === 206) {
+          cdnRes = grapRes;
+        }
+      } catch (grapErr) {
+        // Continue to standard error handling
+      }
+    }
+
     // If still failed
     if (!cdnRes.ok && cdnRes.status !== 206) {
       return new Response(

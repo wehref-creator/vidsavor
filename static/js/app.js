@@ -384,44 +384,58 @@ function shareMedia() {
 let currentResults = [];
 let currentTitle = "Extracted Content";
 
-// Instant Direct Download Engine (Guaranteed zero tab redirection, in-page native download)
+// Instant Direct Download Engine (Using grapweb.com/tiktok/ method for TikTok and Vercel Edge for multi-platform)
+function resolveDownloadUrl(streamUrl, filename) {
+    if (!streamUrl) return '';
+    const currentPostUrl = document.getElementById('videoUrl')?.value?.trim() || '';
+    const isTikTok = currentPostUrl.includes('tiktok.com') ||
+                     streamUrl.includes('tiktok') ||
+                     streamUrl.includes('byteoversea') ||
+                     streamUrl.includes('tikwm') ||
+                     streamUrl.includes('musical.ly') ||
+                     streamUrl.includes('rapidcdn');
+
+    if (isTikTok) {
+        // Use user's dedicated grapweb.com/tiktok/download.php engine (Hostinger cURL streaming with attachment headers)
+        const safeTitle = (filename || 'tiktok_video').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const ext = (filename || '').split('.').pop() || 'mp4';
+        return `https://grapweb.com/tiktok/download.php?url=${encodeURIComponent(streamUrl)}&title=${encodeURIComponent(safeTitle)}&ext=${encodeURIComponent(ext)}`;
+    }
+
+    const params = new URLSearchParams({
+        url: streamUrl,
+        filename: filename || 'video.mp4'
+    });
+    if (currentPostUrl) {
+        params.set('referer', currentPostUrl);
+    }
+    return `/api/proxy-download?${params.toString()}`;
+}
+
 async function triggerInstantDownload(streamUrl, filename, btnElement) {
     if (!streamUrl) {
         alert('Download stream URL not found.');
         return;
     }
 
-    const originalHTML = btnElement.innerHTML;
-    btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Starting...</span>';
-    btnElement.disabled = true;
+    const downloadUrl = resolveDownloadUrl(streamUrl, filename);
 
-    // Grab original post URL to send as referer header for strict platform CDNs (TikTok, Instagram)
-    const currentPostUrl = document.getElementById('videoUrl')?.value?.trim() || '';
-    const params = new URLSearchParams({
-        url: streamUrl,
-        filename: filename
-    });
-    if (currentPostUrl) {
-        params.set('referer', currentPostUrl);
+    if (btnElement) {
+        const originalHTML = btnElement.innerHTML;
+        btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
+        setTimeout(() => {
+            btnElement.innerHTML = originalHTML;
+        }, 3500);
     }
-    const proxyUrl = `/api/proxy-download?${params.toString()}`;
 
     // Trigger native browser attachment download via invisible anchor
-    // Because /api/proxy-download returns 'Content-Disposition: attachment',
-    // the browser saves directly to the Downloads directory without navigating away or opening tabs.
     const dlAnchor = document.createElement('a');
     dlAnchor.style.display = 'none';
-    dlAnchor.href = proxyUrl;
+    dlAnchor.href = downloadUrl;
     dlAnchor.setAttribute('download', filename);
     document.body.appendChild(dlAnchor);
     dlAnchor.click();
     setTimeout(() => dlAnchor.remove(), 2000);
-
-    btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Download Started!</span>';
-    setTimeout(() => {
-        btnElement.innerHTML = originalHTML;
-        btnElement.disabled = false;
-    }, 3500);
 }
 
 // Primary extraction pipeline
@@ -639,6 +653,7 @@ async function downloadNow() {
                     singleRow.className = 'download-item-row primary-row';
                     const safeTitle = (currentTitle || 'vidsavor').slice(0, 45).replace(/[^a-zA-Z0-9_-]/g, '_');
                     const cleanName = `${safeTitle}.mp4`;
+                    const singleDlUrl = resolveDownloadUrl(data.download, cleanName);
                     singleRow.innerHTML = `
                         <div class="row-left">
                             <div class="row-icon"><i class="fa-solid fa-video"></i></div>
@@ -652,15 +667,21 @@ async function downloadNow() {
                         </div>
                         <div class="row-right">
                             <span class="row-size-pill">Original HD</span>
-                            <button class="btn-row-download" type="button">
+                            <a href="${singleDlUrl}" class="btn-row-download" download="${cleanName}">
                                 <i class="fa-solid fa-download"></i> <span>Download</span>
-                            </button>
+                            </a>
                         </div>
                     `;
                     const singleDownloadBtn = singleRow.querySelector('.btn-row-download');
+                    singleDownloadBtn.addEventListener('click', () => {
+                        const orig = singleDownloadBtn.innerHTML;
+                        singleDownloadBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
+                        setTimeout(() => { singleDownloadBtn.innerHTML = orig; }, 3500);
+                    });
                     singleRow.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        triggerInstantDownload(data.download, cleanName, singleDownloadBtn);
+                        if (e.target !== singleDownloadBtn && !singleDownloadBtn.contains(e.target)) {
+                            singleDownloadBtn.click();
+                        }
                     });
                     container.appendChild(singleRow);
                 }
@@ -690,6 +711,7 @@ async function downloadNow() {
 
                         const safeTitle = (currentTitle || 'vidsavor').slice(0, 45).replace(/[^a-zA-Z0-9_-]/g, '_');
                         const cleanFilename = `${safeTitle}_${index}_${cleanQ.replace(/[^a-zA-Z0-9_-]/g, '_')}.${ext}`;
+                        const rowDlUrl = resolveDownloadUrl(item.url, cleanFilename);
 
                         let iconClass = 'fa-solid fa-video';
                         let soundBadge = '';
@@ -729,16 +751,22 @@ async function downloadNow() {
                             </div>
                             <div class="row-right">
                                 <span class="row-size-pill">${item.size || 'HD File'}</span>
-                                <button class="btn-row-download" type="button">
+                                <a href="${rowDlUrl}" class="btn-row-download" download="${cleanFilename}">
                                     <i class="fa-solid fa-download"></i> <span>Download</span>
-                                </button>
+                                </a>
                             </div>
                         `;
 
                         const downloadBtn = rowEl.querySelector('.btn-row-download');
+                        downloadBtn.addEventListener('click', () => {
+                            const orig = downloadBtn.innerHTML;
+                            downloadBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
+                            setTimeout(() => { downloadBtn.innerHTML = orig; }, 3500);
+                        });
                         rowEl.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            triggerInstantDownload(item.url, cleanFilename, downloadBtn);
+                            if (e.target !== downloadBtn && !downloadBtn.contains(e.target)) {
+                                downloadBtn.click();
+                            }
                         });
 
                         container.appendChild(rowEl);
