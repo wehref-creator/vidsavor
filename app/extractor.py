@@ -134,6 +134,12 @@ class MediaExtractor:
                     logger.debug(f"yt-dlp merge skipped: {ydl_merge_err}")
                 return twm_res
 
+        # For YouTube, prioritize grapweb/vidssave engine for unthrottled non-IP-locked streams with full audio
+        if platform == 'youtube':
+            yt_res = self._extract_youtube_grapweb(url)
+            if yt_res and yt_res.get('status') == 'success' and yt_res.get('results'):
+                return yt_res
+
         # 1. Primary: yt-dlp Extraction
         try:
             ydl_opts = dict(self.ydl_opts_base)
@@ -424,6 +430,120 @@ class MediaExtractor:
             "platform": platform,
             "results": results
         }
+
+    def _extract_youtube_grapweb(self, url: str) -> Optional[Dict[str, Any]]:
+        """Extract YouTube videos and audio via Hostinger grapweb engine."""
+        try:
+            parse_url = "https://grapweb.com/youtube/api.php?action=parse&url=" + urllib.parse.quote(url)
+            resp = requests.get(parse_url, timeout=12, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+            })
+            if resp.status_code != 200:
+                return None
+            
+            data = resp.json()
+            if not data or data.get('status') != 'success' or not data.get('data'):
+                return None
+            
+            info = data['data']
+            title = info.get('title') or "YouTube Video"
+            thumbnail = info.get('thumbnail') or ""
+            author = info.get('author') or "YouTube Creator"
+            duration = info.get('durationFormatted') or ""
+
+            results = []
+            seen_qualities = set()
+
+            # Process Video Options
+            for v in info.get('videos', []):
+                q = v.get('quality', '').upper()
+                token = v.get('resource_content') or ''
+                dl_url = v.get('download_url') or ''
+                size_str = v.get('sizeFormatted') or 'HD Stream'
+                
+                clean_q = q
+                if clean_q in seen_qualities:
+                    continue
+                seen_qualities.add(clean_q)
+
+                if clean_q in ['1080P', '1080P60', 'FHD']:
+                    label = "1080p Full HD"
+                elif clean_q in ['720P', 'HD']:
+                    label = "720p HD"
+                elif clean_q == '2160P':
+                    label = "2160p (4K Ultra HD)"
+                elif clean_q == '1440P':
+                    label = "1440p (2K QHD)"
+                elif clean_q == '480P':
+                    label = "480p SD"
+                elif clean_q == '360P':
+                    label = "360p"
+                else:
+                    label = f"{clean_q.lower()}"
+
+                target_url = token if token else dl_url
+                if not target_url:
+                    continue
+
+                results.append({
+                    "url": target_url,
+                    "token": token,
+                    "type": "video",
+                    "quality": label,
+                    "has_audio": True,
+                    "format": "mp4",
+                    "size": size_str,
+                    "thumbnail": thumbnail
+                })
+
+            # Process Audio Options (MP3)
+            for a in info.get('audios', []):
+                q = a.get('quality', '').upper()
+                token = a.get('resource_content') or ''
+                dl_url = a.get('download_url') or ''
+                size_str = a.get('sizeFormatted') or 'High Audio'
+                target_url = token if token else dl_url
+                if not target_url:
+                    continue
+
+                results.append({
+                    "url": target_url,
+                    "token": token,
+                    "type": "audio",
+                    "quality": f"{q} Audio (MP3)",
+                    "has_audio": True,
+                    "format": "mp3",
+                    "size": size_str,
+                    "thumbnail": thumbnail
+                })
+
+            # Add Cover Photo
+            if thumbnail:
+                results.append({
+                    "url": thumbnail,
+                    "type": "photo",
+                    "quality": "HD Cover Poster (JPG)",
+                    "format": "jpg",
+                    "size": "Original JPG",
+                    "thumbnail": thumbnail
+                })
+
+            if results:
+                primary = results[0]
+                return {
+                    "status": "success",
+                    "title": title,
+                    "thumbnail": thumbnail,
+                    "type": "video",
+                    "download": primary['url'],
+                    "author": author,
+                    "duration": duration,
+                    "platform": "youtube",
+                    "results": results
+                }
+        except Exception as yt_err:
+            logger.warning(f"YouTube grapweb engine error: {yt_err}")
+        return None
 
     def _fallback_extract(self, url: str, platform: str) -> Optional[Dict[str, Any]]:
         """Fallback extractors using platform-specific APIs and HTML metadata."""

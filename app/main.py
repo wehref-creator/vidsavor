@@ -1,4 +1,6 @@
 import os
+import re
+import time
 import urllib.parse
 import logging
 import requests
@@ -48,6 +50,124 @@ async def fetch_media(req: FetchRequest):
     
     result = extractor.extract(req.url.strip())
     return JSONResponse(status_code=200, content=result)
+
+@app.api_route("/api/resolve-youtube", methods=["GET", "POST"])
+@app.api_route("/resolve-youtube", methods=["GET", "POST"])
+async def resolve_youtube(
+    request: Request,
+    token: Optional[str] = Query(None),
+    title: Optional[str] = Query("youtube_video"),
+    format: Optional[str] = Query("mp4"),
+    url: Optional[str] = Query(None)
+):
+    """
+    Resolves YouTube video streams into high-speed unthrottled direct downloads
+    using the dedicated Hostinger grapweb engine.
+    """
+    body_data = {}
+    if request.method == "POST":
+        try:
+            body_data = await request.json()
+        except Exception:
+            try:
+                form = await request.form()
+                body_data = dict(form)
+            except Exception:
+                pass
+
+    req_token = token or body_data.get("token") or body_data.get("url") or url or request.query_params.get("token") or request.query_params.get("url")
+    req_title = title or body_data.get("title") or request.query_params.get("title", "youtube_video")
+    req_format = format or body_data.get("format") or request.query_params.get("format", "mp4")
+
+    # Sanitize title
+    clean_title = re.sub(r'[^a-zA-Z0-9_\-\s]', '', req_title).strip()
+    clean_title = re.sub(r'\s+', '_', clean_title)[:60] or "youtube_video"
+    clean_format = (req_format or "mp4").lower().strip()
+    if clean_format not in ["mp4", "mp3", "m4a", "webm"]:
+        clean_format = "mp4"
+
+    if not req_token:
+        return JSONResponse({"status": "error", "message": "Missing conversion token or URL"}, status_code=400)
+
+    # If already a direct download redirect link
+    if "download_redirect" in req_token:
+        try:
+            r = requests.get(req_token, headers={'User-Agent': 'Mozilla/5.0'}, allow_redirects=False, timeout=8)
+            real_url = r.headers.get("Location") or req_token
+            return JSONResponse({
+                "status": "success",
+                "download_url": real_url,
+                "filename": f"{clean_title}.{clean_format}"
+            })
+        except Exception:
+            pass
+
+    try:
+        # Start conversion task on grapweb engine
+        st_resp = requests.post("https://grapweb.com/youtube/api.php", data={
+            "action": "start_task",
+            "content": req_token,
+            "title": clean_title,
+            "format": clean_format
+        }, timeout=10)
+        st_data = st_resp.json()
+
+        # If direct link returned immediately
+        dl_link = st_data.get("direct_link") or st_data.get("download_link")
+        if dl_link and dl_link.startswith("http"):
+            try:
+                r = requests.get(dl_link, headers={'User-Agent': 'Mozilla/5.0'}, allow_redirects=False, timeout=8)
+                real_url = r.headers.get("Location") or dl_link
+                return JSONResponse({
+                    "status": "success",
+                    "download_url": real_url,
+                    "filename": f"{clean_title}.{clean_format}"
+                })
+            except Exception:
+                return JSONResponse({
+                    "status": "success",
+                    "download_url": dl_link,
+                    "filename": f"{clean_title}.{clean_format}"
+                })
+
+        task_id = st_data.get("task_id")
+        if not task_id:
+            return JSONResponse({
+                "status": "error",
+                "message": st_data.get("message", "Could not initialize conversion task")
+            }, status_code=400)
+
+        # Poll task until complete (max 10 iterations * 1.2s = 12s)
+        for _ in range(10):
+            time.sleep(1.2)
+            chk_resp = requests.get(
+                f"https://grapweb.com/youtube/api.php?action=check_task&task_id={urllib.parse.quote(task_id)}&title={urllib.parse.quote(clean_title)}&format={clean_format}",
+                timeout=10
+            )
+            chk_data = chk_resp.json()
+            cand_link = chk_data.get("direct_link")
+            if not cand_link and chk_data.get("download_link") and chk_data["download_link"].startswith("http"):
+                cand_link = chk_data["download_link"]
+
+            if cand_link:
+                try:
+                    r = requests.get(cand_link, headers={'User-Agent': 'Mozilla/5.0'}, allow_redirects=False, timeout=8)
+                    real_url = r.headers.get("Location") or cand_link
+                except Exception:
+                    real_url = cand_link
+                return JSONResponse({
+                    "status": "success",
+                    "download_url": real_url,
+                    "filename": f"{clean_title}.{clean_format}"
+                })
+
+        return JSONResponse({
+            "status": "error",
+            "message": "Conversion task is taking longer than expected. Please retry."
+        }, status_code=504)
+    except Exception as err:
+        logger.error(f"resolve_youtube error: {err}")
+        return JSONResponse({"status": "error", "message": str(err)}, status_code=500)
 
 @app.api_route("/api/proxy-download", methods=["GET", "HEAD"])
 @app.api_route("/proxy-download", methods=["GET", "HEAD"])

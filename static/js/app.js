@@ -384,22 +384,50 @@ function shareMedia() {
 let currentResults = [];
 let currentTitle = "Extracted Content";
 
-// Instant Direct Download Engine (Using grapweb.com/tiktok/ method for TikTok and Vercel Edge for multi-platform)
-function resolveDownloadUrl(streamUrl, filename) {
-    if (!streamUrl) return '';
+// Instant Direct Download Engine (Using grapweb Hostinger streaming attachment engine for TikTok, Instagram, Facebook, and YouTube)
+function resolveDownloadUrl(streamUrl, filename, item = null) {
+    if (!streamUrl) return '#';
     const currentPostUrl = document.getElementById('videoUrl')?.value?.trim() || '';
+    const safeTitle = (filename || 'video').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const ext = (filename || '').split('.').pop() || 'mp4';
+
+    // 1. TIKTOK: Route through dedicated grapweb.com/tiktok/download.php engine (Hostinger cURL attachment streaming)
     const isTikTok = currentPostUrl.includes('tiktok.com') ||
                      streamUrl.includes('tiktok') ||
                      streamUrl.includes('byteoversea') ||
                      streamUrl.includes('tikwm') ||
                      streamUrl.includes('musical.ly') ||
                      streamUrl.includes('rapidcdn');
-
     if (isTikTok) {
-        // Use user's dedicated grapweb.com/tiktok/download.php engine (Hostinger cURL streaming with attachment headers)
-        const safeTitle = (filename || 'tiktok_video').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
-        const ext = (filename || '').split('.').pop() || 'mp4';
         return `https://grapweb.com/tiktok/download.php?url=${encodeURIComponent(streamUrl)}&title=${encodeURIComponent(safeTitle)}&ext=${encodeURIComponent(ext)}`;
+    }
+
+    // 2. INSTAGRAM & FACEBOOK: Route through dedicated grapweb.com/facebook/download.php engine (supports cdninstagram.com, fbcdn.net, facebook.com)
+    const isMeta = currentPostUrl.includes('instagram.com') ||
+                   currentPostUrl.includes('instagr.am') ||
+                   currentPostUrl.includes('facebook.com') ||
+                   currentPostUrl.includes('fb.watch') ||
+                   currentPostUrl.includes('fb.com') ||
+                   streamUrl.includes('cdninstagram.com') ||
+                   streamUrl.includes('instagram.com') ||
+                   streamUrl.includes('fbcdn.net') ||
+                   streamUrl.includes('facebook.com');
+    if (isMeta) {
+        return `https://grapweb.com/facebook/download.php?url=${encodeURIComponent(streamUrl)}&title=${encodeURIComponent(safeTitle)}&ext=${encodeURIComponent(ext)}`;
+    }
+
+    // 3. DIRECT VIDSSAVE RESOLVED LINK (already converted and unrestricted):
+    if (streamUrl.includes('vidssave.com') && streamUrl.includes('/tmp/recycle/')) {
+        return streamUrl;
+    }
+
+    // 4. YOUTUBE (dynamic resolution trigger):
+    const isYouTube = currentPostUrl.includes('youtube.com') ||
+                      currentPostUrl.includes('youtu.be') ||
+                      (item && item.token) ||
+                      streamUrl.startsWith('Z0ve');
+    if (isYouTube) {
+        return 'javascript:void(0);';
     }
 
     const params = new URLSearchParams({
@@ -412,13 +440,76 @@ function resolveDownloadUrl(streamUrl, filename) {
     return `/api/proxy-download?${params.toString()}`;
 }
 
-async function triggerInstantDownload(streamUrl, filename, btnElement) {
-    if (!streamUrl) {
+async function triggerInstantDownload(streamUrl, filename, btnElement, item = null) {
+    if (!streamUrl && (!item || !item.token)) {
         alert('Download stream URL not found.');
         return;
     }
 
-    const downloadUrl = resolveDownloadUrl(streamUrl, filename);
+    const currentPostUrl = document.getElementById('videoUrl')?.value?.trim() || '';
+    const safeTitle = (filename || 'video').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const ext = (filename || '').split('.').pop() || 'mp4';
+
+    // Check if this is a YouTube stream requiring cloud task conversion
+    const isYouTube = currentPostUrl.includes('youtube.com') ||
+                      currentPostUrl.includes('youtu.be') ||
+                      (item && item.token) ||
+                      (streamUrl && streamUrl.startsWith('Z0ve'));
+
+    if (isYouTube) {
+        const token = (item && item.token) ? item.token : streamUrl;
+        const origHTML = btnElement ? btnElement.innerHTML : '';
+        if (btnElement) {
+            btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Preparing...</span>';
+            btnElement.style.pointerEvents = 'none';
+        }
+
+        try {
+            const res = await fetch('/api/resolve-youtube', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: token,
+                    title: safeTitle,
+                    format: ext,
+                    url: currentPostUrl
+                })
+            });
+            const data = await res.json();
+            if (data && data.status === 'success' && data.download_url) {
+                if (btnElement) {
+                    btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
+                    btnElement.style.pointerEvents = 'auto';
+                    setTimeout(() => {
+                        btnElement.innerHTML = origHTML || '<i class="fa-solid fa-download"></i> <span>Download</span>';
+                    }, 4000);
+                }
+
+                // Trigger direct file download
+                const dlAnchor = document.createElement('a');
+                dlAnchor.style.display = 'none';
+                dlAnchor.href = data.download_url;
+                dlAnchor.setAttribute('download', data.filename || filename);
+                document.body.appendChild(dlAnchor);
+                dlAnchor.click();
+                setTimeout(() => dlAnchor.remove(), 2500);
+                return;
+            } else {
+                throw new Error((data && data.message) ? data.message : 'Conversion server timeout');
+            }
+        } catch (err) {
+            console.error('YouTube resolution error:', err);
+            if (btnElement) {
+                btnElement.innerHTML = origHTML || '<i class="fa-solid fa-download"></i> <span>Download</span>';
+                btnElement.style.pointerEvents = 'auto';
+            }
+            alert('Could not prepare YouTube stream: ' + (err.message || 'Server timeout. Please retry.'));
+            return;
+        }
+    }
+
+    // Standard Direct Download Flow (TikTok, Instagram, Facebook, Pinterest, Twitter)
+    const downloadUrl = resolveDownloadUrl(streamUrl, filename, item);
 
     if (btnElement) {
         const originalHTML = btnElement.innerHTML;
@@ -673,14 +764,13 @@ async function downloadNow() {
                         </div>
                     `;
                     const singleDownloadBtn = singleRow.querySelector('.btn-row-download');
-                    singleDownloadBtn.addEventListener('click', () => {
-                        const orig = singleDownloadBtn.innerHTML;
-                        singleDownloadBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
-                        setTimeout(() => { singleDownloadBtn.innerHTML = orig; }, 3500);
+                    singleDownloadBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        triggerInstantDownload(data.download, cleanName, singleDownloadBtn);
                     });
                     singleRow.addEventListener('click', (e) => {
                         if (e.target !== singleDownloadBtn && !singleDownloadBtn.contains(e.target)) {
-                            singleDownloadBtn.click();
+                            triggerInstantDownload(data.download, cleanName, singleDownloadBtn);
                         }
                     });
                     container.appendChild(singleRow);
@@ -711,7 +801,7 @@ async function downloadNow() {
 
                         const safeTitle = (currentTitle || 'vidsavor').slice(0, 45).replace(/[^a-zA-Z0-9_-]/g, '_');
                         const cleanFilename = `${safeTitle}_${index}_${cleanQ.replace(/[^a-zA-Z0-9_-]/g, '_')}.${ext}`;
-                        const rowDlUrl = resolveDownloadUrl(item.url, cleanFilename);
+                        const rowDlUrl = resolveDownloadUrl(item.url, cleanFilename, item);
 
                         let iconClass = 'fa-solid fa-video';
                         let soundBadge = '';
@@ -758,14 +848,13 @@ async function downloadNow() {
                         `;
 
                         const downloadBtn = rowEl.querySelector('.btn-row-download');
-                        downloadBtn.addEventListener('click', () => {
-                            const orig = downloadBtn.innerHTML;
-                            downloadBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
-                            setTimeout(() => { downloadBtn.innerHTML = orig; }, 3500);
+                        downloadBtn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            triggerInstantDownload(item.url, cleanFilename, downloadBtn, item);
                         });
                         rowEl.addEventListener('click', (e) => {
                             if (e.target !== downloadBtn && !downloadBtn.contains(e.target)) {
-                                downloadBtn.click();
+                                triggerInstantDownload(item.url, cleanFilename, downloadBtn, item);
                             }
                         });
 

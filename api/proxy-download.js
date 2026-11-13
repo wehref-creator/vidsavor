@@ -56,8 +56,24 @@ export default async function handler(request) {
       headers.set('Referer', 'https://x.com/');
     }
 
+    // If fileUrl is a vidssave download_redirect, resolve 302 first
+    let finalFetchUrl = targetUrl;
+    if (targetUrl.includes('download_redirect')) {
+      try {
+        const redirRes = await fetch(targetUrl, {
+          method: 'GET',
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+          redirect: 'manual',
+        });
+        const loc = redirRes.headers.get('location');
+        if (loc) {
+          finalFetchUrl = loc;
+        }
+      } catch (rErr) {}
+    }
+
     // Fetch stream from origin CDN
-    let cdnRes = await fetch(targetUrl, {
+    let cdnRes = await fetch(finalFetchUrl, {
       method: request.method === 'HEAD' ? 'HEAD' : 'GET',
       headers: headers,
       redirect: 'follow',
@@ -66,14 +82,14 @@ export default async function handler(request) {
     // If 403 Forbidden with platform Referer, retry without Referer (bypasses CDN anti-hotlinking)
     if (cdnRes.status === 403 && headers.has('Referer')) {
       headers.delete('Referer');
-      cdnRes = await fetch(targetUrl, {
+      cdnRes = await fetch(finalFetchUrl, {
         method: request.method === 'HEAD' ? 'HEAD' : 'GET',
         headers: headers,
         redirect: 'follow',
       });
     }
 
-    // High-Reliability Fallback: Use user's dedicated grapweb.com/tiktok/download.php engine for TikTok
+    // High-Reliability Fallback 1: Use user's dedicated grapweb.com/tiktok/download.php engine for TikTok
     if (!cdnRes.ok && (domain.includes('tiktok') || domain.includes('byteoversea') || domain.includes('tikwm') || domain.includes('ibytedtos'))) {
       try {
         const ext = cleanFilename.split('.').pop() || 'mp4';
@@ -86,9 +102,23 @@ export default async function handler(request) {
         if (grapRes.ok || grapRes.status === 206) {
           cdnRes = grapRes;
         }
-      } catch (grapErr) {
-        // Continue to standard error handling
-      }
+      } catch (grapErr) {}
+    }
+
+    // High-Reliability Fallback 2: Use user's dedicated grapweb.com/facebook/download.php engine for Instagram & Facebook
+    if (!cdnRes.ok && (domain.includes('instagram') || domain.includes('cdninstagram') || domain.includes('facebook') || domain.includes('fbcdn'))) {
+      try {
+        const ext = cleanFilename.split('.').pop() || 'mp4';
+        const fbGrapwebUrl = `https://grapweb.com/facebook/download.php?url=${encodeURIComponent(targetUrl)}&title=${encodeURIComponent(cleanFilename)}&ext=${encodeURIComponent(ext)}`;
+        const fbGrapRes = await fetch(fbGrapwebUrl, {
+          method: request.method === 'HEAD' ? 'HEAD' : 'GET',
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
+          redirect: 'follow',
+        });
+        if (fbGrapRes.ok || fbGrapRes.status === 206) {
+          cdnRes = fbGrapRes;
+        }
+      } catch (fbGrapErr) {}
     }
 
     // If still failed
