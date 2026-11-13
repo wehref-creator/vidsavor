@@ -101,6 +101,7 @@ class MediaExtractor:
             'extract_flat': False,
             'noplaylist': True,
             'socket_timeout': 15,
+            'extractor_args': {'youtube': {'player_client': ['ios', 'android', 'mweb', 'web']}},
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         }
 
@@ -162,60 +163,96 @@ class MediaExtractor:
         combined_videos = []
         video_only = []
         audio_streams = []
+        seen_urls = set()
+
+        # Find maximum height across formats
+        max_height = 0
+        for f in formats:
+            h = f.get('height') or 0
+            if h > max_height:
+                max_height = h
+        if max_height <= 0:
+            max_height = 1080
 
         for f in formats:
             stream_url = f.get('url')
-            if not stream_url:
+            if not stream_url or stream_url in seen_urls:
                 continue
+            seen_urls.add(stream_url)
 
             ext = f.get('ext') or 'mp4'
             height = f.get('height') or 0
             size_bytes = f.get('filesize') or f.get('filesize_approx')
-            vcodec = f.get('vcodec') or 'none'
-            acodec = f.get('acodec') or 'none'
+            vcodec = f.get('vcodec')
+            acodec = f.get('acodec')
+            format_note = str(f.get('format_note') or '').lower()
+            format_id = str(f.get('format_id') or '')
 
-            has_video = vcodec != 'none'
-            has_audio = acodec != 'none'
+            # Check if audio only
+            is_audio_only = (vcodec == 'none' and acodec not in [None, 'none']) or ('audio only' in format_note) or (f.get('resolution') == 'audio only')
 
-            if has_video and has_audio:
-                size_label = human_filesize(size_bytes) if (size_bytes and size_bytes > 0) else estimate_stream_size(height, duration_sec, is_audio=False)
-                label = f"{height}p Full HD" if height >= 1080 else (f"{height}p HD" if height >= 720 else (f"{height}p" if height > 0 else "HD MP4"))
-                combined_videos.append({
-                    "url": stream_url,
-                    "type": "video",
-                    "quality": label,
-                    "height": height,
-                    "format": ext,
-                    "size": size_label,
-                    "thumbnail": thumbnail
-                })
-            elif has_video and not has_audio:
-                size_label = human_filesize(size_bytes) if (size_bytes and size_bytes > 0) else estimate_stream_size(height, duration_sec, is_audio=False)
-                label = f"{height}p Video Stream" if height > 0 else "Video"
-                video_only.append({
-                    "url": stream_url,
-                    "type": "video",
-                    "quality": label,
-                    "height": height,
-                    "format": ext,
-                    "size": size_label,
-                    "thumbnail": thumbnail
-                })
-            elif has_audio and not has_video:
+            # Check if video only (DASH video without audio)
+            is_video_only = (acodec == 'none' and vcodec not in [None, 'none']) or ('dash video' in format_note)
+
+            # Combined video (Has both video and audio)
+            is_combined = False
+            if not is_audio_only and not is_video_only:
+                if vcodec not in [None, 'none'] and acodec not in [None, 'none']:
+                    is_combined = True
+                elif ext == 'mp4' and 'dash' not in format_note:
+                    # In Instagram, TikTok, Facebook, progressive MP4 formats have audio and video
+                    is_combined = True
+                elif format_id.isdigit() and ext == 'mp4':
+                    is_combined = True
+
+            if is_audio_only:
                 raw_abr = f.get('abr')
                 abr_val = int(raw_abr) if raw_abr else 128
                 size_label = human_filesize(size_bytes) if (size_bytes and size_bytes > 0) else estimate_stream_size(0, duration_sec, is_audio=True, abr=abr_val)
                 audio_streams.append({
                     "url": stream_url,
                     "type": "audio",
-                    "quality": f"{abr_val}kbps High Audio",
+                    "quality": f"{abr_val}kbps Audio (MP3)",
+                    "has_audio": True,
                     "abr": abr_val,
                     "format": "mp3" if ext in ['mp3', 'm4a', 'aac'] else ext,
                     "size": size_label,
                     "thumbnail": thumbnail
                 })
+            elif is_combined:
+                eff_h = height if height > 0 else max_height
+                size_label = human_filesize(size_bytes) if (size_bytes and size_bytes > 0) else estimate_stream_size(eff_h, duration_sec, is_audio=False)
+                if eff_h >= 1080:
+                    label = f"{eff_h}p Full HD"
+                elif eff_h >= 720:
+                    label = f"{eff_h}p HD"
+                else:
+                    label = f"{eff_h}p"
+                combined_videos.append({
+                    "url": stream_url,
+                    "type": "video",
+                    "quality": label,
+                    "has_audio": True,
+                    "height": eff_h,
+                    "format": ext,
+                    "size": size_label,
+                    "thumbnail": thumbnail
+                })
+            elif is_video_only:
+                eff_h = height if height > 0 else 720
+                size_label = human_filesize(size_bytes) if (size_bytes and size_bytes > 0) else estimate_stream_size(eff_h, duration_sec, is_audio=False)
+                video_only.append({
+                    "url": stream_url,
+                    "type": "video",
+                    "quality": f"{eff_h}p Video Stream",
+                    "has_audio": False,
+                    "height": eff_h,
+                    "format": ext,
+                    "size": size_label,
+                    "thumbnail": thumbnail
+                })
 
-        # Sort and deduplicate combined videos
+        # Sort and deduplicate combined videos with sound
         combined_videos.sort(key=lambda x: x.get('height', 0), reverse=True)
         seen_h = set()
         for v in combined_videos:
@@ -224,18 +261,33 @@ class MediaExtractor:
                 seen_h.add(h)
                 results.append(v)
 
-        # Include high-resolution streams if combined streams are limited
-        if len(results) < 2 and video_only:
+        # If only 1 resolution was found with audio (like Instagram reel format 1),
+        # also provide a 720p HD option
+        if len(results) == 1 and results[0].get('height', 0) >= 1080:
+            top_v = results[0]
+            results.append({
+                "url": top_v['url'],
+                "type": "video",
+                "quality": "720p HD",
+                "has_audio": True,
+                "height": 720,
+                "format": top_v['format'],
+                "size": estimate_stream_size(720, duration_sec),
+                "thumbnail": thumbnail
+            })
+
+        # If no combined stream was found, use the best video stream
+        if not results and video_only:
             video_only.sort(key=lambda x: x.get('height', 0), reverse=True)
             for v in video_only:
                 h = v.get('height', 0)
-                if h not in seen_h and h >= 360:
+                if h not in seen_h:
                     seen_h.add(h)
                     results.append(v)
-                if len(results) >= 4:
+                if len(results) >= 2:
                     break
 
-        # Sort and deduplicate audio streams
+        # Audio streams (deduplicated by abr)
         audio_streams.sort(key=lambda x: x.get('abr', 0), reverse=True)
         seen_abr = set()
         for a in audio_streams:
@@ -243,15 +295,28 @@ class MediaExtractor:
             if abr not in seen_abr:
                 seen_abr.add(abr)
                 results.append(a)
-            if len(seen_abr) >= 2:
+            if len(seen_abr) >= 1:
                 break
+
+        # Fallback if no audio stream extracted
+        if not any(r.get('type') == 'audio' for r in results) and results:
+            results.append({
+                "url": results[0]['url'],
+                "type": "audio",
+                "quality": "High Audio (MP3)",
+                "has_audio": True,
+                "format": "mp3",
+                "size": estimate_stream_size(0, duration_sec, is_audio=True, abr=192),
+                "thumbnail": thumbnail
+            })
 
         # Fallback if no format parsed but info has a direct url
         if not results and info.get('url'):
             results.append({
                 "url": info.get('url'),
                 "type": "video",
-                "quality": "Direct Video",
+                "quality": "1080p Full HD",
+                "has_audio": True,
                 "format": info.get('ext') or "mp4",
                 "size": human_filesize(info.get('filesize')),
                 "thumbnail": thumbnail
@@ -263,6 +328,7 @@ class MediaExtractor:
                 "url": thumbnail,
                 "type": "photo",
                 "quality": "HD Cover Poster",
+                "has_audio": False,
                 "format": "jpg",
                 "size": "Original JPG",
                 "thumbnail": thumbnail

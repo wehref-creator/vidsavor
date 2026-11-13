@@ -550,6 +550,140 @@ async function downloadNow() {
                 platformBadge.textContent = data.source ? data.source.toUpperCase() : 'MEDIA';
             }
 
+            // Ensure bulletproof modern SaveFrom + Antigravity styles are active
+            if (!document.getElementById('vidsavor-download-styles')) {
+                const styleEl = document.createElement('style');
+                styleEl.id = 'vidsavor-download-styles';
+                styleEl.textContent = `
+                    .download-item-row {
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: space-between !important;
+                        padding: 14px 20px !important;
+                        background: #f8fafc !important;
+                        border: 1.5px solid #e2e8f0 !important;
+                        border-radius: 16px !important;
+                        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+                        cursor: pointer !important;
+                        gap: 16px !important;
+                        margin-bottom: 12px !important;
+                        box-sizing: border-box !important;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
+                    }
+                    .download-item-row:hover {
+                        border-color: #1a73e8 !important;
+                        background: #ffffff !important;
+                        box-shadow: 0 4px 16px rgba(26, 115, 232, 0.12) !important;
+                        transform: translateY(-2px) !important;
+                    }
+                    .download-item-row.primary-row {
+                        border-color: #1a73e8 !important;
+                        background: #f0f7ff !important;
+                        box-shadow: 0 2px 8px rgba(26, 115, 232, 0.1) !important;
+                    }
+                    .download-item-row .row-left {
+                        display: flex !important;
+                        align-items: center !important;
+                        gap: 14px !important;
+                        flex: 1 !important;
+                        min-width: 0 !important;
+                    }
+                    .download-item-row .row-icon {
+                        width: 44px !important;
+                        height: 44px !important;
+                        border-radius: 12px !important;
+                        background: #e8f0fe !important;
+                        color: #1a73e8 !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        font-size: 18px !important;
+                        flex-shrink: 0 !important;
+                    }
+                    .download-item-row .row-info {
+                        display: flex !important;
+                        flex-direction: column !important;
+                        gap: 4px !important;
+                        text-align: left !important;
+                        min-width: 0 !important;
+                    }
+                    .download-item-row .row-title-wrap {
+                        display: flex !important;
+                        align-items: center !important;
+                        gap: 8px !important;
+                        flex-wrap: wrap !important;
+                    }
+                    .download-item-row .row-title {
+                        font-size: 15px !important;
+                        font-weight: 700 !important;
+                        color: #1e293b !important;
+                        letter-spacing: -0.01em !important;
+                    }
+                    .download-item-row .sound-tag {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        gap: 4px !important;
+                        padding: 2px 8px !important;
+                        background: #dcfce7 !important;
+                        color: #15803d !important;
+                        font-size: 11px !important;
+                        font-weight: 600 !important;
+                        border-radius: 9999px !important;
+                    }
+                    .download-item-row .sound-tag.muted {
+                        background: #f1f5f9 !important;
+                        color: #64748b !important;
+                    }
+                    .download-item-row .row-sub {
+                        font-size: 12px !important;
+                        color: #64748b !important;
+                    }
+                    .download-item-row .row-right {
+                        display: flex !important;
+                        align-items: center !important;
+                        gap: 12px !important;
+                        flex-shrink: 0 !important;
+                    }
+                    .download-item-row .row-size-pill {
+                        font-size: 12.5px !important;
+                        font-weight: 600 !important;
+                        padding: 6px 14px !important;
+                        border-radius: 9999px !important;
+                        background: #f1f5f9 !important;
+                        color: #334155 !important;
+                        white-space: nowrap !important;
+                        border: 1px solid #e2e8f0 !important;
+                    }
+                    .download-item-row.primary-row .row-size-pill {
+                        background: #e0f2fe !important;
+                        color: #0369a1 !important;
+                        border-color: #bae6fd !important;
+                    }
+                    .download-item-row .btn-row-download {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        gap: 8px !important;
+                        padding: 10px 22px !important;
+                        background: #1a73e8 !important;
+                        color: #ffffff !important;
+                        border: none !important;
+                        border-radius: 9999px !important;
+                        font-size: 14px !important;
+                        font-weight: 600 !important;
+                        cursor: pointer !important;
+                        transition: all 0.2s ease !important;
+                        white-space: nowrap !important;
+                        box-shadow: 0 2px 8px rgba(26, 115, 232, 0.25) !important;
+                    }
+                    .download-item-row .btn-row-download:hover {
+                        background: #1557b0 !important;
+                        box-shadow: 0 4px 14px rgba(26, 115, 232, 0.4) !important;
+                        transform: translateY(-1px) !important;
+                    }
+                `;
+                document.head.appendChild(styleEl);
+            }
+
             // Render SaveFrom-Style Download Rows (Right on the page, NO redirection)
             if (container) {
                 container.innerHTML = '';
@@ -564,7 +698,10 @@ async function downloadNow() {
                         <div class="row-left">
                             <div class="row-icon"><i class="fa-solid fa-video"></i></div>
                             <div class="row-info">
-                                <span class="row-title">Full HD Video (MP4)</span>
+                                <div class="row-title-wrap">
+                                    <span class="row-title">Full HD Video (MP4)</span>
+                                    <span class="sound-tag"><i class="fa-solid fa-volume-high"></i> Sound On</span>
+                                </div>
                                 <span class="row-sub">Instant Watermark-Free Direct Save</span>
                             </div>
                         </div>
@@ -610,8 +747,26 @@ async function downloadNow() {
                         const cleanFilename = `${safeTitle}_${index}_${cleanQ.replace(/[^a-zA-Z0-9_-]/g, '_')}.${ext}`;
 
                         let iconClass = 'fa-solid fa-video';
-                        if (isAudio) iconClass = 'fa-solid fa-music';
-                        if (isPhoto) iconClass = 'fa-regular fa-image';
+                        let soundBadge = '';
+                        let subText = 'Watermark-Free Video Direct Save';
+
+                        if (isPhoto) {
+                            iconClass = 'fa-regular fa-image';
+                            soundBadge = '<span class="sound-tag muted"><i class="fa-regular fa-image"></i> HD Image</span>';
+                            subText = 'Original High-Resolution Image';
+                        } else if (isAudio) {
+                            iconClass = 'fa-solid fa-music';
+                            soundBadge = '<span class="sound-tag"><i class="fa-solid fa-music"></i> Stereo Audio</span>';
+                            subText = 'Original High-Quality Audio Track';
+                        } else {
+                            if (item.has_audio !== false) {
+                                soundBadge = '<span class="sound-tag"><i class="fa-solid fa-volume-high"></i> Sound On</span>';
+                                subText = 'Full HD Video with Audio Included';
+                            } else {
+                                soundBadge = '<span class="sound-tag muted"><i class="fa-solid fa-volume-xmark"></i> Video Only</span>';
+                                subText = 'Muted Video Stream';
+                            }
+                        }
 
                         rowEl.className = `download-item-row ${isPrimary ? 'primary-row' : ''}`;
                         rowEl.innerHTML = `
@@ -620,8 +775,11 @@ async function downloadNow() {
                                     <i class="${iconClass}"></i>
                                 </div>
                                 <div class="row-info">
-                                    <span class="row-title">${cleanQ} (${ext.toUpperCase()})</span>
-                                    <span class="row-sub">Watermark-Free Direct Save</span>
+                                    <div class="row-title-wrap">
+                                        <span class="row-title">${cleanQ} (${ext.toUpperCase()})</span>
+                                        ${soundBadge}
+                                    </div>
+                                    <span class="row-sub">${subText}</span>
                                 </div>
                             </div>
                             <div class="row-right">
