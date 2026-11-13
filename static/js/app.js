@@ -384,6 +384,101 @@ function shareMedia() {
 let currentResults = [];
 let currentTitle = "Extracted Content";
 
+// Instant Direct Download Engine (No new tabs, no page redirection, SaveFrom UX)
+async function triggerInstantDownload(streamUrl, filename, btnElement) {
+    if (!streamUrl) {
+        alert('Download stream URL not found.');
+        return;
+    }
+
+    const originalHTML = btnElement.innerHTML;
+    btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Saving...</span>';
+    btnElement.disabled = true;
+
+    const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(streamUrl)}&filename=${encodeURIComponent(filename)}`;
+
+    // STRATEGY 1: Fetch through proxy with streaming blob (Prevents any page redirection, saves directly to disk)
+    try {
+        const response = await fetch(proxyUrl);
+        const contentType = response.headers.get('content-type') || '';
+        
+        // Ensure the response is valid binary media, NOT an error or HTML page!
+        if (response.ok && !contentType.includes('text/html') && !contentType.includes('application/json')) {
+            const blob = await response.blob();
+            if (blob.size > 2048) { // Valid binary media
+                const blobUrl = window.URL.createObjectURL(blob);
+                const tempLink = document.createElement('a');
+                tempLink.style.display = 'none';
+                tempLink.href = blobUrl;
+                tempLink.download = filename;
+                document.body.appendChild(tempLink);
+                tempLink.click();
+                
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(blobUrl);
+                    tempLink.remove();
+                }, 1000);
+
+                btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Done!</span>';
+                setTimeout(() => {
+                    btnElement.innerHTML = originalHTML;
+                    btnElement.disabled = false;
+                }, 3000);
+                return;
+            }
+        }
+    } catch (fetchErr) {
+        console.warn("Proxy blob fetch failed, checking alternatives:", fetchErr);
+    }
+
+    // STRATEGY 2: Direct CORS fetch from CDN (if supported by origin CDN)
+    try {
+        const directRes = await fetch(streamUrl, { mode: 'cors' });
+        if (directRes.ok) {
+            const blob = await directRes.blob();
+            if (blob.size > 2048) {
+                const blobUrl = window.URL.createObjectURL(blob);
+                const tempLink = document.createElement('a');
+                tempLink.style.display = 'none';
+                tempLink.href = blobUrl;
+                tempLink.download = filename;
+                document.body.appendChild(tempLink);
+                tempLink.click();
+
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(blobUrl);
+                    tempLink.remove();
+                }, 1000);
+
+                btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Done!</span>';
+                setTimeout(() => {
+                    btnElement.innerHTML = originalHTML;
+                    btnElement.disabled = false;
+                }, 3000);
+                return;
+            }
+        }
+    } catch (corsErr) {
+        console.warn("Direct CORS stream not allowed by CDN:", corsErr);
+    }
+
+    // STRATEGY 3: Hidden iframe background trigger targeting proxy endpoint
+    // Browser receives Content-Disposition: attachment header and downloads without page redirection
+    const hiddenIframe = document.createElement('iframe');
+    hiddenIframe.style.display = 'none';
+    hiddenIframe.src = proxyUrl;
+    document.body.appendChild(hiddenIframe);
+
+    setTimeout(() => {
+        hiddenIframe.remove();
+        btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
+        setTimeout(() => {
+            btnElement.innerHTML = originalHTML;
+            btnElement.disabled = false;
+        }, 2500);
+    }, 2000);
+}
+
 // Primary extraction pipeline
 async function downloadNow() {
     const urlInput = document.getElementById('videoUrl').value.trim();
@@ -455,39 +550,43 @@ async function downloadNow() {
                 platformBadge.textContent = data.source ? data.source.toUpperCase() : 'MEDIA';
             }
 
-            // Render 2-Column Download Buttons
+            // Render SaveFrom-Style Download Rows (Right on the page, NO redirection)
             if (container) {
                 container.innerHTML = '';
 
                 // Handle single stream download
                 if (data.download && (!data.results || data.results.length === 0)) {
-                    const singleBtn = document.createElement('a');
-                    const cleanName = encodeURIComponent((currentTitle || 'video').slice(0, 50).replace(/[^a-zA-Z0-9_-]/g, '_') + '.mp4');
-                    singleBtn.href = `/api/proxy-download?url=${encodeURIComponent(data.download)}&filename=${cleanName}`;
-                    singleBtn.className = 'btn-download-new primary-download';
-                    singleBtn.setAttribute('download', 'video.mp4');
-                    singleBtn.innerHTML = `
-                        <div class="btn-left">
-                            <i class="fa-solid fa-download"></i>
-                            <div class="btn-label-group">
-                                <span class="btn-main-label">Download Full HD (MP4)</span>
-                                <span class="btn-sub-label">Instant Watermark-Free Save</span>
+                    const singleRow = document.createElement('div');
+                    singleRow.className = 'download-item-row primary-row';
+                    const safeTitle = (currentTitle || 'vidsavor').slice(0, 45).replace(/[^a-zA-Z0-9_-]/g, '_');
+                    const cleanName = `${safeTitle}.mp4`;
+                    singleRow.innerHTML = `
+                        <div class="row-left">
+                            <div class="row-icon"><i class="fa-solid fa-video"></i></div>
+                            <div class="row-info">
+                                <span class="row-title">Full HD Video (MP4)</span>
+                                <span class="row-sub">Instant Watermark-Free Direct Save</span>
                             </div>
                         </div>
-                        <div class="btn-right-group">
-                            <span class="btn-badge">1080p HD</span>
-                            <a href="${data.download}" target="_blank" rel="noopener noreferrer" class="btn-direct-badge" title="Open direct CDN link" onclick="event.stopPropagation();">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Direct
-                            </a>
+                        <div class="row-right">
+                            <span class="row-size-pill">Original HD</span>
+                            <button class="btn-row-download" type="button">
+                                <i class="fa-solid fa-download"></i> <span>Download</span>
+                            </button>
                         </div>
                     `;
-                    container.appendChild(singleBtn);
+                    const singleDownloadBtn = singleRow.querySelector('.btn-row-download');
+                    singleRow.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        triggerInstantDownload(data.download, cleanName, singleDownloadBtn);
+                    });
+                    container.appendChild(singleRow);
                 }
 
                 // Handle multi-resolution streams
                 if (data.results && data.results.length > 0) {
                     data.results.forEach((item, index) => {
-                        const btnEl = document.createElement('a');
+                        const rowEl = document.createElement('div');
                         const isPrimary = index === 0;
 
                         // Accurate extension and type detection
@@ -509,32 +608,37 @@ async function downloadNow() {
 
                         const safeTitle = (currentTitle || 'vidsavor').slice(0, 45).replace(/[^a-zA-Z0-9_-]/g, '_');
                         const cleanFilename = `${safeTitle}_${index}_${cleanQ.replace(/[^a-zA-Z0-9_-]/g, '_')}.${ext}`;
-                        const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(cleanFilename)}`;
-
-                        btnEl.href = proxyUrl;
-                        btnEl.className = `btn-download-new ${isPrimary ? 'primary-download' : ''}`;
-                        btnEl.setAttribute('download', cleanFilename);
 
                         let iconClass = 'fa-solid fa-video';
                         if (isAudio) iconClass = 'fa-solid fa-music';
                         if (isPhoto) iconClass = 'fa-regular fa-image';
 
-                        btnEl.innerHTML = `
-                            <div class="btn-left">
-                                <i class="${iconClass}"></i>
-                                <div class="btn-label-group">
-                                    <span class="btn-main-label">Download ${cleanQ} (${ext.toUpperCase()})</span>
-                                    <span class="btn-sub-label">Instant Watermark-Free Save</span>
+                        rowEl.className = `download-item-row ${isPrimary ? 'primary-row' : ''}`;
+                        rowEl.innerHTML = `
+                            <div class="row-left">
+                                <div class="row-icon">
+                                    <i class="${iconClass}"></i>
+                                </div>
+                                <div class="row-info">
+                                    <span class="row-title">${cleanQ} (${ext.toUpperCase()})</span>
+                                    <span class="row-sub">Watermark-Free Direct Save</span>
                                 </div>
                             </div>
-                            <div class="btn-right-group">
-                                <span class="btn-badge">${item.size || 'HD File'}</span>
-                                <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="btn-direct-badge" title="Open direct CDN stream" onclick="event.stopPropagation();">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Direct
-                                </a>
+                            <div class="row-right">
+                                <span class="row-size-pill">${item.size || 'HD File'}</span>
+                                <button class="btn-row-download" type="button">
+                                    <i class="fa-solid fa-download"></i> <span>Download</span>
+                                </button>
                             </div>
                         `;
-                        container.appendChild(btnEl);
+
+                        const downloadBtn = rowEl.querySelector('.btn-row-download');
+                        rowEl.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            triggerInstantDownload(item.url, cleanFilename, downloadBtn);
+                        });
+
+                        container.appendChild(rowEl);
                     });
                 }
             }

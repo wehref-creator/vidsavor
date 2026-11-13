@@ -663,6 +663,108 @@ input#videoUrl::placeholder {
     gap: 10px;
 }
 
+/* Clean Download Rows matching SaveFrom style */
+.download-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    transition: all 0.18s ease;
+    cursor: pointer;
+    gap: 14px;
+}
+
+.download-item-row:hover {
+    border-color: var(--border-main);
+    background: var(--bg-hover);
+    transform: translateY(-1px);
+}
+
+.download-item-row.primary-row {
+    border-color: var(--border-main);
+    background: #fbfbfc;
+    box-shadow: var(--shadow-subtle);
+}
+
+.download-item-row .row-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.download-item-row .row-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--bg-hover);
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.download-item-row .row-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: left;
+}
+
+.download-item-row .row-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.download-item-row .row-sub {
+    font-size: 11.5px;
+    color: var(--text-muted);
+}
+
+.download-item-row .row-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.download-item-row .row-size-pill {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-hover);
+    color: var(--text-main);
+    white-space: nowrap;
+}
+
+.download-item-row .btn-row-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--btn-dark);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-pill);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s ease, transform 0.15s ease;
+    white-space: nowrap;
+}
+
+.download-item-row:hover .btn-row-download,
+.download-item-row .btn-row-download:hover {
+    background: var(--btn-dark-hover);
+}
+
 .btn-download-new {
     display: flex;
     align-items: center;

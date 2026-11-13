@@ -2,8 +2,9 @@ import os
 import urllib.parse
 import logging
 import requests
+from typing import Optional
 from fastapi import FastAPI, Request, HTTPException, Query
-from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -48,22 +49,26 @@ async def fetch_media(req: FetchRequest):
     result = extractor.extract(req.url.strip())
     return JSONResponse(status_code=200, content=result)
 
-@app.get("/api/proxy-download")
-@app.get("/proxy-download")
-async def proxy_download(url: str = Query(...), filename: str = Query("video.mp4")):
+@app.api_route("/api/proxy-download", methods=["GET", "HEAD"])
+@app.api_route("/proxy-download", methods=["GET", "HEAD"])
+@app.api_route("/api/index.py", methods=["GET", "HEAD"])
+async def proxy_download(request: Request, url: Optional[str] = Query(None), filename: Optional[str] = Query("video.mp4")):
     """
-    Stream download proxy to bypass CORS and anti-hotlinking,
-    and force attachment download of the real video directly to user's disk.
+    High-performance binary streaming proxy that forces direct attachment download
+    to the user's local disk with zero page redirection.
     """
-    if not url or not url.strip():
-        raise HTTPException(status_code=400, detail="Missing media URL parameter.")
+    target_url = url or request.query_params.get("url")
+    if not target_url or not target_url.strip():
+        # If called without url parameter, return service status
+        return JSONResponse({"status": "ok", "service": "VidSavor Download Proxy Engine v2.0"})
 
-    clean_filename = urllib.parse.unquote(filename).replace('"', '').replace('\n', '').strip()
+    raw_filename = filename or request.query_params.get("filename", "vidsavor_video.mp4")
+    clean_filename = urllib.parse.unquote(raw_filename).replace('"', '').replace('\r', '').replace('\n', '').strip()
     if not clean_filename:
-        clean_filename = "vidsavor_media.mp4"
+        clean_filename = "vidsavor_video.mp4"
 
     try:
-        parsed = urllib.parse.urlparse(url)
+        parsed = urllib.parse.urlparse(target_url)
         referer = f"{parsed.scheme}://{parsed.netloc}/" if parsed.netloc else ""
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -72,10 +77,38 @@ async def proxy_download(url: str = Query(...), filename: str = Query("video.mp4
             'Referer': referer
         }
         
-        req = requests.get(url, headers=headers, stream=True, timeout=25)
+        req = requests.get(target_url, headers=headers, stream=True, timeout=35)
+        
+        # Verify target stream status
         if req.status_code not in (200, 206):
-            # Fallback directly to source CDN if proxying is blocked by source
-            return RedirectResponse(url=url, status_code=302)
+            logger.warning(f"Target CDN returned HTTP {req.status_code} for {target_url}")
+            return JSONResponse(
+                {"status": "error", "message": f"Source stream returned HTTP {req.status_code}. Stream might have expired."},
+                status_code=req.status_code
+            )
+
+        # Determine accurate Content-Type
+        content_type = req.headers.get("Content-Type")
+        if not content_type or "text/html" in content_type:
+            if clean_filename.endswith(".mp3") or clean_filename.endswith(".m4a"):
+                content_type = "audio/mpeg"
+            elif clean_filename.endswith(".jpg") or clean_filename.endswith(".jpeg"):
+                content_type = "image/jpeg"
+            elif clean_filename.endswith(".png"):
+                content_type = "image/png"
+            elif clean_filename.endswith(".webp"):
+                content_type = "image/webp"
+            else:
+                content_type = "video/mp4"
+
+        # Ensure filename has an appropriate extension if none provided
+        if "." not in clean_filename:
+            if "audio" in content_type:
+                clean_filename += ".mp3"
+            elif "image" in content_type:
+                clean_filename += ".jpg"
+            else:
+                clean_filename += ".mp4"
 
         def iter_stream():
             try:
@@ -84,23 +117,17 @@ async def proxy_download(url: str = Query(...), filename: str = Query("video.mp4
                         yield chunk
             except Exception as stream_err:
                 logger.error(f"Streaming error: {stream_err}")
-
-        content_type = req.headers.get("Content-Type")
-        if not content_type or "text/html" in content_type:
-            if clean_filename.endswith(".mp3"):
-                content_type = "audio/mpeg"
-            elif clean_filename.endswith(".jpg") or clean_filename.endswith(".jpeg"):
-                content_type = "image/jpeg"
-            elif clean_filename.endswith(".png"):
-                content_type = "image/png"
-            else:
-                content_type = "video/mp4"
+            finally:
+                req.close()
 
         content_length = req.headers.get("Content-Length")
 
+        # CRITICAL HEADERS TO FORCE BROWSER ATTACHMENT DOWNLOAD RIGHT ON THE PAGE
         resp_headers = {
             "Content-Disposition": f'attachment; filename="{clean_filename}"',
+            "Content-Type": content_type,
             "Access-Control-Allow-Origin": "*",
+            "Access-Control-Expose-Headers": "Content-Disposition, Content-Length",
             "Cache-Control": "public, max-age=3600"
         }
         if content_length:
@@ -110,8 +137,7 @@ async def proxy_download(url: str = Query(...), filename: str = Query("video.mp4
 
     except Exception as e:
         logger.error(f"Proxy download exception: {e}")
-        # Safe fallback: redirect directly to source URL
-        return RedirectResponse(url=url, status_code=302)
+        return JSONResponse({"status": "error", "message": f"Download proxy failed: {str(e)}"}, status_code=500)
 
 @app.get("/health")
 @app.get("/api/health")
@@ -223,8 +249,14 @@ async def serve_photo():
     return serve_html_file("photo.html")
 
 # UNIVERSAL CATCH-ALL ROUTE FOR GET AND POST (Zero 405 Method Not Allowed)
-@app.api_route("/{catch_all:path}", methods=["GET", "POST"])
+@app.api_route("/{catch_all:path}", methods=["GET", "POST", "HEAD"])
 async def universal_catch_all(catch_all: str, request: Request):
+    # Intercept any proxy download requests that fall through
+    if "proxy-download" in catch_all or "proxy" in catch_all or request.query_params.get("url"):
+        target_url = request.query_params.get("url")
+        if target_url:
+            return await proxy_download(request, url=target_url, filename=request.query_params.get("filename", "vidsavor_video.mp4"))
+
     if request.method == "POST":
         try:
             data = await request.json()
