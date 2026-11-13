@@ -69,7 +69,24 @@ async def proxy_download(request: Request, url: Optional[str] = Query(None), fil
 
     try:
         parsed = urllib.parse.urlparse(target_url)
-        referer = f"{parsed.scheme}://{parsed.netloc}/" if parsed.netloc else ""
+        domain = (parsed.netloc or "").lower()
+
+        # Determine optimal platform Referer to avoid anti-hotlinking 403 Forbidden
+        if any(k in domain for k in ["tiktok", "byteoversea", "ibytedtos", "musical.ly"]):
+            referer = "https://www.tiktok.com/"
+        elif any(k in domain for k in ["instagram", "cdninstagram"]):
+            referer = "https://www.instagram.com/"
+        elif any(k in domain for k in ["googlevideo", "youtube", "ytimg"]):
+            referer = "https://www.youtube.com/"
+        elif any(k in domain for k in ["facebook", "fbcdn"]):
+            referer = "https://www.facebook.com/"
+        elif any(k in domain for k in ["twimg", "twitter", "x.com"]):
+            referer = "https://x.com/"
+        elif any(k in domain for k in ["pinimg", "pinterest"]):
+            referer = "https://www.pinterest.com/"
+        else:
+            referer = f"{parsed.scheme}://{parsed.netloc}/" if parsed.netloc else ""
+
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
             'Accept': '*/*',
@@ -79,11 +96,25 @@ async def proxy_download(request: Request, url: Optional[str] = Query(None), fil
         
         req = requests.get(target_url, headers=headers, stream=True, timeout=35)
         
+        # If 403 Forbidden with platform Referer, retry with Range header and empty Referer (bypasses TikTok/Instagram CDN blocks)
+        if req.status_code == 403:
+            headers_fallback = dict(headers)
+            headers_fallback['Referer'] = ''
+            headers_fallback['Range'] = 'bytes=0-'
+            req_fb = requests.get(target_url, headers=headers_fallback, stream=True, timeout=35)
+            if req_fb.status_code in (200, 206):
+                req = req_fb
+
         # Verify target stream status
         if req.status_code not in (200, 206):
             logger.warning(f"Target CDN returned HTTP {req.status_code} for {target_url}")
             return JSONResponse(
-                {"status": "error", "message": f"Source stream returned HTTP {req.status_code}. Stream might have expired."},
+                {
+                    "status": "error",
+                    "code": req.status_code,
+                    "message": f"Source stream returned HTTP {req.status_code}. Stream might be geo-restricted or expired.",
+                    "direct_url": target_url
+                },
                 status_code=req.status_code
             )
 

@@ -462,21 +462,33 @@ async function triggerInstantDownload(streamUrl, filename, btnElement) {
         console.warn("Direct CORS stream not allowed by CDN:", corsErr);
     }
 
-    // STRATEGY 3: Hidden iframe background trigger targeting proxy endpoint
-    // Browser receives Content-Disposition: attachment header and downloads without page redirection
-    const hiddenIframe = document.createElement('iframe');
-    hiddenIframe.style.display = 'none';
-    hiddenIframe.src = proxyUrl;
-    document.body.appendChild(hiddenIframe);
+    // STRATEGY 3: Direct browser attachment trigger
+    // If serverless proxy was blocked by CDN (e.g. TikTok CDN geo-blocking datacenter IPs),
+    // the user's browser direct connection can download the video directly!
+    try {
+        const directLink = document.createElement('a');
+        directLink.style.display = 'none';
+        directLink.href = streamUrl;
+        directLink.setAttribute('download', filename);
+        directLink.setAttribute('rel', 'noreferrer noopener');
+        directLink.setAttribute('target', '_blank');
+        document.body.appendChild(directLink);
+        directLink.click();
+        setTimeout(() => directLink.remove(), 1500);
 
-    setTimeout(() => {
-        hiddenIframe.remove();
-        btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
+        btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Downloaded!</span>';
         setTimeout(() => {
             btnElement.innerHTML = originalHTML;
             btnElement.disabled = false;
-        }, 2500);
-    }, 2000);
+        }, 3000);
+        return;
+    } catch (directErr) {
+        console.error("Direct trigger failed:", directErr);
+    }
+
+    btnElement.innerHTML = originalHTML;
+    btnElement.disabled = false;
+    alert('Unable to initiate download for this stream. Please try an alternate quality or format.');
 }
 
 // Primary extraction pipeline
