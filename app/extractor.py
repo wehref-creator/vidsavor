@@ -20,6 +20,28 @@ def human_filesize(num_bytes: Optional[int]) -> str:
         i += 1
     return f"{size:.1f} {units[i]}"
 
+def estimate_stream_size(height: int, duration_sec: Optional[float], is_audio: bool = False, abr: Optional[int] = None) -> str:
+    """Provide realistic filesize estimate in MB when CDN omits Content-Length."""
+    d = float(duration_sec) if duration_sec and duration_sec > 0 else 30.0
+    if is_audio:
+        bitrate = abr if abr and abr > 0 else 128
+        bytes_val = int((bitrate * 1024 / 8) * d)
+    else:
+        if height >= 1440:
+            bitrate = 5500
+        elif height >= 1080:
+            bitrate = 3200
+        elif height >= 720:
+            bitrate = 1600
+        elif height >= 480:
+            bitrate = 850
+        elif height > 0:
+            bitrate = 500
+        else:
+            bitrate = 1500
+        bytes_val = int((bitrate * 1024 / 8) * d)
+    return human_filesize(bytes_val)
+
 def format_duration(seconds: Optional[int]) -> str:
     """Format seconds into MM:SS or HH:MM:SS."""
     if not seconds or seconds <= 0:
@@ -149,7 +171,6 @@ class MediaExtractor:
             ext = f.get('ext') or 'mp4'
             height = f.get('height') or 0
             size_bytes = f.get('filesize') or f.get('filesize_approx')
-            size_label = human_filesize(size_bytes)
             vcodec = f.get('vcodec') or 'none'
             acodec = f.get('acodec') or 'none'
 
@@ -157,6 +178,7 @@ class MediaExtractor:
             has_audio = acodec != 'none'
 
             if has_video and has_audio:
+                size_label = human_filesize(size_bytes) if (size_bytes and size_bytes > 0) else estimate_stream_size(height, duration_sec, is_audio=False)
                 label = f"{height}p Full HD" if height >= 1080 else (f"{height}p HD" if height >= 720 else (f"{height}p" if height > 0 else "HD MP4"))
                 combined_videos.append({
                     "url": stream_url,
@@ -168,6 +190,7 @@ class MediaExtractor:
                     "thumbnail": thumbnail
                 })
             elif has_video and not has_audio:
+                size_label = human_filesize(size_bytes) if (size_bytes and size_bytes > 0) else estimate_stream_size(height, duration_sec, is_audio=False)
                 label = f"{height}p Video Stream" if height > 0 else "Video"
                 video_only.append({
                     "url": stream_url,
@@ -181,6 +204,7 @@ class MediaExtractor:
             elif has_audio and not has_video:
                 raw_abr = f.get('abr')
                 abr_val = int(raw_abr) if raw_abr else 128
+                size_label = human_filesize(size_bytes) if (size_bytes and size_bytes > 0) else estimate_stream_size(0, duration_sec, is_audio=True, abr=abr_val)
                 audio_streams.append({
                     "url": stream_url,
                     "type": "audio",
@@ -238,9 +262,9 @@ class MediaExtractor:
             results.append({
                 "url": thumbnail,
                 "type": "photo",
-                "quality": "HD Poster / Thumbnail",
+                "quality": "HD Cover Poster",
                 "format": "jpg",
-                "size": "Original Quality",
+                "size": "Original JPG",
                 "thumbnail": thumbnail
             })
 

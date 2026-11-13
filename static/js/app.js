@@ -465,14 +465,22 @@ async function downloadNow() {
                     const cleanName = encodeURIComponent((currentTitle || 'video').slice(0, 50).replace(/[^a-zA-Z0-9_-]/g, '_') + '.mp4');
                     singleBtn.href = `/api/proxy-download?url=${encodeURIComponent(data.download)}&filename=${cleanName}`;
                     singleBtn.className = 'btn-download-new primary-download';
+                    singleBtn.setAttribute('download', 'video.mp4');
                     singleBtn.innerHTML = `
                         <div class="btn-left">
                             <i class="fa-solid fa-download"></i>
-                            <span>Download Full HD MP4</span>
+                            <div class="btn-label-group">
+                                <span class="btn-main-label">Download Full HD (MP4)</span>
+                                <span class="btn-sub-label">Instant Watermark-Free Save</span>
+                            </div>
                         </div>
-                        <span class="btn-badge">1080p HD</span>
+                        <div class="btn-right-group">
+                            <span class="btn-badge">1080p HD</span>
+                            <a href="${data.download}" target="_blank" rel="noopener noreferrer" class="btn-direct-badge" title="Open direct CDN link" onclick="event.stopPropagation();">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Direct
+                            </a>
+                        </div>
                     `;
-                    singleBtn.setAttribute('download', 'video.mp4');
                     container.appendChild(singleBtn);
                 }
 
@@ -481,42 +489,53 @@ async function downloadNow() {
                     data.results.forEach((item, index) => {
                         const btnEl = document.createElement('a');
                         const isPrimary = index === 0;
-                        const ext = item.ext || (item.format === 'audio' ? 'mp3' : 'mp4');
-                        const cleanName = encodeURIComponent((currentTitle || 'media').slice(0, 50).replace(/[^a-zA-Z0-9_-]/g, '_') + '.' + ext);
-                        
-                        btnEl.href = `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${cleanName}`;
+
+                        // Accurate extension and type detection
+                        const isPhoto = item.type === 'photo' || item.format === 'jpg' || item.format === 'jpeg' || item.format === 'png' || (item.quality && (item.quality.toLowerCase().includes('poster') || item.quality.toLowerCase().includes('cover') || item.quality.toLowerCase().includes('photo')));
+                        const isAudio = item.type === 'audio' || item.format === 'mp3' || item.format === 'm4a' || (item.quality && item.quality.toLowerCase().includes('audio'));
+
+                        let ext = 'mp4';
+                        if (isPhoto) {
+                            ext = (item.format && item.format !== 'video') ? item.format : 'jpg';
+                        } else if (isAudio) {
+                            ext = (item.format && item.format !== 'video') ? item.format : 'mp3';
+                        } else {
+                            ext = item.format || item.ext || 'mp4';
+                        }
+
+                        // Clean quality label
+                        let rawQ = item.quality || (isAudio ? 'High Audio' : (isPhoto ? 'HD Photo' : 'HD Video'));
+                        let cleanQ = rawQ.replace(/\s+(MP4|MP3|JPG|JPEG|PNG)$/i, '').trim();
+
+                        const safeTitle = (currentTitle || 'vidsavor').slice(0, 45).replace(/[^a-zA-Z0-9_-]/g, '_');
+                        const cleanFilename = `${safeTitle}_${index}_${cleanQ.replace(/[^a-zA-Z0-9_-]/g, '_')}.${ext}`;
+                        const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(cleanFilename)}`;
+
+                        btnEl.href = proxyUrl;
                         btnEl.className = `btn-download-new ${isPrimary ? 'primary-download' : ''}`;
+                        btnEl.setAttribute('download', cleanFilename);
 
                         let iconClass = 'fa-solid fa-video';
-                        if (item.format === 'audio' || item.type === 'audio') iconClass = 'fa-solid fa-music';
-                        if (item.format === 'photo' || item.type === 'photo') iconClass = 'fa-solid fa-image';
+                        if (isAudio) iconClass = 'fa-solid fa-music';
+                        if (isPhoto) iconClass = 'fa-regular fa-image';
 
                         btnEl.innerHTML = `
                             <div class="btn-left">
                                 <i class="${iconClass}"></i>
-                                <span>Download ${item.quality || 'HD'} ${ext.toUpperCase()}</span>
+                                <div class="btn-label-group">
+                                    <span class="btn-main-label">Download ${cleanQ} (${ext.toUpperCase()})</span>
+                                    <span class="btn-sub-label">Instant Watermark-Free Save</span>
+                                </div>
                             </div>
-                            <span class="btn-badge">${item.size || 'Direct Link'}</span>
+                            <div class="btn-right-group">
+                                <span class="btn-badge">${item.size || 'HD File'}</span>
+                                <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="btn-direct-badge" title="Open direct CDN stream" onclick="event.stopPropagation();">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Direct
+                                </a>
+                            </div>
                         `;
-                        btnEl.setAttribute('download', `vidsavor_${index}.${ext}`);
                         container.appendChild(btnEl);
                     });
-                }
-
-                // Always offer direct Cover/Thumbnail download
-                if (data.thumbnail) {
-                    const thumbBtn = document.createElement('a');
-                    thumbBtn.href = data.thumbnail;
-                    thumbBtn.target = '_blank';
-                    thumbBtn.className = 'btn-download-new';
-                    thumbBtn.innerHTML = `
-                        <div class="btn-left">
-                            <i class="fa-regular fa-image"></i>
-                            <span>Save High-Res Cover Image</span>
-                        </div>
-                        <span class="btn-badge">HD JPG</span>
-                    `;
-                    container.appendChild(thumbBtn);
                 }
             }
 

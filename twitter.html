@@ -4,41 +4,90 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<title>Twitter / X Video Downloader | Download HD Videos & GIFs - VidSavor</title>
-<meta name="description" content="Download Twitter (X) videos, GIFs, and media clips in 1080p and 720p HD MP4 format for free with VidSavor. Instant link detection, no software required.">
-<meta name="keywords" content="twitter video downloader, x video downloader, download twitter gif, save x video online, vidsavor twitter">
-<meta name="robots" content="index, follow">
+<title>Twitter / X Video Downloader | VidSavor</title>
+<meta name="description" content="Download Twitter (X) videos in high bitrate MP4, convert Twitter GIFs to video loops, and save uncompressed photos free without watermarks.">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="theme-color" content="#121317">
+<meta name="author" content="VidSavor">
 <link rel="canonical" href="https://vidsavor.com/twitter">
 
+<!-- OpenGraph / Social Meta Tags -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Twitter / X Video Downloader - Fast & Free | VidSavor">
-<meta property="og:description" content="Save Twitter / X videos and GIFs in HD MP4 quality instantly.">
-<meta property="og:image" content="https://vidsavor.com/static/assets/logo.svg">
 <meta property="og:url" content="https://vidsavor.com/twitter">
+<meta property="og:title" content="Twitter / X Video Downloader | VidSavor">
+<meta property="og:description" content="Download Twitter (X) videos in high bitrate MP4, convert Twitter GIFs to video loops, and save uncompressed photos free without watermarks.">
+<meta property="og:image" content="https://vidsavor.com/static/assets/logo.svg">
 
+<!-- Twitter Card -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:title" content="Twitter / X Video Downloader | VidSavor">
+<meta property="twitter:description" content="Download Twitter (X) videos in high bitrate MP4, convert Twitter GIFs to video loops, and save uncompressed photos free without watermarks.">
+
+<!-- Favicon & PWA -->
 <link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+<link rel="apple-touch-icon" href="/static/assets/favicon.svg">
+<link rel="manifest" href="/manifest.json">
+
+<!-- Google Sans Flex & Code -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,slnt,wdth,wght,ROND@8..144,-10..0,25..150,400..800,0..100&family=Google+Sans+Code:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <link rel="stylesheet" href="/static/css/style.css">
 
+<!-- Structured Data Schema for GEO & Rich Google Results -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "VidSavor Twitter / X Downloader",
-  "operatingSystem": "Windows, macOS, Android, iOS, Linux",
-  "applicationCategory": "MultimediaApplication",
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "ratingCount": "9800" }
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "VidSavor Twitter / X Video Downloader",
+      "operatingSystem": "All (Web, iOS, Android, Windows, macOS, Linux)",
+      "applicationCategory": "MultimediaApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0.00",
+        "priceCurrency": "USD"
+      },
+      "description": "Download Twitter (X) videos in high bitrate MP4, convert Twitter GIFs to video loops, and save uncompressed photos free without watermarks."
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+        "@type": "Question",
+        "name": "How do I download videos from Twitter / X?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Copy the link of the tweet containing the video, paste it into VidSavor, and click Download."
+        }
+      },
+{
+        "@type": "Question",
+        "name": "Can I download Twitter GIFs as video files?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. VidSavor downloads Twitter animated GIFs as high-compatibility MP4 video loops."
+        }
+      },
+{
+        "@type": "Question",
+        "name": "What is the highest resolution available on Twitter?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Twitter supports resolutions up to 1080p. VidSavor always selects the highest available bitrate rendition."
+        }
+      }
+      ]
+    }
+  ]
 }
 </script>
 </head>
 
 <body>
 
-<!-- HEADER (Google Antigravity Style) -->
 <header>
     <div class="header-left">
         <a href="/" class="logo-container" aria-label="VidSavor Home">
@@ -190,73 +239,272 @@
     </div>
 </header>
 
+<!-- HERO SECTION -->
 <section class="hero" id="downloadSection">
+    <canvas id="antigravityCanvas" class="hero-particles-canvas"></canvas>
+
     <div class="hero-content">
-        <div class="badge" style="background:#f1f5f9; border-color:#e2e8f0; color:#0f172a;">
-            <i class="fa-brands fa-x-twitter"></i>
-            Twitter / X Clips, Videos & GIFs • HD MP4
+        <div class="badge">
+            <i class="fa-solid fa-shield-heart"></i>
+            100% Free • Twitter / X Media • High Bitrate MP4
         </div>
 
         <h1 id="mainTitle">
-            Twitter / X Video Downloader. <span class="gradient">Fast & Free HD Media.</span>
+            Download Twitter (X) Videos & GIFs. <span class="gradient">High Bitrate MP4.</span>
         </h1>
 
         <p id="mainDesc">
-            Download tweets with videos, GIFs, and media clips in original resolution. Instant auto-extraction powered by VidSavor.
+            Save clips, news footage, viral tweets, and animated GIFs from Twitter / X in original HD quality with one click.
         </p>
 
+        <!-- INPUT BAR -->
         <div class="search-box">
             <div class="input-box">
-                <i class="fa-brands fa-x-twitter link-icon" style="color:#0f172a;"></i>
+                <i class="fa-solid fa-link link-icon"></i>
                 <input 
                     type="search" 
                     id="videoUrl" 
                     name="q" 
-                    placeholder="Paste Twitter / X tweet link (x.com/.../status/...)..." 
+                    placeholder="Paste Twitter / X tweet link here..." 
                     inputmode="url" 
                     autocomplete="off" 
                     autocorrect="off" 
                     autocapitalize="off" 
                     spellcheck="false"
                 >
-                <button type="button" class="clear-btn" id="clearUrlBtn" title="Clear input"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" class="clear-btn" id="clearUrlBtn" title="Clear input">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
-            <button class="paste-btn" type="button" onclick="pasteText()"><i class="fa-regular fa-paste"></i><span>Paste</span></button>
-            <button class="download-btn" type="button" id="mainFetchBtn" onclick="downloadNow()"><i class="fa-solid fa-download"></i><span>Download</span></button>
+
+            <button class="paste-btn" type="button" onclick="pasteText()">
+                <i class="fa-regular fa-paste"></i>
+                <span>Paste</span>
+            </button>
+
+            <button class="download-btn" type="button" id="mainFetchBtn" onclick="downloadNow()">
+                <i class="fa-solid fa-download"></i>
+                <span>Download</span>
+            </button>
         </div>
 
-        <div class="quick-text">Pasting a Twitter / X URL starts extraction instantly!</div>
+        <div class="quick-text">
+            Paste any link above and VidSavor will auto-fetch and prepare your high-definition download!
+        </div>
 
-        <!-- TWO COLUMN RESULT CONTAINER -->
+        <!-- TWO-COLUMN RESULT VIEW (AFTER PASTE / FETCH) -->
         <div id="resultBox" style="display:none;">
-            <div class="result-card-main">
-                <div class="result-two-column-grid">
-                    <div class="result-downloads-col">
-                        <div class="downloads-col-header">
-                            <div class="downloads-col-title"><i class="fa-solid fa-download" style="color:var(--primary);"></i> Download Options</div>
-                            <span class="downloads-count-badge" id="downloadsCountBadge">Ready</span>
+            <div class="result-two-column-grid">
+                <!-- LEFT COLUMN: Download options -->
+                <div class="result-col-downloads">
+                    <div class="result-section-header">
+                        <div class="result-section-title">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Download Options</span>
                         </div>
-                        <div class="format-filter-tabs" id="formatFilterTabs" style="display:none;"></div>
-                        <div id="downloadButtonsContainer"></div>
+                        <span class="result-badge-ready" id="platformBadge">READY</span>
                     </div>
-                    <div class="result-preview-col">
-                        <div class="preview-media-container" id="previewMediaContainer"></div>
-                        <div class="preview-details-wrap">
-                            <h3 id="videoTitle">Twitter / X Media</h3>
-                            <div class="media-meta-tags" id="mediaMetaContainer"></div>
+
+                    <!-- Stream Download Cards -->
+                    <div class="download-options-list" id="downloadButtonsContainer"></div>
+                </div>
+
+                <!-- RIGHT COLUMN: Media Preview & Post Details -->
+                <div class="result-col-preview">
+                    <div class="preview-media-wrapper" id="previewMediaContainer"></div>
+                    <div class="preview-details">
+                        <div class="preview-title" id="videoTitle">Extracted Media</div>
+                        <div class="preview-meta">
+                            <span class="preview-meta-pill" id="videoDuration">HD Quality Available</span>
+                            <span class="preview-meta-pill">Watermark Free</span>
                         </div>
-                        <div class="preview-actions-bar">
-                            <button type="button" class="btn-preview-action" onclick="copyMediaLink()"><i class="fa-regular fa-copy"></i> Copy Link</button>
-                            <button type="button" class="btn-preview-action" onclick="shareMedia()"><i class="fa-solid fa-share-nodes"></i> Share</button>
+                        <div class="preview-actions">
+                            <button type="button" class="btn-action-small" onclick="copyMediaLink()" title="Copy link to clipboard">
+                                <i class="fa-regular fa-copy"></i> Copy Link
+                            </button>
+                            <button type="button" class="btn-action-small" onclick="shareMedia()" title="Share media">
+                                <i class="fa-solid fa-share-nodes"></i> Share
+                            </button>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- HOW TO STEPS SECTION -->
+<section class="steps-section">
+    <div class="steps-container">
+        <div class="section-label">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            3 Easy Steps
+        </div>
+        <h2>How to Download Using VidSavor</h2>
+        <p class="section-subhead">Simple, reliable, and completely free in original resolution:</p>
+
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Copy Link</h3>
+                <p>Open the app or site, tap the share icon, and copy the public post or video link to your clipboard.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Paste into VidSavor</h3>
+                <p>Click the 'Paste' button above. VidSavor instantly resolves the highest available video streams.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Save & Enjoy</h3>
+                <p>Select your preferred quality (Full HD 1080p, 720p, or MP3) and download directly to your device.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SPECIFICATION & FORMAT MATRIX (SEO / GEO TABLE) -->
+<section class="rich-seo-section alt-bg">
+    <div class="rich-seo-container">
+        <div class="rich-section-header">
+            <div class="section-label"><i class="fa-solid fa-table-cells"></i> Technical Specifications</div>
+            <h2>Supported Resolutions & Audio Formats</h2>
+            <p>Direct lossless passthrough ensures zero compression degradation.</p>
+        </div>
+
+        <div class="spec-table-wrap">
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>Media Format</th>
+                        <th>Quality / Resolution</th>
+                        <th>File Extension</th>
+                        <th>Audio Track</th>
+                        <th>Watermark Removed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+<tr><td class="strong-text">Twitter / X Video (1080p)</td><td>1080p High Bitrate MP4</td><td>.mp4</td><td>Stereo Audio</td><td><span class="badge-tag-pill green"><i class="fa-solid fa-check"></i> Clean</span></td></tr>
+<tr><td class="strong-text">Animated GIFs</td><td>Looping Video (MP4)</td><td>.mp4</td><td>N/A</td><td><span class="badge-tag-pill green"><i class="fa-solid fa-check"></i> Clean</span></td></tr>
+<tr><td class="strong-text">Tweet Photos</td><td>Uncompressed Lossless JPG</td><td>.jpg</td><td>N/A</td><td><span class="badge-tag-pill green"><i class="fa-solid fa-check"></i> Clean</span></td></tr>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- IN-DEPTH PLATFORM GUIDE & CONTENT (SEO & GEO AUTHORITY) -->
+<section class="rich-seo-section">
+    <div class="rich-seo-container">
+        <div class="rich-prose">
+            <h2>How to Save Twitter (X) Videos & Animated GIFs</h2>
+            
+<p>
+    <strong>VidSavor Twitter (X) Downloader</strong> allows you to save video clips, animated GIFs, and high-resolution photos from Twitter / X directly to your phone, tablet, or desktop in top bitrate MP4 format.
+</p>
+
+<h3>Converting Twitter GIFs to MP4</h3>
+<p>
+    Twitter converts all user-uploaded GIFs into short MP4 video loops to save bandwidth. VidSavor lets you download these smooth video loops directly for use in your own creative projects, presentations, and messaging apps.
+</p>
+
+
+            <h2>How to Download on Different Devices</h2>
+            <div class="device-guides-grid">
+                <div class="device-guide-card">
+                    <div class="device-icon"><i class="fa-brands fa-apple"></i></div>
+                    <h3>iPhone & iPad (iOS Safari)</h3>
+                    <ol>
+    <li>Open the Twitter / X app and tap the <strong>Share</strong> icon (paper airplane).</li>
+    <li>Select <strong>Copy Link</strong> to save the post URL to your clipboard.</li>
+    <li>Open <strong>Safari</strong>, go to VidSavor, and tap <strong>Paste</strong>.</li>
+    <li>Tap <strong>Download</strong> and confirm Safari's download prompt.</li>
+    <li>Open Safari's Downloads list, tap the video, and tap <strong>Save Video</strong> to move it into your iPhone Camera Roll.</li>
+</ol>
+                </div>
+
+                <div class="device-guide-card">
+                    <div class="device-icon"><i class="fa-brands fa-android"></i></div>
+                    <h3>Android (Google Chrome / Edge)</h3>
+                    <ol>
+    <li>In Twitter / X, tap the three dots or Share icon and tap <strong>Copy Link</strong>.</li>
+    <li>Open <strong>Google Chrome</strong> or your default browser, visit VidSavor, and tap <strong>Paste</strong>.</li>
+    <li>Tap <strong>Download</strong>. Chrome will automatically save the clean MP4 file to your <strong>Downloads</strong> folder and native Gallery.</li>
+</ol>
+                </div>
+
+                <div class="device-guide-card">
+                    <div class="device-icon"><i class="fa-solid fa-laptop"></i></div>
+                    <h3>Windows & Mac Computers</h3>
+                    <ol>
+    <li>Navigate to the Twitter / X post in your desktop browser and copy the address bar URL.</li>
+    <li>Paste the link into VidSavor's input bar and click <strong>Download</strong>.</li>
+    <li>Choose your preferred resolution (1080p, 720p, or MP3) to download directly to your PC or Mac.</li>
+</ol>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- FOOTER -->
+<!-- PLATFORM FAQ ACCORDION -->
+<section class="custom-faq-section" id="faqSection">
+    <div class="faq-container-custom">
+        <div class="faq-header-custom">
+            <div class="section-label">
+                <i class="fa-solid fa-circle-question"></i>
+                Knowledge Base
+            </div>
+            <h2>Frequently Asked Questions</h2>
+            <p class="section-subhead">Everything you need to know about downloading Twitter / X Video Downloader</p>
+        </div>
+
+        <div class="faq-accordion">
+            <div class="faq-item active">
+        <button type="button" class="faq-question">
+            <span>How do I download videos from Twitter / X?</span>
+            <i class="fa-solid fa-chevron-down faq-chevron"></i>
+        </button>
+        <div class="faq-answer">Copy the link of the tweet containing the video, paste it into VidSavor, and click Download.</div>
+    </div>
+<div class="faq-item">
+        <button type="button" class="faq-question">
+            <span>Can I download Twitter GIFs as video files?</span>
+            <i class="fa-solid fa-chevron-down faq-chevron"></i>
+        </button>
+        <div class="faq-answer">Yes. VidSavor downloads Twitter animated GIFs as high-compatibility MP4 video loops.</div>
+    </div>
+<div class="faq-item">
+        <button type="button" class="faq-question">
+            <span>What is the highest resolution available on Twitter?</span>
+            <i class="fa-solid fa-chevron-down faq-chevron"></i>
+        </button>
+        <div class="faq-answer">Twitter supports resolutions up to 1080p. VidSavor always selects the highest available bitrate rendition.</div>
+    </div>
+        </div>
+    </div>
+</section>
+
+<!-- DMCA NOTICE -->
+<section class="dmca">
+    <div class="dmca-box-styled">
+        <i class="fa-solid fa-shield-halved" style="font-size: 38px; color: var(--text-main); margin-bottom: 12px;"></i>
+        <h2>Copyright & Intellectual Property Notice</h2>
+        <p>
+            VidSavor complies strictly with international copyright standards and the Digital Millennium Copyright Act (DMCA). Content downloaded through VidSavor is intended for personal, fair-use offline viewing. All trademarks and media copyrights remain the property of their respective creators.
+        </p>
+        <a href="/dmca-policy" class="dmca-cta-btn">
+            <span>Read DMCA Policy</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+    </div>
+</section>
+
 <footer class="footer-antigravity-layout">
     <div class="footer-top-grid">
         <div class="footer-hero-col">

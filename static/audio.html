@@ -3,16 +3,81 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Online Audio MP3 Extractor - VidSavor | Convert Video to MP3</title>
-<meta name="description" content="Extract MP3 audio tracks, background music, and sounds from online videos and reels with VidSavor. 100% Free, High Quality 320kbps MP3.">
-<meta name="robots" content="index, follow">
+
+<title>Social Media to MP3 Audio Extractor | VidSavor</title>
+<meta name="description" content="Extract audio tracks and background songs from Instagram Reels, YouTube Shorts, and TikTok videos into 320kbps MP3 sound files instantly.">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 <meta name="theme-color" content="#121317">
-<link rel="canonical" href="https://vidsavor.com/audio" />
+<meta name="author" content="VidSavor">
+<link rel="canonical" href="https://vidsavor.com/audio">
+
+<!-- OpenGraph / Social Meta Tags -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://vidsavor.com/audio">
+<meta property="og:title" content="Social Media to MP3 Audio Extractor | VidSavor">
+<meta property="og:description" content="Extract audio tracks and background songs from Instagram Reels, YouTube Shorts, and TikTok videos into 320kbps MP3 sound files instantly.">
+<meta property="og:image" content="https://vidsavor.com/static/assets/logo.svg">
+
+<!-- Twitter Card -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:title" content="Social Media to MP3 Audio Extractor | VidSavor">
+<meta property="twitter:description" content="Extract audio tracks and background songs from Instagram Reels, YouTube Shorts, and TikTok videos into 320kbps MP3 sound files instantly.">
+
+<!-- Favicon & PWA -->
 <link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+<link rel="apple-touch-icon" href="/static/assets/favicon.svg">
+<link rel="manifest" href="/manifest.json">
+
+<!-- Google Sans Flex & Code -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,slnt,wdth,wght,ROND@8..144,-10..0,25..150,400..800,0..100&family=Google+Sans+Code:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <link rel="stylesheet" href="/static/css/style.css">
+
+<!-- Structured Data Schema for GEO & Rich Google Results -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "VidSavor Social Media to MP3 Audio Extractor",
+      "operatingSystem": "All (Web, iOS, Android, Windows, macOS, Linux)",
+      "applicationCategory": "MultimediaApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0.00",
+        "priceCurrency": "USD"
+      },
+      "description": "Extract audio tracks and background songs from Instagram Reels, YouTube Shorts, and TikTok videos into 320kbps MP3 sound files instantly."
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+        "@type": "Question",
+        "name": "How do I extract audio from a video link?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Paste any video link from YouTube, Instagram, or TikTok into VidSavor. Select the 'Download MP3 Audio' option to save the sound file."
+        }
+      },
+{
+        "@type": "Question",
+        "name": "What audio bitrate does VidSavor deliver?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "VidSavor extracts audio up to 320kbps MP3 depending on the source stream quality."
+        }
+      }
+      ]
+    }
+  ]
+}
+</script>
 </head>
+
 <body>
 
 <header>
@@ -166,60 +231,261 @@
     </div>
 </header>
 
-<section class="hero">
-    <div class="hero-content">
-        <div class="badge"><i class="fa-solid fa-music"></i> High Quality MP3 Engine</div>
-        <h1 id="mainTitle"><span class="gradient">Online Audio</span> Extractor</h1>
-        <p id="mainDesc">Extract sound files, background themes, and music loops directly into optimized high-quality MP3 tracks instantly.</p>
+<!-- HERO SECTION -->
+<section class="hero" id="downloadSection">
+    <canvas id="antigravityCanvas" class="hero-particles-canvas"></canvas>
 
+    <div class="hero-content">
+        <div class="badge">
+            <i class="fa-solid fa-shield-heart"></i>
+            100% Free • High-Bitrate Audio • 320kbps MP3
+        </div>
+
+        <h1 id="mainTitle">
+            Extract Social Media Audio to MP3. <span class="gradient">Studio 320kbps Fidelity.</span>
+        </h1>
+
+        <p id="mainDesc">
+            Extract trending background tracks, podcast speech, and instrumental audio from any social media video into high-quality MP3 format.
+        </p>
+
+        <!-- INPUT BAR -->
         <div class="search-box">
             <div class="input-box">
                 <i class="fa-solid fa-link link-icon"></i>
-                <input type="search" id="videoUrl" placeholder="Paste media link to convert and download audio..." autocomplete="off">
-                <button type="button" class="clear-btn" id="clearUrlBtn"><i class="fa-solid fa-xmark"></i></button>
+                <input 
+                    type="search" 
+                    id="videoUrl" 
+                    name="q" 
+                    placeholder="Paste video link to extract MP3 audio..." 
+                    inputmode="url" 
+                    autocomplete="off" 
+                    autocorrect="off" 
+                    autocapitalize="off" 
+                    spellcheck="false"
+                >
+                <button type="button" class="clear-btn" id="clearUrlBtn" title="Clear input">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
-            <button class="paste-btn" type="button" onclick="pasteText()"><i class="fa-regular fa-paste"></i> <span>Paste</span></button>
-            <button class="download-btn" type="button" id="mainFetchBtn" onclick="downloadNow()"><i class="fa-solid fa-download"></i> <span>Extract MP3</span></button>
+
+            <button class="paste-btn" type="button" onclick="pasteText()">
+                <i class="fa-regular fa-paste"></i>
+                <span>Paste</span>
+            </button>
+
+            <button class="download-btn" type="button" id="mainFetchBtn" onclick="downloadNow()">
+                <i class="fa-solid fa-download"></i>
+                <span>Download</span>
+            </button>
         </div>
 
-        <div class="quick-text">Paste YouTube, TikTok, or Instagram link to extract soundtrack as MP3</div>
+        <div class="quick-text">
+            Paste any link above and VidSavor will auto-fetch and prepare your high-definition download!
+        </div>
 
+        <!-- TWO-COLUMN RESULT VIEW (AFTER PASTE / FETCH) -->
         <div id="resultBox" style="display:none;">
-            <div class="result-card-main">
-                <div class="preview-media-container" id="previewMediaContainer"></div>
-                <div class="result-header-row">
-                    <div class="result-title-wrap">
-                        <h3 id="videoTitle">Extracted Audio Track</h3>
-                        <div class="media-meta-tags" id="mediaMetaContainer"></div>
+            <div class="result-two-column-grid">
+                <!-- LEFT COLUMN: Download options -->
+                <div class="result-col-downloads">
+                    <div class="result-section-header">
+                        <div class="result-section-title">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Download Options</span>
+                        </div>
+                        <span class="result-badge-ready" id="platformBadge">READY</span>
+                    </div>
+
+                    <!-- Stream Download Cards -->
+                    <div class="download-options-list" id="downloadButtonsContainer"></div>
+                </div>
+
+                <!-- RIGHT COLUMN: Media Preview & Post Details -->
+                <div class="result-col-preview">
+                    <div class="preview-media-wrapper" id="previewMediaContainer"></div>
+                    <div class="preview-details">
+                        <div class="preview-title" id="videoTitle">Extracted Media</div>
+                        <div class="preview-meta">
+                            <span class="preview-meta-pill" id="videoDuration">HD Quality Available</span>
+                            <span class="preview-meta-pill">Watermark Free</span>
+                        </div>
+                        <div class="preview-actions">
+                            <button type="button" class="btn-action-small" onclick="copyMediaLink()" title="Copy link to clipboard">
+                                <i class="fa-regular fa-copy"></i> Copy Link
+                            </button>
+                            <button type="button" class="btn-action-small" onclick="shareMedia()" title="Share media">
+                                <i class="fa-solid fa-share-nodes"></i> Share
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div class="format-filter-tabs" id="formatFilterTabs" style="display:none;"></div>
-                <div id="downloadButtonsContainer"></div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- HOW TO STEPS SECTION -->
+<section class="steps-section">
+    <div class="steps-container">
+        <div class="section-label">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            3 Easy Steps
+        </div>
+        <h2>How to Download Using VidSavor</h2>
+        <p class="section-subhead">Simple, reliable, and completely free in original resolution:</p>
+
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Copy Link</h3>
+                <p>Open the app or site, tap the share icon, and copy the public post or video link to your clipboard.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Paste into VidSavor</h3>
+                <p>Click the 'Paste' button above. VidSavor instantly resolves the highest available video streams.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Save & Enjoy</h3>
+                <p>Select your preferred quality (Full HD 1080p, 720p, or MP3) and download directly to your device.</p>
             </div>
         </div>
     </div>
 </section>
 
-<section class="steps-section">
-    <div class="steps-container">
-        <h2>Save Music & Audio Tracks Effortlessly</h2>
-        <div class="steps-grid-custom">
-            <div class="step-card-custom">
-                <div class="step-circle-custom">1</div>
-                <h3>Copy Link</h3>
-                <p>Find the video with the music or soundtrack you want to extract.</p>
-            </div>
-            <div class="step-card-custom">
-                <div class="step-circle-custom">2</div>
-                <h3>Paste URL</h3>
-                <p>Paste the video URL into the VidSavor audio engine above.</p>
-            </div>
-            <div class="step-card-custom">
-                <div class="step-circle-custom">3</div>
-                <h3>Save MP3</h3>
-                <p>Download the high bitrate audio track directly to your device.</p>
+<!-- SPECIFICATION & FORMAT MATRIX (SEO / GEO TABLE) -->
+<section class="rich-seo-section alt-bg">
+    <div class="rich-seo-container">
+        <div class="rich-section-header">
+            <div class="section-label"><i class="fa-solid fa-table-cells"></i> Technical Specifications</div>
+            <h2>Supported Resolutions & Audio Formats</h2>
+            <p>Direct lossless passthrough ensures zero compression degradation.</p>
+        </div>
+
+        <div class="spec-table-wrap">
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>Media Format</th>
+                        <th>Quality / Resolution</th>
+                        <th>File Extension</th>
+                        <th>Audio Track</th>
+                        <th>Watermark Removed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+<tr><td class="strong-text">Ultra-HQ 320kbps MP3</td><td>Maximum Studio Fidelity</td><td>.mp3</td><td>Stereo 48kHz</td><td><span class="badge-tag-pill green"><i class="fa-solid fa-check"></i> Highest Quality</span></td></tr>
+<tr><td class="strong-text">Standard 192kbps MP3</td><td>Balanced Size & Clarity</td><td>.mp3</td><td>Stereo 44.1kHz</td><td><span class="badge-tag-pill green"><i class="fa-solid fa-check"></i> Optimized</span></td></tr>
+<tr><td class="strong-text">Lossless Passthrough</td><td>Original M4A / AAC Stream</td><td>.m4a</td><td>Direct Stream</td><td><span class="badge-tag-pill green"><i class="fa-solid fa-check"></i> Untouched</span></td></tr>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- IN-DEPTH PLATFORM GUIDE & CONTENT (SEO & GEO AUTHORITY) -->
+<section class="rich-seo-section">
+    <div class="rich-seo-container">
+        <div class="rich-prose">
+            <h2>How to Convert Online Videos into High-Quality MP3 Soundtracks</h2>
+            
+<p>
+    <strong>VidSavor Social Media to MP3 Audio Extractor</strong> strips audio tracks from Instagram Reels, TikTok videos, YouTube Shorts, and Facebook clips into standalone, high-fidelity MP3 sound files.
+</p>
+<h3>Why 320kbps Audio Quality Matters</h3>
+<p>
+    Many online audio converters downscale tracks to muffled 128kbps or 96kbps. VidSavor preserves up to 320kbps high-bitrate stereo sound with clear dynamic range, deep bass, and pristine vocal clarity.
+</p>
+
+
+            <h2>How to Download on Different Devices</h2>
+            <div class="device-guides-grid">
+                <div class="device-guide-card">
+                    <div class="device-icon"><i class="fa-brands fa-apple"></i></div>
+                    <h3>iPhone & iPad (iOS Safari)</h3>
+                    <ol>
+    <li>Open the Instagram app and tap the <strong>Share</strong> icon (paper airplane).</li>
+    <li>Select <strong>Copy Link</strong> to save the post URL to your clipboard.</li>
+    <li>Open <strong>Safari</strong>, go to VidSavor, and tap <strong>Paste</strong>.</li>
+    <li>Tap <strong>Download</strong> and confirm Safari's download prompt.</li>
+    <li>Open Safari's Downloads list, tap the video, and tap <strong>Save Video</strong> to move it into your iPhone Camera Roll.</li>
+</ol>
+                </div>
+
+                <div class="device-guide-card">
+                    <div class="device-icon"><i class="fa-brands fa-android"></i></div>
+                    <h3>Android (Google Chrome / Edge)</h3>
+                    <ol>
+    <li>In Instagram, tap the three dots or Share icon and tap <strong>Copy Link</strong>.</li>
+    <li>Open <strong>Google Chrome</strong> or your default browser, visit VidSavor, and tap <strong>Paste</strong>.</li>
+    <li>Tap <strong>Download</strong>. Chrome will automatically save the clean MP4 file to your <strong>Downloads</strong> folder and native Gallery.</li>
+</ol>
+                </div>
+
+                <div class="device-guide-card">
+                    <div class="device-icon"><i class="fa-solid fa-laptop"></i></div>
+                    <h3>Windows & Mac Computers</h3>
+                    <ol>
+    <li>Navigate to the Instagram post in your desktop browser and copy the address bar URL.</li>
+    <li>Paste the link into VidSavor's input bar and click <strong>Download</strong>.</li>
+    <li>Choose your preferred resolution (1080p, 720p, or MP3) to download directly to your PC or Mac.</li>
+</ol>
+                </div>
             </div>
         </div>
+    </div>
+</section>
+
+<!-- PLATFORM FAQ ACCORDION -->
+<section class="custom-faq-section" id="faqSection">
+    <div class="faq-container-custom">
+        <div class="faq-header-custom">
+            <div class="section-label">
+                <i class="fa-solid fa-circle-question"></i>
+                Knowledge Base
+            </div>
+            <h2>Frequently Asked Questions</h2>
+            <p class="section-subhead">Everything you need to know about downloading Social Media to MP3 Audio Extractor</p>
+        </div>
+
+        <div class="faq-accordion">
+            <div class="faq-item active">
+        <button type="button" class="faq-question">
+            <span>How do I extract audio from a video link?</span>
+            <i class="fa-solid fa-chevron-down faq-chevron"></i>
+        </button>
+        <div class="faq-answer">Paste any video link from YouTube, Instagram, or TikTok into VidSavor. Select the 'Download MP3 Audio' option to save the sound file.</div>
+    </div>
+<div class="faq-item">
+        <button type="button" class="faq-question">
+            <span>What audio bitrate does VidSavor deliver?</span>
+            <i class="fa-solid fa-chevron-down faq-chevron"></i>
+        </button>
+        <div class="faq-answer">VidSavor extracts audio up to 320kbps MP3 depending on the source stream quality.</div>
+    </div>
+        </div>
+    </div>
+</section>
+
+<!-- DMCA NOTICE -->
+<section class="dmca">
+    <div class="dmca-box-styled">
+        <i class="fa-solid fa-shield-halved" style="font-size: 38px; color: var(--text-main); margin-bottom: 12px;"></i>
+        <h2>Copyright & Intellectual Property Notice</h2>
+        <p>
+            VidSavor complies strictly with international copyright standards and the Digital Millennium Copyright Act (DMCA). Content downloaded through VidSavor is intended for personal, fair-use offline viewing. All trademarks and media copyrights remain the property of their respective creators.
+        </p>
+        <a href="/dmca-policy" class="dmca-cta-btn">
+            <span>Read DMCA Policy</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
     </div>
 </section>
 
@@ -286,14 +552,6 @@
         </div>
     </div>
 </footer>
-
-<div id="popupOverlay">
-    <div class="popup-box">
-        <button class="close-popup" onclick="closePopup()">×</button>
-        <h2 id="popupTitle"></h2>
-        <div id="popupContent"></div>
-    </div>
-</div>
 
 <script src="/static/js/app.js"></script>
 </body>

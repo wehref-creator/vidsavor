@@ -1,13 +1,16 @@
 import os
 import urllib.parse
+import logging
+import requests
 from fastapi import FastAPI, Request, HTTPException, Query
-from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse, JSONResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import requests
 
 from app.extractor import extractor
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="VidSavor API", description="Fast & HD Online Video Downloader API", version="2.0.0")
 
@@ -44,6 +47,76 @@ async def fetch_media(req: FetchRequest):
     
     result = extractor.extract(req.url.strip())
     return JSONResponse(status_code=200, content=result)
+
+@app.get("/api/proxy-download")
+@app.get("/proxy-download")
+async def proxy_download(url: str = Query(...), filename: str = Query("video.mp4")):
+    """
+    Stream download proxy to bypass CORS and anti-hotlinking,
+    and force attachment download of the real video directly to user's disk.
+    """
+    if not url or not url.strip():
+        raise HTTPException(status_code=400, detail="Missing media URL parameter.")
+
+    clean_filename = urllib.parse.unquote(filename).replace('"', '').replace('\n', '').strip()
+    if not clean_filename:
+        clean_filename = "vidsavor_media.mp4"
+
+    try:
+        parsed = urllib.parse.urlparse(url)
+        referer = f"{parsed.scheme}://{parsed.netloc}/" if parsed.netloc else ""
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Accept': '*/*',
+            'Accept-Encoding': 'identity',
+            'Referer': referer
+        }
+        
+        req = requests.get(url, headers=headers, stream=True, timeout=25)
+        if req.status_code not in (200, 206):
+            # Fallback directly to source CDN if proxying is blocked by source
+            return RedirectResponse(url=url, status_code=302)
+
+        def iter_stream():
+            try:
+                for chunk in req.iter_content(chunk_size=131072): # 128KB chunks
+                    if chunk:
+                        yield chunk
+            except Exception as stream_err:
+                logger.error(f"Streaming error: {stream_err}")
+
+        content_type = req.headers.get("Content-Type")
+        if not content_type or "text/html" in content_type:
+            if clean_filename.endswith(".mp3"):
+                content_type = "audio/mpeg"
+            elif clean_filename.endswith(".jpg") or clean_filename.endswith(".jpeg"):
+                content_type = "image/jpeg"
+            elif clean_filename.endswith(".png"):
+                content_type = "image/png"
+            else:
+                content_type = "video/mp4"
+
+        content_length = req.headers.get("Content-Length")
+
+        resp_headers = {
+            "Content-Disposition": f'attachment; filename="{clean_filename}"',
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=3600"
+        }
+        if content_length:
+            resp_headers["Content-Length"] = content_length
+
+        return StreamingResponse(iter_stream(), media_type=content_type, headers=resp_headers)
+
+    except Exception as e:
+        logger.error(f"Proxy download exception: {e}")
+        # Safe fallback: redirect directly to source URL
+        return RedirectResponse(url=url, status_code=302)
+
+@app.get("/health")
+@app.get("/api/health")
+def health():
+    return {"status": "ok", "service": "VidSavor Core API v2.0"}
 
 # Page Routes for SEO and Multi-Platform Support
 def get_page_path(filename: str):
@@ -163,7 +236,7 @@ async def universal_catch_all(catch_all: str, request: Request):
             pass
         return JSONResponse(status_code=200, content={"status": "error", "message": "Please provide a valid media link."})
 
-    # If GET request: resolve to the corresponding html page
+    # If GET request: check if matches static page
     clean = catch_all.strip("/").replace(".html", "")
     target = f"{clean}.html"
     for folder in [BASE_DIR, STATIC_DIR]:

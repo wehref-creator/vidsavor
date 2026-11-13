@@ -4,41 +4,98 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<title>Facebook Video Downloader | Save Public HD Videos & Reels - VidSavor</title>
-<meta name="description" content="Download Facebook public videos, Watch clips, and FB Reels in 1080p Full HD for free with VidSavor. Fast, secure, and no login required.">
-<meta name="keywords" content="facebook video downloader, download facebook reels, save fb video, facebook watch downloader, vidsavor facebook">
-<meta name="robots" content="index, follow">
+<title>Facebook Video & Reels Downloader | VidSavor</title>
+<meta name="description" content="Download Facebook Reels, Watch videos, and public group videos in Full HD 1080p. Free, fast, watermark-free, and no software required.">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="theme-color" content="#121317">
+<meta name="author" content="VidSavor">
 <link rel="canonical" href="https://vidsavor.com/facebook">
 
+<!-- OpenGraph / Social Meta Tags -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Facebook Video Downloader - HD & Reels | VidSavor">
-<meta property="og:description" content="Download public Facebook videos and reels in high resolution.">
-<meta property="og:image" content="https://vidsavor.com/static/assets/logo.svg">
 <meta property="og:url" content="https://vidsavor.com/facebook">
+<meta property="og:title" content="Facebook Video & Reels Downloader | VidSavor">
+<meta property="og:description" content="Download Facebook Reels, Watch videos, and public group videos in Full HD 1080p. Free, fast, watermark-free, and no software required.">
+<meta property="og:image" content="https://vidsavor.com/static/assets/logo.svg">
 
+<!-- Twitter Card -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:title" content="Facebook Video & Reels Downloader | VidSavor">
+<meta property="twitter:description" content="Download Facebook Reels, Watch videos, and public group videos in Full HD 1080p. Free, fast, watermark-free, and no software required.">
+
+<!-- Favicon & PWA -->
 <link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+<link rel="apple-touch-icon" href="/static/assets/favicon.svg">
+<link rel="manifest" href="/manifest.json">
+
+<!-- Google Sans Flex & Code -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,slnt,wdth,wght,ROND@8..144,-10..0,25..150,400..800,0..100&family=Google+Sans+Code:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <link rel="stylesheet" href="/static/css/style.css">
 
+<!-- Structured Data Schema for GEO & Rich Google Results -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "VidSavor Facebook Downloader",
-  "operatingSystem": "Windows, macOS, Android, iOS, Linux",
-  "applicationCategory": "MultimediaApplication",
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "ratingCount": "11200" }
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "VidSavor Facebook Video & Reels Downloader",
+      "operatingSystem": "All (Web, iOS, Android, Windows, macOS, Linux)",
+      "applicationCategory": "MultimediaApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0.00",
+        "priceCurrency": "USD"
+      },
+      "description": "Download Facebook Reels, Watch videos, and public group videos in Full HD 1080p. Free, fast, watermark-free, and no software required."
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+        "@type": "Question",
+        "name": "Can I download private Facebook videos?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. VidSavor only supports public Facebook videos, reels, and posts to protect creator privacy."
+        }
+      },
+{
+        "@type": "Question",
+        "name": "What resolutions does Facebook support?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Depending on upload source, VidSavor offers 1080p Full HD, 720p HD, and 480p SD."
+        }
+      },
+{
+        "@type": "Question",
+        "name": "Do I need to sign in with my Facebook account?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Never. VidSavor operates without login credentials, cookies, or account access."
+        }
+      },
+{
+        "@type": "Question",
+        "name": "Can I download live streams after they end?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, once a Facebook Live broadcast completes and is posted as a public video, VidSavor can download it."
+        }
+      }
+      ]
+    }
+  ]
 }
 </script>
 </head>
 
 <body>
 
-<!-- HEADER (Google Antigravity Style) -->
 <header>
     <div class="header-left">
         <a href="/" class="logo-container" aria-label="VidSavor Home">
@@ -190,24 +247,28 @@
     </div>
 </header>
 
+<!-- HERO SECTION -->
 <section class="hero" id="downloadSection">
+    <canvas id="antigravityCanvas" class="hero-particles-canvas"></canvas>
+
     <div class="hero-content">
-        <div class="badge" style="background:#eff6ff; border-color:#dbeafe; color:#1d4ed8;">
-            <i class="fa-brands fa-facebook"></i>
-            Facebook Watch, Public Videos & Reels • HD MP4
+        <div class="badge">
+            <i class="fa-solid fa-shield-heart"></i>
+            100% Free • Facebook Reels & Watch • Full HD 1080p
         </div>
 
         <h1 id="mainTitle">
-            Facebook Video Downloader. <span class="gradient">Fast & Free HD MP4.</span>
+            Download Facebook Videos & Reels. <span class="gradient">Full HD 1080p.</span>
         </h1>
 
         <p id="mainDesc">
-            Save Facebook Watch videos, public feed clips, and FB Reels in 1080p and 720p HD. Instant auto-fetch and direct download to your storage.
+            Save public Facebook Watch videos, viral reels, and group clips directly to your phone or computer in original quality.
         </p>
 
+        <!-- INPUT BAR -->
         <div class="search-box">
             <div class="input-box">
-                <i class="fa-brands fa-facebook link-icon" style="color:#1877f2;"></i>
+                <i class="fa-solid fa-link link-icon"></i>
                 <input 
                     type="search" 
                     id="videoUrl" 
@@ -219,44 +280,252 @@
                     autocapitalize="off" 
                     spellcheck="false"
                 >
-                <button type="button" class="clear-btn" id="clearUrlBtn" title="Clear input"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" class="clear-btn" id="clearUrlBtn" title="Clear input">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
-            <button class="paste-btn" type="button" onclick="pasteText()"><i class="fa-regular fa-paste"></i><span>Paste</span></button>
-            <button class="download-btn" type="button" id="mainFetchBtn" onclick="downloadNow()"><i class="fa-solid fa-download"></i><span>Download</span></button>
+
+            <button class="paste-btn" type="button" onclick="pasteText()">
+                <i class="fa-regular fa-paste"></i>
+                <span>Paste</span>
+            </button>
+
+            <button class="download-btn" type="button" id="mainFetchBtn" onclick="downloadNow()">
+                <i class="fa-solid fa-download"></i>
+                <span>Download</span>
+            </button>
         </div>
 
-        <div class="quick-text">Pasting a Facebook link starts extraction automatically!</div>
+        <div class="quick-text">
+            Paste any link above and VidSavor will auto-fetch and prepare your high-definition download!
+        </div>
 
-        <!-- TWO COLUMN RESULT CONTAINER -->
+        <!-- TWO-COLUMN RESULT VIEW (AFTER PASTE / FETCH) -->
         <div id="resultBox" style="display:none;">
-            <div class="result-card-main">
-                <div class="result-two-column-grid">
-                    <div class="result-downloads-col">
-                        <div class="downloads-col-header">
-                            <div class="downloads-col-title"><i class="fa-solid fa-download" style="color:var(--primary);"></i> Download Options</div>
-                            <span class="downloads-count-badge" id="downloadsCountBadge">Ready</span>
+            <div class="result-two-column-grid">
+                <!-- LEFT COLUMN: Download options -->
+                <div class="result-col-downloads">
+                    <div class="result-section-header">
+                        <div class="result-section-title">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Download Options</span>
                         </div>
-                        <div class="format-filter-tabs" id="formatFilterTabs" style="display:none;"></div>
-                        <div id="downloadButtonsContainer"></div>
+                        <span class="result-badge-ready" id="platformBadge">READY</span>
                     </div>
-                    <div class="result-preview-col">
-                        <div class="preview-media-container" id="previewMediaContainer"></div>
-                        <div class="preview-details-wrap">
-                            <h3 id="videoTitle">Facebook Media</h3>
-                            <div class="media-meta-tags" id="mediaMetaContainer"></div>
+
+                    <!-- Stream Download Cards -->
+                    <div class="download-options-list" id="downloadButtonsContainer"></div>
+                </div>
+
+                <!-- RIGHT COLUMN: Media Preview & Post Details -->
+                <div class="result-col-preview">
+                    <div class="preview-media-wrapper" id="previewMediaContainer"></div>
+                    <div class="preview-details">
+                        <div class="preview-title" id="videoTitle">Extracted Media</div>
+                        <div class="preview-meta">
+                            <span class="preview-meta-pill" id="videoDuration">HD Quality Available</span>
+                            <span class="preview-meta-pill">Watermark Free</span>
                         </div>
-                        <div class="preview-actions-bar">
-                            <button type="button" class="btn-preview-action" onclick="copyMediaLink()"><i class="fa-regular fa-copy"></i> Copy Link</button>
-                            <button type="button" class="btn-preview-action" onclick="shareMedia()"><i class="fa-solid fa-share-nodes"></i> Share</button>
+                        <div class="preview-actions">
+                            <button type="button" class="btn-action-small" onclick="copyMediaLink()" title="Copy link to clipboard">
+                                <i class="fa-regular fa-copy"></i> Copy Link
+                            </button>
+                            <button type="button" class="btn-action-small" onclick="shareMedia()" title="Share media">
+                                <i class="fa-solid fa-share-nodes"></i> Share
+                            </button>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- HOW TO STEPS SECTION -->
+<section class="steps-section">
+    <div class="steps-container">
+        <div class="section-label">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            3 Easy Steps
+        </div>
+        <h2>How to Download Using VidSavor</h2>
+        <p class="section-subhead">Simple, reliable, and completely free in original resolution:</p>
+
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Copy Link</h3>
+                <p>Open the app or site, tap the share icon, and copy the public post or video link to your clipboard.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Paste into VidSavor</h3>
+                <p>Click the 'Paste' button above. VidSavor instantly resolves the highest available video streams.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Save & Enjoy</h3>
+                <p>Select your preferred quality (Full HD 1080p, 720p, or MP3) and download directly to your device.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SPECIFICATION & FORMAT MATRIX (SEO / GEO TABLE) -->
+<section class="rich-seo-section alt-bg">
+    <div class="rich-seo-container">
+        <div class="rich-section-header">
+            <div class="section-label"><i class="fa-solid fa-table-cells"></i> Technical Specifications</div>
+            <h2>Supported Resolutions & Audio Formats</h2>
+            <p>Direct lossless passthrough ensures zero compression degradation.</p>
+        </div>
+
+        <div class="spec-table-wrap">
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>Media Format</th>
+                        <th>Quality / Resolution</th>
+                        <th>File Extension</th>
+                        <th>Audio Track</th>
+                        <th>Watermark Removed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+<tr><td class="strong-text">Facebook Reels (1080p)</td><td>1080x1920 Vertical HD</td><td>.mp4</td><td>Stereo Audio</td><td><span class="badge-tag-pill green"><i class="fa-solid fa-check"></i> Clean</span></td></tr>
+<tr><td class="strong-text">Facebook Watch Videos</td><td>1080p / 720p Full HD</td><td>.mp4</td><td>AAC Stereo</td><td><span class="badge-tag-pill green"><i class="fa-solid fa-check"></i> Clean</span></td></tr>
+<tr><td class="strong-text">Public Group Videos</td><td>Original Upload Resolution</td><td>.mp4</td><td>Original Audio</td><td><span class="badge-tag-pill green"><i class="fa-solid fa-check"></i> Clean</span></td></tr>
+<tr><td class="strong-text">Facebook Audio Track</td><td>MP3 Sound File</td><td>.mp3</td><td>256 kbps Audio</td><td>N/A</td></tr>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- IN-DEPTH PLATFORM GUIDE & CONTENT (SEO & GEO AUTHORITY) -->
+<section class="rich-seo-section">
+    <div class="rich-seo-container">
+        <div class="rich-prose">
+            <h2>How to Download Facebook Videos in High Definition</h2>
+            
+<p>
+    <strong>VidSavor Facebook Video Downloader</strong> makes it effortless to save public Facebook Reels, Facebook Watch episodes, live broadcast replays, and public page videos in high-definition 1080p MP4 format.
+</p>
+
+<h3>Downloading Facebook Reels & Watch in 1080p</h3>
+<p>
+    Facebook often defaults to a lower-resolution 480p stream on cellular connections to save bandwidth. VidSavor checks all available rendition manifests on Facebook's content delivery servers and lets you pick the crystal-clear 1080p Full HD stream.
+</p>
+
+<h3>Public Group & Page Videos</h3>
+<p>
+    Archiving educational tutorials, webinars, local community events, or news clips from public Facebook pages? VidSavor extracts the direct stream without requiring Facebook login credentials.
+</p>
+
+
+            <h2>How to Download on Different Devices</h2>
+            <div class="device-guides-grid">
+                <div class="device-guide-card">
+                    <div class="device-icon"><i class="fa-brands fa-apple"></i></div>
+                    <h3>iPhone & iPad (iOS Safari)</h3>
+                    <ol>
+    <li>Open the Facebook app and tap the <strong>Share</strong> icon (paper airplane).</li>
+    <li>Select <strong>Copy Link</strong> to save the post URL to your clipboard.</li>
+    <li>Open <strong>Safari</strong>, go to VidSavor, and tap <strong>Paste</strong>.</li>
+    <li>Tap <strong>Download</strong> and confirm Safari's download prompt.</li>
+    <li>Open Safari's Downloads list, tap the video, and tap <strong>Save Video</strong> to move it into your iPhone Camera Roll.</li>
+</ol>
+                </div>
+
+                <div class="device-guide-card">
+                    <div class="device-icon"><i class="fa-brands fa-android"></i></div>
+                    <h3>Android (Google Chrome / Edge)</h3>
+                    <ol>
+    <li>In Facebook, tap the three dots or Share icon and tap <strong>Copy Link</strong>.</li>
+    <li>Open <strong>Google Chrome</strong> or your default browser, visit VidSavor, and tap <strong>Paste</strong>.</li>
+    <li>Tap <strong>Download</strong>. Chrome will automatically save the clean MP4 file to your <strong>Downloads</strong> folder and native Gallery.</li>
+</ol>
+                </div>
+
+                <div class="device-guide-card">
+                    <div class="device-icon"><i class="fa-solid fa-laptop"></i></div>
+                    <h3>Windows & Mac Computers</h3>
+                    <ol>
+    <li>Navigate to the Facebook post in your desktop browser and copy the address bar URL.</li>
+    <li>Paste the link into VidSavor's input bar and click <strong>Download</strong>.</li>
+    <li>Choose your preferred resolution (1080p, 720p, or MP3) to download directly to your PC or Mac.</li>
+</ol>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- FOOTER -->
+<!-- PLATFORM FAQ ACCORDION -->
+<section class="custom-faq-section" id="faqSection">
+    <div class="faq-container-custom">
+        <div class="faq-header-custom">
+            <div class="section-label">
+                <i class="fa-solid fa-circle-question"></i>
+                Knowledge Base
+            </div>
+            <h2>Frequently Asked Questions</h2>
+            <p class="section-subhead">Everything you need to know about downloading Facebook Video & Reels Downloader</p>
+        </div>
+
+        <div class="faq-accordion">
+            <div class="faq-item active">
+        <button type="button" class="faq-question">
+            <span>Can I download private Facebook videos?</span>
+            <i class="fa-solid fa-chevron-down faq-chevron"></i>
+        </button>
+        <div class="faq-answer">No. VidSavor only supports public Facebook videos, reels, and posts to protect creator privacy.</div>
+    </div>
+<div class="faq-item">
+        <button type="button" class="faq-question">
+            <span>What resolutions does Facebook support?</span>
+            <i class="fa-solid fa-chevron-down faq-chevron"></i>
+        </button>
+        <div class="faq-answer">Depending on upload source, VidSavor offers 1080p Full HD, 720p HD, and 480p SD.</div>
+    </div>
+<div class="faq-item">
+        <button type="button" class="faq-question">
+            <span>Do I need to sign in with my Facebook account?</span>
+            <i class="fa-solid fa-chevron-down faq-chevron"></i>
+        </button>
+        <div class="faq-answer">Never. VidSavor operates without login credentials, cookies, or account access.</div>
+    </div>
+<div class="faq-item">
+        <button type="button" class="faq-question">
+            <span>Can I download live streams after they end?</span>
+            <i class="fa-solid fa-chevron-down faq-chevron"></i>
+        </button>
+        <div class="faq-answer">Yes, once a Facebook Live broadcast completes and is posted as a public video, VidSavor can download it.</div>
+    </div>
+        </div>
+    </div>
+</section>
+
+<!-- DMCA NOTICE -->
+<section class="dmca">
+    <div class="dmca-box-styled">
+        <i class="fa-solid fa-shield-halved" style="font-size: 38px; color: var(--text-main); margin-bottom: 12px;"></i>
+        <h2>Copyright & Intellectual Property Notice</h2>
+        <p>
+            VidSavor complies strictly with international copyright standards and the Digital Millennium Copyright Act (DMCA). Content downloaded through VidSavor is intended for personal, fair-use offline viewing. All trademarks and media copyrights remain the property of their respective creators.
+        </p>
+        <a href="/dmca-policy" class="dmca-cta-btn">
+            <span>Read DMCA Policy</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+    </div>
+</section>
+
 <footer class="footer-antigravity-layout">
     <div class="footer-top-grid">
         <div class="footer-hero-col">
