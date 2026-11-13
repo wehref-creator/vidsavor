@@ -406,27 +406,13 @@ async function triggerInstantDownload(streamUrl, filename, btnElement) {
     }
     const proxyUrl = `/api/proxy-download?${params.toString()}`;
 
-    // METHOD 1: Invisible Download Frame & Anchor (Fastest, zero RAM buffering, native Chrome download shelf)
-    // Because /api/proxy-download returns 'Content-Disposition: attachment; filename="..."',
-    // the browser immediately saves the file to the Downloads folder without leaving or reloading the page.
-    let dlFrame = document.getElementById('vidsavor-download-frame');
-    if (!dlFrame) {
-        dlFrame = document.createElement('iframe');
-        dlFrame.id = 'vidsavor-download-frame';
-        dlFrame.style.display = 'none';
-        dlFrame.style.width = '0px';
-        dlFrame.style.height = '0px';
-        dlFrame.style.border = 'none';
-        document.body.appendChild(dlFrame);
-    }
-    dlFrame.src = proxyUrl;
-
-    // Trigger hidden anchor click with download attribute (ensures full cross-browser download trigger)
+    // Trigger native browser attachment download via invisible anchor
+    // Because /api/proxy-download returns 'Content-Disposition: attachment',
+    // the browser saves directly to the Downloads directory without navigating away or opening tabs.
     const dlAnchor = document.createElement('a');
     dlAnchor.style.display = 'none';
     dlAnchor.href = proxyUrl;
     dlAnchor.setAttribute('download', filename);
-    // CRITICAL: NEVER set target="_blank" — prevents opening any new tabs
     document.body.appendChild(dlAnchor);
     dlAnchor.click();
     setTimeout(() => dlAnchor.remove(), 2000);

@@ -113,6 +113,27 @@ class MediaExtractor:
         url = clean_media_url(raw_url)
         platform = detect_platform(url)
 
+        # For TikTok, prioritize TikWM unwatermarked streams for instant, high-speed watermark-free saves
+        if platform == 'tiktok':
+            twm_res = self._fallback_extract(url, 'tiktok')
+            if twm_res and twm_res.get('status') == 'success' and twm_res.get('results'):
+                # Try getting yt-dlp formats to enrich with additional raw stream resolutions
+                try:
+                    ydl_opts = dict(self.ydl_opts_base)
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        info = ydl.extract_info(url, download=False)
+                        if info:
+                            parsed = self._parse_info(info, platform, url)
+                            if parsed and parsed.get('results'):
+                                seen_urls = {r['url'] for r in twm_res['results']}
+                                for item in parsed['results']:
+                                    if item.get('url') and item['url'] not in seen_urls and item.get('type') == 'video':
+                                        twm_res['results'].append(item)
+                                        seen_urls.add(item['url'])
+                except Exception as ydl_merge_err:
+                    logger.debug(f"yt-dlp merge skipped: {ydl_merge_err}")
+                return twm_res
+
         # 1. Primary: yt-dlp Extraction
         try:
             ydl_opts = dict(self.ydl_opts_base)
