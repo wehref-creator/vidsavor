@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VidSavor Downloader</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="popup-container">
+        <!-- Header -->
+        <header class="popup-header">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"></polygon>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">VidSavor</span>
+                    <span class="brand-tag">HD Downloader</span>
+                </div>
+            </div>
+            <div class="status-indicator" id="statusBadge">
+                <span class="pulse-dot"></span>
+                <span id="statusText">Ready</span>
+            </div>
+        </header>
+
+        <!-- Dynamic Active Tab Banner -->
+        <div class="active-detection-card" id="detectionCard">
+            <div class="detection-icon" id="detectionPlatformIcon">🎬</div>
+            <div class="detection-info">
+                <span class="detection-label" id="detectionPlatformLabel">Detected Video Page</span>
+                <span class="detection-url" id="detectionUrl">Scanning active tab...</span>
+            </div>
+            <button class="btn-direct-download" id="btnActiveDownload">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Download Now</span>
+            </button>
+        </div>
+
+        <!-- Manual URL Input Section -->
+        <div class="input-section">
+            <label for="manualUrlInput" class="input-label">Or paste any link to download:</label>
+            <div class="input-wrap">
+                <input type="url" id="manualUrlInput" placeholder="Paste Instagram, TikTok, YouTube link..." />
+                <button class="btn-paste" id="btnPaste" title="Paste from clipboard">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    </svg>
+                </button>
+            </div>
+            <button class="btn-fetch" id="btnFetchManual">
+                <span>Fetch & Download</span>
+            </button>
+        </div>
+
+        <!-- Supported Badges -->
+        <div class="platforms-supported">
+            <span class="platform-chip">Instagram Reels</span>
+            <span class="platform-chip">TikTok HD</span>
+            <span class="platform-chip">YouTube 4K</span>
+            <span class="platform-chip">Facebook</span>
+            <span class="platform-chip">Twitter/X</span>
+            <span class="platform-chip">Pinterest</span>
+        </div>
+
+        <!-- Footer -->
+        <footer class="popup-footer">
+            <a href="https://vidsavor.vercel.app" target="_blank" class="footer-link">
+                Open Full Web App &rarr;
+            </a>
+            <span class="version-label">v1.0.0</span>
+        </footer>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

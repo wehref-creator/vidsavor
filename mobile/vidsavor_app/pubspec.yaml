@@ -1,0 +1,27 @@
+name: vidsavor_app
+description: "VidSavor - Official Mobile App with Native Social Media Share Sheet Downloader"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  dio: ^5.4.1
+  receive_sharing_intent: ^1.8.1
+  path_provider: ^2.1.2
+  permission_handler: ^11.3.1
+  open_filex: ^4.4.0
+  flutter_local_notifications: ^17.1.0
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

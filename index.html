@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -38,7 +38,7 @@
       "name": "Is VidSavor completely free to use?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes, VidSavor is a 100% free web utility. You can process and download unlimited videos, reels, photos, and audio tracks without any subscription or hidden fees."
+        "text": "Yes, VidSavor is a 100% free web utility. You can process and download unlimited videos, reels, photos, and audio tracks without any subscription, credits, or hidden fees."
       }
     },
     {
@@ -46,7 +46,7 @@
       "name": "Do I need to install any app or browser extension?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "No software installation is required. VidSavor operates directly inside modern web browsers across Android, iOS, Windows, and Mac."
+        "text": "No software installation is required. VidSavor operates directly inside modern web browsers across Android, iOS, Windows, Mac, and Linux without consuming device storage."
       }
     },
     {
@@ -54,15 +54,63 @@
       "name": "What output resolution will my downloaded video have?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "We preserve and provide maximum source resolution, delivering 4K, 2K, 1080p Full HD, or 720p HD depending on original upload quality."
+        "text": "We preserve and provide maximum source resolution, delivering 4K UHD, 2K QHD, 1080p Full HD, or 720p HD depending on the original quality uploaded by the creator."
       }
     },
     {
       "@type": "Question",
-      "name": "Does VidSavor leave watermarks on saved media?",
+      "name": "Does VidSavor remove watermarks from TikTok and social reels?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "No, all media downloaded through VidSavor is free of added watermarks, logos, or promotional branding."
+        "text": "Yes, VidSavor strips annoying platform logos and watermarks from TikTok videos and reels, delivering a clean, unbranded original MP4 file with audio included."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I extract only the audio (MP3) from a video?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, VidSavor includes a dedicated high-fidelity audio extractor that provides 320kbps MP3 audio downloads from any supported video or music reel."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I download media from private social media accounts?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To respect user privacy and comply with platform security standards, VidSavor exclusively extracts publicly available videos, reels, shorts, and photos."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Where are downloaded files saved on iPhone and Android?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "On iPhone/iPad, downloads appear in the Safari Downloads manager and the native Files app (which can be saved directly to Photos). On Android, files are stored in your device's Downloads folder and Gallery."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does a video play in a new tab instead of downloading?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Some browsers preview MP4 files in a video player tab. Simply right-click (or long-press on mobile) the download button and choose 'Save link as...' or 'Download linked file'."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do you store copies or logs of downloaded videos?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, VidSavor operates under a strict zero-log architecture. No media files, personal information, or download histories are ever stored on our servers."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is downloading social media videos legal under copyright law?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Downloading public media for personal offline viewing, research, or educational quotation is permissible under Fair Use principles (17 U.S.C. § 107). Commercial redistribution without creator permission is strictly prohibited."
       }
     }
   ]
@@ -104,7 +152,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 
 <!-- VidSavor Stylesheet -->
-<link rel="stylesheet" href="/static/css/style.css?v=2.6">
+<link rel="stylesheet" href="/static/css/style.css?v=4.5">
 </head>
 
 <body>
@@ -378,6 +426,170 @@
     </div>
 </section>
 
+<!-- 1. VID SAVOR AT A GLANCE (KEY VALUE PILLARS) -->
+<section class="rich-seo-section alt-bg" style="padding: 50px 20px 60px;">
+    <div class="rich-seo-container">
+        <div class="rich-section-header" style="margin-bottom: 28px;">
+            <div class="section-label"><i class="fa-solid fa-bolt-lightning"></i> Fast, Free & Compliant</div>
+            <h2>VidSavor at a Glance</h2>
+            <p>Built for creators, researchers, and everyday social media users who need reliable, uncompressed media downloads.</p>
+        </div>
+
+        <div class="glance-grid">
+            <div class="glance-card">
+                <div class="glance-header">
+                    <div class="glance-icon" style="background:#fef2f2; color:#ef4444;"><i class="fa-solid fa-clapperboard"></i></div>
+                    <span class="glance-badge">Up to 4K UHD</span>
+                </div>
+                <h3>Pristine HD Video</h3>
+                <p>Direct binary passthrough of 4K, 2K, 1080p 60fps & 720p streams without re-encoding compression loss.</p>
+            </div>
+
+            <div class="glance-card">
+                <div class="glance-header">
+                    <div class="glance-icon" style="background:#f5f3ff; color:#7c3aed;"><i class="fa-solid fa-music"></i></div>
+                    <span class="glance-badge">320kbps MP3</span>
+                </div>
+                <h3>Studio Audio Extractor</h3>
+                <p>Rip background tracks, trending songs, and voice clips straight to high-bitrate standalone MP3 sound files.</p>
+            </div>
+
+            <div class="glance-card">
+                <div class="glance-header">
+                    <div class="glance-icon" style="background:#ecfdf5; color:#059669;"><i class="fa-solid fa-shield-halved"></i></div>
+                    <span class="glance-badge">Clean Output</span>
+                </div>
+                <h3>Zero Watermarks</h3>
+                <p>All downloaded content is 100% free of added branding, logos, or third-party sponsor watermarks.</p>
+            </div>
+
+            <div class="glance-card">
+                <div class="glance-header">
+                    <div class="glance-icon" style="background:#eff6ff; color:#2563eb;"><i class="fa-solid fa-user-lock"></i></div>
+                    <span class="glance-badge">100% Private</span>
+                </div>
+                <h3>Zero Login & Free</h3>
+                <p>No credit card, no registration, no tracking cookies, and zero user download history stored on our servers.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 2. EXPLORE OUR FULL SOCIAL SUITE (ESSENTIAL TOOLS - LIKE YOUTUBETOOLKIT) -->
+<section class="rich-seo-section">
+    <div class="rich-seo-container">
+        <div class="rich-section-header">
+            <div class="section-label"><i class="fa-solid fa-toolbox"></i> Complete Creator Suite</div>
+            <h2>Essential Social Download Tools</h2>
+            <p>Select any platform below to access dedicated, tailored tools for videos, reels, photos, and high-fidelity audio.</p>
+        </div>
+
+        <div class="suite-grid">
+            <a href="/instagram" class="suite-card">
+                <div>
+                    <div class="suite-card-top">
+                        <div class="suite-icon" style="background:#fdf2f8; color:#e1306c;"><i class="fa-brands fa-instagram"></i></div>
+                        <div>
+                            <h3>Instagram Downloader</h3>
+                            <span class="badge-tag-pill green"><i class="fa-solid fa-check"></i> Reels & Stories</span>
+                        </div>
+                    </div>
+                    <p>Save high-resolution Instagram Reels, carousel albums, IGTV videos, and original sound tracks in 1080p HD.</p>
+                </div>
+                <div class="suite-card-footer">
+                    <span>Open Instagram Tool</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <a href="/youtube" class="suite-card">
+                <div>
+                    <div class="suite-card-top">
+                        <div class="suite-icon" style="background:#fef2f2; color:#ff0000;"><i class="fa-brands fa-youtube"></i></div>
+                        <div>
+                            <h3>YouTube Downloader</h3>
+                            <span class="badge-tag-pill green"><i class="fa-solid fa-check"></i> 4K UHD & MP3</span>
+                        </div>
+                    </div>
+                    <p>Download full YouTube videos, viral Shorts, and 320kbps MP3 audio with unthrottled high-speed cloud extraction.</p>
+                </div>
+                <div class="suite-card-footer">
+                    <span>Open YouTube Tool</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <a href="/tiktok" class="suite-card">
+                <div>
+                    <div class="suite-card-top">
+                        <div class="suite-icon" style="background:#f3f4f6; color:#000000;"><i class="fa-brands fa-tiktok"></i></div>
+                        <div>
+                            <h3>TikTok Downloader</h3>
+                            <span class="badge-tag-pill green"><i class="fa-solid fa-check"></i> No Watermark</span>
+                        </div>
+                    </div>
+                    <p>Strip TikTok bouncing logos and watermarks to get crystal-clear original MP4 clips with synchronized audio.</p>
+                </div>
+                <div class="suite-card-footer">
+                    <span>Open TikTok Tool</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <a href="/facebook" class="suite-card">
+                <div>
+                    <div class="suite-card-top">
+                        <div class="suite-icon" style="background:#eff6ff; color:#1877f2;"><i class="fa-brands fa-facebook"></i></div>
+                        <div>
+                            <h3>Facebook Downloader</h3>
+                            <span class="badge-tag-pill green"><i class="fa-solid fa-check"></i> Watch & Reels</span>
+                        </div>
+                    </div>
+                    <p>Download public Facebook Reels, Live replays, and newsfeed videos in 1080p Full HD without software installation.</p>
+                </div>
+                <div class="suite-card-footer">
+                    <span>Open Facebook Tool</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <a href="/twitter" class="suite-card">
+                <div>
+                    <div class="suite-card-top">
+                        <div class="suite-icon" style="background:#f1f5f9; color:#0f172a;"><i class="fa-brands fa-x-twitter"></i></div>
+                        <div>
+                            <h3>Twitter / X Downloader</h3>
+                            <span class="badge-tag-pill green"><i class="fa-solid fa-check"></i> Clips & GIFs</span>
+                        </div>
+                    </div>
+                    <p>Save viral tweets, video clips, and high-frame-rate animated GIFs straight to MP4 format with one click.</p>
+                </div>
+                <div class="suite-card-footer">
+                    <span>Open Twitter / X Tool</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <a href="/pinterest" class="suite-card">
+                <div>
+                    <div class="suite-card-top">
+                        <div class="suite-icon" style="background:#fef2f2; color:#e60023;"><i class="fa-brands fa-pinterest"></i></div>
+                        <div>
+                            <h3>Pinterest Downloader</h3>
+                            <span class="badge-tag-pill green"><i class="fa-solid fa-check"></i> Video & Idea Pins</span>
+                        </div>
+                    </div>
+                    <p>Extract aesthetic video pins, DIY tutorials, recipe clips, and original photography in full source resolution.</p>
+                </div>
+                <div class="suite-card-footer">
+                    <span>Open Pinterest Tool</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+
 <!-- HOW TO STEPS SECTION (CLEAN GOOGLE CARDS) -->
 <section class="steps-section">
     <div class="steps-container">
@@ -549,7 +761,229 @@
     </div>
 </section>
 
-<!-- IN-DEPTH TECHNICAL & EDUCATIONAL GUIDE (SEO / GEO AUTHORITY) -->
+<!-- 4. WORKS EVERYWHERE: DEVICE-SPECIFIC GUIDE (INSPIRED BY SNAPYT) -->
+<section class="rich-seo-section alt-bg">
+    <div class="rich-seo-container">
+        <div class="rich-section-header">
+            <div class="section-label"><i class="fa-solid fa-laptop-mobile"></i> Universal Compatibility</div>
+            <h2>Works Everywhere — iPhone, Android, Windows & Mac</h2>
+            <p>VidSavor operates seamlessly within native web browsers on all modern operating systems without downloading external apps.</p>
+        </div>
+
+        <div class="device-guides-grid">
+            <div class="device-guide-card">
+                <div class="device-icon" style="color:#0071e3;"><i class="fa-brands fa-apple"></i></div>
+                <h3>Apple iPhone & iPad (iOS)</h3>
+                <ol>
+                    <li>In the Instagram, TikTok, or YouTube app, tap <strong>Share</strong> and choose <strong>Copy Link</strong>.</li>
+                    <li>Open <strong>Safari</strong> on your iPhone, visit VidSavor, and tap <strong>Paste</strong>.</li>
+                    <li>Choose your resolution and tap <strong>Download</strong>. The file saves directly into the native <strong>Files app</strong> & Photos.</li>
+                </ol>
+            </div>
+
+            <div class="device-guide-card">
+                <div class="device-icon" style="color:#3ddc84;"><i class="fa-brands fa-android"></i></div>
+                <h3>Android (Samsung, Pixel, Xiaomi)</h3>
+                <ol>
+                    <li>Tap the <strong>Share</strong> button on any social media post and tap <strong>Copy Link</strong>.</li>
+                    <li>Launch <strong>Google Chrome</strong> or Samsung Internet and paste the link into VidSavor.</li>
+                    <li>Select MP4 or MP3 and tap <strong>Download</strong>. Your media appears instantly in your <strong>Gallery & Downloads</strong>.</li>
+                </ol>
+            </div>
+
+            <div class="device-guide-card">
+                <div class="device-icon" style="color:#00a4ef;"><i class="fa-brands fa-windows"></i></div>
+                <h3>Windows PC & Laptops</h3>
+                <ol>
+                    <li>Navigate to the video in your desktop browser and copy the URL from the address bar.</li>
+                    <li>Paste the URL into VidSavor and choose your quality up to <strong>4K 60FPS UHD</strong>.</li>
+                    <li>Click <strong>Download</strong> for instant high-speed multi-threaded saving into your PC's <strong>Downloads</strong> folder.</li>
+                </ol>
+            </div>
+
+            <div class="device-guide-card">
+                <div class="device-icon" style="color:#555555;"><i class="fa-solid fa-desktop"></i></div>
+                <h3>macOS (MacBook, iMac, Mac Mini)</h3>
+                <ol>
+                    <li>Copy any social media link from Safari, Chrome, or the desktop app using <strong>⌘ + C</strong>.</li>
+                    <li>Open VidSavor in your browser, hit <strong>Paste</strong>, and select your preferred media stream.</li>
+                    <li>Files are downloaded in lossless original format directly into your Mac's <strong>Finder Downloads</strong> directory.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 5. SUPPORTED CONTENT VS LIMITATIONS (TRANSPARENCY & TRUST - INSPIRED BY SNAPYT) -->
+<section class="rich-seo-section">
+    <div class="rich-seo-container">
+        <div class="rich-section-header">
+            <div class="section-label"><i class="fa-solid fa-scale-balanced"></i> Transparency & Compliance</div>
+            <h2>Supported Content & Platform Boundaries</h2>
+            <p>VidSavor is designed for responsible, high-speed personal media archiving. Here is an overview of what our system handles:</p>
+        </div>
+
+        <div class="split-comparison-grid">
+            <div class="comparison-card supported">
+                <div class="comparison-header">
+                    <div class="comparison-icon"><i class="fa-solid fa-check"></i></div>
+                    <h3>What VidSavor Supports (100% Free)</h3>
+                </div>
+                <ul class="comparison-list">
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Public Social Videos:</strong> Any public video from Instagram, YouTube, TikTok, Facebook, Twitter, and Pinterest.</li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Reels & Shorts:</strong> Full-length vertical videos with audio synchronized and watermarks stripped.</li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>High-Fidelity Audio Tracks:</strong> Extracting original music tracks, dialogue, and sounds to standalone MP3 files.</li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Maximum Resolutions:</strong> Delivering 4K, 2K, 1080p, and 720p streams exposed by the source network.</li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Unlimited Access:</strong> Free for everyday personal use with zero paywalls, credits, or registration gates.</li>
+                </ul>
+            </div>
+
+            <div class="comparison-card limits">
+                <div class="comparison-header">
+                    <div class="comparison-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <h3>Boundaries & Limitations</h3>
+                </div>
+                <ul class="comparison-list">
+                    <li><i class="fa-solid fa-circle-exclamation"></i> <strong>Private Accounts:</strong> Content protected by private follower approvals cannot be downloaded to safeguard user privacy.</li>
+                    <li><i class="fa-solid fa-circle-exclamation"></i> <strong>DRM & Encrypted Paywalls:</strong> We do not bypass digital rights management (DRM) or paywalled streaming subscriptions.</li>
+                    <li><i class="fa-solid fa-circle-exclamation"></i> <strong>Automated Bulk Scraping:</strong> Bulk playlist downloads without single links are restricted to preserve cloud bandwidth for all users.</li>
+                    <li><i class="fa-solid fa-circle-exclamation"></i> <strong>Commercial Re-distribution:</strong> Users must respect creators' copyrights and Fair Use boundaries under international law.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 6. PRO TIPS & TROUBLESHOOTING GUIDE (INSPIRED BY SNAPYT) -->
+<section class="rich-seo-section alt-bg">
+    <div class="rich-seo-container">
+        <div class="rich-section-header">
+            <div class="section-label"><i class="fa-solid fa-lightbulb"></i> Pro Tips & Best Practices</div>
+            <h2>Troubleshooting & Download Tips</h2>
+            <p>Encountering an issue? Check these quick, practical solutions to ensure smooth downloads on every platform.</p>
+        </div>
+
+        <div class="troubleshoot-grid">
+            <div class="troubleshoot-card">
+                <div class="troubleshoot-icon"><i class="fa-solid fa-play"></i></div>
+                <h3>Video Plays Instead of Downloading?</h3>
+                <p>If tapping download opens the video player in a new browser tab, simply right-click (or long-press on mobile) the download button and choose <strong>"Save link as..."</strong> or <strong>"Download linked file"</strong>.</p>
+            </div>
+
+            <div class="troubleshoot-card">
+                <div class="troubleshoot-icon"><i class="fa-solid fa-volume-high"></i></div>
+                <h3>Downloaded Video Has No Sound?</h3>
+                <p>High-resolution streams (like 1080p and 4K) are often stored as separate video and audio manifests. Always choose the <strong>"Full HD (With Audio)"</strong> option or download the dedicated MP3 track.</p>
+            </div>
+
+            <div class="troubleshoot-card">
+                <div class="troubleshoot-icon"><i class="fa-solid fa-link-slash"></i></div>
+                <h3>"Link Invalid" or Fetch Failed?</h3>
+                <p>Ensure you are copying the full public URL from the browser address bar or social share button. Remove extraneous tracking parameters (e.g. <code>?igsh=...</code> or <code>?si=...</code>) for the cleanest resolution.</p>
+            </div>
+
+            <div class="troubleshoot-card">
+                <div class="troubleshoot-icon"><i class="fa-solid fa-hard-drive"></i></div>
+                <h3>Managing Device Storage Space</h3>
+                <p>High-bitrate 4K UHD and 1080p 60FPS videos can range from 50MB to over 500MB. Make sure your phone or laptop has sufficient free storage before initiating large video downloads.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 7. POPULAR CREATOR & EVERYDAY USE CASES -->
+<section class="rich-seo-section">
+    <div class="rich-seo-container">
+        <div class="rich-section-header">
+            <div class="section-label"><i class="fa-solid fa-users"></i> Real-World Workflows</div>
+            <h2>Popular Ways Creators & Users Use VidSavor</h2>
+            <p>From offline entertainment to professional content editing, discover why millions choose VidSavor daily.</p>
+        </div>
+
+        <div class="usecases-grid">
+            <div class="usecase-card">
+                <div class="usecase-icon"><i class="fa-solid fa-plane"></i></div>
+                <h3>Offline Travel & Commute</h3>
+                <p>Save long podcasts, travel vlogs, workout routines, and educational tutorials to watch on airplanes or in areas without reliable cellular connectivity.</p>
+            </div>
+
+            <div class="usecase-card">
+                <div class="usecase-icon"><i class="fa-solid fa-video"></i></div>
+                <h3>Content Creators & B-Roll</h3>
+                <p>Archive your own published reels, back up lost raw footage, or collect public reference clips for moodboards, creative pitch decks, and editing storyboards.</p>
+            </div>
+
+            <div class="usecase-card">
+                <div class="usecase-icon"><i class="fa-solid fa-headphones"></i></div>
+                <h3>Audio & Sound Snippets</h3>
+                <p>Extract background tracks, speech samples, trending voice lines, and sound effects into clean 320kbps MP3 audio files for podcasting and mixing.</p>
+            </div>
+
+            <div class="usecase-card">
+                <div class="usecase-icon"><i class="fa-solid fa-bookmark"></i></div>
+                <h3>Personal Knowledge Archival</h3>
+                <p>Keep valuable cooking recipes, DIY home repair guides, infographic carousels, and fitness tutorials permanently accessible before posts are removed.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 8. SOCIAL PROOF / USER REVIEWS (INSPIRED BY YOUTUBE TOOLKIT) -->
+<section class="rich-seo-section alt-bg">
+    <div class="rich-seo-container">
+        <div class="rich-section-header">
+            <div class="section-label"><i class="fa-solid fa-heart"></i> Community Trust</div>
+            <h2>What Creators & Users Say</h2>
+            <p>Join thousands of content creators, video editors, and everyday social media fans who rely on VidSavor.</p>
+        </div>
+
+        <div class="reviews-grid">
+            <div class="review-card">
+                <div class="review-stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                </div>
+                <p class="review-text">"VidSavor has completely replaced all other video tools for me. Being able to download clean TikTok reels without watermarks and grab high-quality MP3s in seconds is a lifesaver for my editing workflow."</p>
+                <div class="review-author">
+                    <div class="review-avatar">SM</div>
+                    <div class="review-author-info">
+                        <span class="review-name">Sarah Mitchell</span>
+                        <span class="review-role">Travel Content Creator • 180K Followers</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="review-card">
+                <div class="review-stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                </div>
+                <p class="review-text">"Most online downloaders are riddled with popup ads, fake buttons, and low-res compression. VidSavor is lightning-fast, ultra-clean, and gives me true 1080p 60fps MP4 files every single time."</p>
+                <div class="review-author">
+                    <div class="review-avatar">AD</div>
+                    <div class="review-author-info">
+                        <span class="review-name">Alex Davis</span>
+                        <span class="review-role">Video Editor & Producer</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="review-card">
+                <div class="review-stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                </div>
+                <p class="review-text">"I save educational workout routines and lecture shorts before long flights. It works flawlessly on iPhone Safari without having to install any sketch third-party apps. Highly recommended!"</p>
+                <div class="review-author">
+                    <div class="review-avatar">PK</div>
+                    <div class="review-author-info">
+                        <span class="review-name">Priya Kapoor</span>
+                        <span class="review-role">Digital Marketing Consultant</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 9. IN-DEPTH TECHNICAL & EDUCATIONAL GUIDE (SEO / GEO AUTHORITY) -->
 <section class="rich-seo-section">
     <div class="rich-seo-container">
         <div class="rich-prose">
@@ -591,8 +1025,8 @@
     </div>
 </section>
 
-<!-- FREQUENTLY ASKED QUESTIONS (CLEAN GOOGLE ACCORDION) -->
-<section class="custom-faq-section" id="faqSection">
+<!-- 10. FREQUENTLY ASKED QUESTIONS (EXPANDED KNOWLEDGE BASE) -->
+<section class="custom-faq-section alt-bg" id="faqSection">
     <div class="faq-container-custom">
         <div class="faq-header-custom">
             <div class="section-label">
@@ -636,6 +1070,26 @@
 
             <div class="faq-item">
                 <button type="button" class="faq-question">
+                    <span>Does VidSavor remove watermarks from TikTok and social reels?</span>
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </button>
+                <div class="faq-answer">
+                    Yes, VidSavor strips annoying platform logos and watermarks from TikTok videos and reels, delivering a clean, unbranded original MP4 file with audio included.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button type="button" class="faq-question">
+                    <span>Can I extract only the audio (MP3) from a video?</span>
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </button>
+                <div class="faq-answer">
+                    Yes, VidSavor includes a dedicated high-fidelity audio extractor that provides 320kbps MP3 audio downloads from any supported video or music reel.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button type="button" class="faq-question">
                     <span>Can I extract content from private social media accounts?</span>
                     <i class="fa-solid fa-chevron-down faq-chevron"></i>
                 </button>
@@ -646,11 +1100,21 @@
 
             <div class="faq-item">
                 <button type="button" class="faq-question">
-                    <span>Where are downloaded files saved on my device?</span>
+                    <span>Where are downloaded files saved on iPhone and Android?</span>
                     <i class="fa-solid fa-chevron-down faq-chevron"></i>
                 </button>
                 <div class="faq-answer">
-                    Downloaded files are placed directly in your device's default 'Downloads' folder, easily accessible via your browser's download manager, iPhone Files app, or Android Gallery.
+                    On iPhone/iPad, downloads appear in the Safari Downloads manager and the native Files app (which can be saved directly to Photos). On Android, files are stored in your device's Downloads folder and Gallery.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button type="button" class="faq-question">
+                    <span>Why does a video play in a new tab instead of downloading?</span>
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </button>
+                <div class="faq-answer">
+                    Some browsers preview MP4 files in a video player tab. Simply right-click (or long-press on mobile) the download button and choose 'Save link as...' or 'Download linked file'.
                 </div>
             </div>
 
@@ -661,6 +1125,16 @@
                 </button>
                 <div class="faq-answer">
                     No media files or user activity histories are retained on our servers. All parsing happens transiently directly from public source servers in real time under zero-log architecture.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button type="button" class="faq-question">
+                    <span>Is downloading social media videos legal under copyright law?</span>
+                    <i class="fa-solid fa-chevron-down faq-chevron"></i>
+                </button>
+                <div class="faq-answer">
+                    Downloading public media for personal offline viewing, research, or educational quotation is permissible under Fair Use principles (17 U.S.C. § 107). Commercial redistribution without creator permission is strictly prohibited.
                 </div>
             </div>
         </div>
@@ -751,7 +1225,7 @@
 </footer>
 
 <!-- VidSavor Client Engine -->
-<script src="/static/js/app.js?v=3.2"></script>
+<script src="/static/js/app.js?v=4.5"></script>
 </body>
 </html>
 

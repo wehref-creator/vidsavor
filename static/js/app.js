@@ -343,6 +343,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 downloadNow();
             }
         });
+
+        // 3. Auto-handle incoming shared URL from Web Share Target, PWA, Extension, or Mobile Share Sheet
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const rawShare = urlParams.get('url') || urlParams.get('text') || urlParams.get('link') || urlParams.get('video_url');
+
+            if (rawShare) {
+                // Extract actual http(s) URL in case social media app included trailing / leading text
+                const match = rawShare.match(/https?:\/\/[^\s"']+/i);
+                const targetUrl = match ? match[0] : rawShare.trim();
+
+                if (targetUrl && (targetUrl.startsWith('http://') || targetUrl.startsWith('https://'))) {
+                    urlInput.value = targetUrl;
+                    if (clearBtn) clearBtn.style.display = 'block';
+                    // Scroll to hero and auto-trigger downloadNow smoothly
+                    setTimeout(() => {
+                        scrollHero();
+                        downloadNow();
+                    }, 150);
+                }
+            }
+        } catch (shareErr) {
+            console.warn('Share target parsing error:', shareErr);
+        }
     }
 });
 
@@ -575,14 +599,21 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
 
 // Primary extraction pipeline
 async function downloadNow() {
-    const urlInput = document.getElementById('videoUrl').value.trim();
+    let rawInput = document.getElementById('videoUrl').value.trim();
     const btn = document.getElementById('mainFetchBtn');
     const resultBox = document.getElementById('resultBox');
     const container = document.getElementById('downloadButtonsContainer');
 
-    if (!urlInput) {
+    if (!rawInput) {
         alert('Please paste a valid video or post link first');
         return;
+    }
+
+    // Auto-extract pure HTTP(S) link in case user pasted social share text (e.g. "Check out this reel https://...")
+    const urlMatch = rawInput.match(/https?:\/\/[^\s"']+/i);
+    const urlInput = urlMatch ? urlMatch[0] : rawInput;
+    if (urlMatch && urlMatch[0] !== rawInput) {
+        document.getElementById('videoUrl').value = urlInput;
     }
 
     // Loading State with animation
