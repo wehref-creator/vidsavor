@@ -6,7 +6,7 @@ import logging
 import requests
 from typing import Optional
 from fastapi import FastAPI, Request, HTTPException, Query, Response
-from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -404,9 +404,26 @@ async def serve_pinterest():
 
 @app.get("/download", response_class=HTMLResponse)
 @app.get("/download/", response_class=HTMLResponse)
-@app.get("/downloads", response_class=HTMLResponse)
 async def serve_download():
     return serve_html_file("download.html")
+
+@app.get("/downloads/{filename:path}")
+@app.get("/static/downloads/{filename:path}")
+async def serve_download_file(filename: str):
+    for folder in [
+        os.path.join(BASE_DIR, "downloads"),
+        os.path.join(STATIC_DIR, "downloads"),
+        os.path.join(BASE_DIR, "static", "downloads")
+    ]:
+        filepath = os.path.join(folder, filename)
+        if os.path.exists(filepath) and os.path.isfile(filepath):
+            return FileResponse(
+                path=filepath,
+                filename=filename,
+                media_type="application/octet-stream",
+                headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+            )
+    raise HTTPException(status_code=404, detail="Requested file not found")
 
 @app.get("/about-us", response_class=HTMLResponse)
 @app.get("/about-us/", response_class=HTMLResponse)
@@ -478,6 +495,18 @@ async def universal_catch_all(catch_all: str, request: Request):
         except Exception:
             pass
         return JSONResponse(status_code=200, content={"status": "error", "message": "Please provide a valid media link."})
+
+    # If GET request: check if matches physical downloadable file
+    for folder in [BASE_DIR, STATIC_DIR]:
+        direct_file = os.path.join(folder, catch_all)
+        if os.path.exists(direct_file) and os.path.isfile(direct_file):
+            filename = os.path.basename(direct_file)
+            return FileResponse(
+                path=direct_file,
+                filename=filename,
+                media_type="application/octet-stream",
+                headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+            )
 
     # If GET request: check if matches static page
     clean = catch_all.strip("/").replace(".html", "")

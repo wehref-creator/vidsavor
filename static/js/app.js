@@ -1024,3 +1024,86 @@ window.scrollHero = scrollHero;
 window.toggleMobileNav = toggleMobileNav;
 window.copyMediaLink = copyMediaLink;
 window.shareMedia = shareMedia;
+
+// ==========================================================================
+// 6. GOOGLE ANTIGRAVITY LANGUAGE SELECTOR & OS SWITCHER ENGINE
+// ==========================================================================
+function initLanguageSelector() {
+    const btn = document.getElementById('langSelectorBtn');
+    const menu = document.getElementById('langDropdownMenu');
+    if (!btn || !menu) return;
+
+    // Load saved language
+    const savedCode = localStorage.getItem('vidsavor_lang') || 'EN';
+    updateLanguageUI(savedCode);
+
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.classList.toggle('show');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!menu.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+            menu.classList.remove('show');
+        }
+    });
+
+    menu.querySelectorAll('.lang-option').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            e.preventDefault();
+            const code = opt.getAttribute('data-code') || 'EN';
+            localStorage.setItem('vidsavor_lang', code);
+            updateLanguageUI(code);
+            menu.classList.remove('show');
+        });
+    });
+}
+
+function updateLanguageUI(code) {
+    const btnText = document.getElementById('currentLangCode');
+    if (btnText) btnText.textContent = code;
+
+    const menu = document.getElementById('langDropdownMenu');
+    if (!menu) return;
+
+    menu.querySelectorAll('.lang-option').forEach(opt => {
+        const itemCode = opt.getAttribute('data-code');
+        if (itemCode === code) {
+            opt.classList.add('active');
+        } else {
+            opt.classList.remove('active');
+        }
+    });
+}
+
+// OS Switcher for Download Page (Exact Google Antigravity behavior)
+function switchAgyOsTab(targetOs) {
+    document.querySelectorAll('.agy-os-pill').forEach(pill => {
+        pill.classList.toggle('active', pill.getAttribute('data-os') === targetOs);
+    });
+
+    const extSec = document.getElementById('sec-extension');
+    const androidSec = document.getElementById('sec-android');
+    const iosSec = document.getElementById('sec-ios');
+    const cliSec = document.getElementById('sec-cli');
+    const container = document.getElementById('agySectionsContainer');
+    if (!container) return;
+
+    if (targetOs === 'android') {
+        if (androidSec) container.prepend(androidSec);
+    } else if (targetOs === 'ios') {
+        if (iosSec) container.prepend(iosSec);
+    } else if (targetOs === 'linux') {
+        if (cliSec) container.prepend(cliSec);
+    } else {
+        if (extSec) container.prepend(extSec);
+    }
+}
+
+window.switchAgyOsTab = switchAgyOsTab;
+window.initLanguageSelector = initLanguageSelector;
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', () => {
+    initLanguageSelector();
+});

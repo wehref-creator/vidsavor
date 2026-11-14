@@ -219,12 +219,36 @@
     </div>
 
     <!-- Header Actions (Antigravity Style) -->
+        <!-- Header Actions (Exact Antigravity Style) -->
     <div class="header-actions">
         <span class="antigravity-badge-free"><i class="fa-solid fa-circle-check"></i> 100% Free</span>
-        <a href="#downloadSection" onclick="scrollHero();" class="antigravity-pill-btn">
+        <a href="/download" class="antigravity-pill-btn" style="background:#111827; color:#ffffff !important; font-weight:700;">
             <span>Download</span>
             <i class="fa-solid fa-download"></i>
         </a>
+        <div class="lang-selector-wrapper">
+            <button type="button" class="lang-selector-btn" id="langSelectorBtn" aria-label="Select Language">
+                <i class="fa-solid fa-globe"></i>
+                <span id="currentLangCode">EN</span>
+                <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+            </button>
+            <div class="lang-dropdown-menu" id="langDropdownMenu">
+                <div class="lang-option active" data-code="EN"><div class="lang-left"><i class="fa-solid fa-check lang-check-icon"></i><span class="lang-name">English (United States)</span></div><span class="lang-code-tag">EN</span></div>
+                <div class="lang-option" data-code="ID"><div class="lang-left"><i class="fa-solid fa-check lang-check-icon"></i><span class="lang-name">Bahasa Indonesia</span></div><span class="lang-code-tag">ID</span></div>
+                <div class="lang-option" data-code="DE"><div class="lang-left"><i class="fa-solid fa-check lang-check-icon"></i><span class="lang-name">Deutsch (Deutschland)</span></div><span class="lang-code-tag">DE</span></div>
+                <div class="lang-option" data-code="ES"><div class="lang-left"><i class="fa-solid fa-check lang-check-icon"></i><span class="lang-name">Español (España)</span></div><span class="lang-code-tag">ES</span></div>
+                <div class="lang-option" data-code="FR"><div class="lang-left"><i class="fa-solid fa-check lang-check-icon"></i><span class="lang-name">Français (France)</span></div><span class="lang-code-tag">FR</span></div>
+                <div class="lang-option" data-code="IT"><div class="lang-left"><i class="fa-solid fa-check lang-check-icon"></i><span class="lang-name">Italiano (Italia)</span></div><span class="lang-code-tag">IT</span></div>
+                <div class="lang-option" data-code="PT"><div class="lang-left"><i class="fa-solid fa-check lang-check-icon"></i><span class="lang-name">Português (Brasil)</span></div><span class="lang-code-tag">PT</span></div>
+                <div class="lang-option" data-code="TR"><div class="lang-left"><i class="fa-solid fa-check lang-check-icon"></i><span class="lang-name">Türkçe (Türkiye)</span></div><span class="lang-code-tag">TR</span></div>
+                <div class="lang-option" data-code="RU"><div class="lang-left"><i class="fa-solid fa-check lang-check-icon"></i><span class="lang-name">Русский (Россия)</span></div><span class="lang-code-tag">RU</span></div>
+                <div class="lang-option" data-code="HI"><div class="lang-left"><i class="fa-solid fa-check lang-check-icon"></i><span class="lang-name">हिन्दी (भारत)</span></div><span class="lang-code-tag">HI</span></div>
+                <div class="lang-option" data-code="JA"><div class="lang-left"><i class="fa-solid fa-check lang-check-icon"></i><span class="lang-name">日本語 (日本)</span></div><span class="lang-code-tag">JA</span></div>
+                <div class="lang-option" data-code="KO"><div class="lang-left"><i class="fa-solid fa-check lang-check-icon"></i><span class="lang-name">한국어 (대한민국)</span></div><span class="lang-code-tag">KO</span></div>
+                <div class="lang-option" data-code="ZH"><div class="lang-left"><i class="fa-solid fa-check lang-check-icon"></i><span class="lang-name">中文 (简体)</span></div><span class="lang-code-tag">ZH</span></div>
+                <div class="lang-option" data-code="AR"><div class="lang-left"><i class="fa-solid fa-check lang-check-icon"></i><span class="lang-name">العربية</span></div><span class="lang-code-tag">AR</span></div>
+            </div>
+        </div>
         <button type="button" class="mobile-menu-toggle" onclick="toggleMobileNav()" aria-label="Toggle navigation menu">
             <i class="fa-solid fa-bars"></i>
         </button>

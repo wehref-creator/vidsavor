@@ -3319,3 +3319,331 @@ footer.footer-antigravity-layout {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* ==========================================================================
+   GOOGLE ANTIGRAVITY EXACT DOWNLOAD HUB & LANGUAGE SELECTOR
+   ========================================================================== */
+
+/* 1. Header Language Dropdown */
+.lang-selector-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.lang-selector-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #ffffff;
+    border: 1.5px solid var(--border-light);
+    border-radius: 9999px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.lang-selector-btn:hover {
+    border-color: #7c3aed;
+    color: #7c3aed;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.lang-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 280px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
+    padding: 8px;
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.lang-dropdown-menu.show {
+    display: flex;
+    animation: agyFadeIn 0.2s ease;
+}
+
+@keyframes agyFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.lang-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    color: #1f2937;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.lang-option:hover {
+    background: #f3f4f6;
+}
+
+.lang-option.active {
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-weight: 600;
+}
+
+.lang-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lang-check-icon {
+    font-size: 12px;
+    color: #2563eb;
+    opacity: 0;
+}
+
+.lang-option.active .lang-check-icon {
+    opacity: 1;
+}
+
+.lang-code-tag {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #6b7280;
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 5px;
+}
+
+.lang-option.active .lang-code-tag {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+/* 2. Google Antigravity Download Page Container */
+.agy-download-wrapper {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 130px 24px 100px;
+}
+
+.agy-dl-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.agy-dl-title {
+    font-size: clamp(2.4rem, 5vw, 3.8rem);
+    font-weight: 800;
+    letter-spacing: -1.2px;
+    color: #111827;
+    line-height: 1.1;
+    display: flex;
+    align-items: center;
+}
+
+.agy-blinking-cursor {
+    display: inline-block;
+    width: 3px;
+    height: 0.9em;
+    background: linear-gradient(180deg, #7c3aed 0%, #ec4899 100%);
+    margin-left: 6px;
+    animation: blinkCursor 1s step-end infinite;
+    border-radius: 2px;
+}
+
+@keyframes blinkCursor {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.agy-btn-releases {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 9999px;
+    background: #ffffff;
+    color: #374151;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    align-self: center;
+}
+
+.agy-btn-releases:hover {
+    border-color: #111827;
+    color: #111827;
+    background: #f9fafb;
+}
+
+/* 3. Horizontal OS Selector Pills */
+.agy-os-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 48px;
+    scrollbar-width: none;
+}
+.agy-os-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.agy-os-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 20px;
+    background: #ffffff;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 9999px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.agy-os-pill:hover {
+    border-color: #111827;
+    color: #111827;
+}
+
+.agy-os-pill.active {
+    background: #111827;
+    color: #ffffff;
+    border-color: #111827;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.agy-os-pill.active i {
+    color: #ffffff;
+}
+
+/* 4. Antigravity Download Sections */
+.agy-section-row {
+    margin-bottom: 36px;
+}
+
+.agy-section-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.agy-section-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #111827;
+    letter-spacing: -0.6px;
+    margin: 0;
+}
+
+.agy-version-chip {
+    background: #e8f0fe;
+    color: #1a73e8;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-family: "Google Sans Code", monospace;
+}
+
+.agy-btn-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.agy-pill-black {
+    background: #111827;
+    color: #ffffff !important;
+    border: none;
+    border-radius: 9999px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    transition: all 0.15s ease;
+}
+
+.agy-pill-black:hover {
+    background: #1f2937;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.agy-pill-black:active {
+    transform: translateY(0);
+}
+
+.agy-pill-light {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    color: #1e293b !important;
+    border-radius: 9999px;
+    padding: 12px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.agy-pill-light:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.agy-min-req {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: none;
+    letter-spacing: 0.2px;
+    margin-bottom: 4px;
+}
+
+.agy-min-text {
+    font-size: 13.5px;
+    color: #475569;
+    line-height: 1.5;
+}
+
+.agy-divider {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 36px 0;
+}
