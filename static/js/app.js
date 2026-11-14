@@ -254,7 +254,21 @@ function initMegaMenus() {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             wrappers.forEach(wrapper => wrapper.classList.remove('open'));
+            const nav = document.querySelector('.antigravity-nav');
+            if (nav && nav.classList.contains('mobile-active')) {
+                toggleMobileNav();
+            }
         }
+    });
+
+    // Close mobile nav when clicking any link inside it
+    document.querySelectorAll('.antigravity-nav a').forEach(link => {
+        link.addEventListener('click', () => {
+            const nav = document.querySelector('.antigravity-nav');
+            if (nav && nav.classList.contains('mobile-active')) {
+                toggleMobileNav();
+            }
+        });
     });
 }
 
@@ -334,7 +348,17 @@ function scrollHero() {
 
 function toggleMobileNav() {
     const nav = document.querySelector('.antigravity-nav');
-    if (nav) nav.classList.toggle('mobile-active');
+    const toggleBtn = document.querySelector('.mobile-menu-toggle');
+    if (nav) {
+        const isActive = nav.classList.toggle('mobile-active');
+        if (toggleBtn) {
+            const icon = toggleBtn.querySelector('i');
+            if (icon) {
+                icon.className = isActive ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+            }
+        }
+        document.body.style.overflow = isActive ? 'hidden' : '';
+    }
 }
 
 async function pasteText() {
@@ -729,6 +753,70 @@ async function downloadNow() {
                         background: #1557b0 !important;
                         box-shadow: 0 4px 14px rgba(26, 115, 232, 0.4) !important;
                         transform: translateY(-1px) !important;
+                    }
+                    @media (max-width: 640px) {
+                        .download-item-row {
+                            flex-direction: column !important;
+                            align-items: stretch !important;
+                            padding: 14px !important;
+                            gap: 12px !important;
+                            border-radius: 16px !important;
+                        }
+                        .download-item-row .row-left {
+                            width: 100% !important;
+                            display: flex !important;
+                            align-items: flex-start !important;
+                            gap: 12px !important;
+                        }
+                        .download-item-row .row-icon {
+                            width: 40px !important;
+                            height: 40px !important;
+                            min-width: 40px !important;
+                            font-size: 16px !important;
+                            border-radius: 10px !important;
+                        }
+                        .download-item-row .row-info {
+                            flex: 1 !important;
+                            min-width: 0 !important;
+                        }
+                        .download-item-row .row-title-wrap {
+                            flex-wrap: wrap !important;
+                            gap: 6px !important;
+                            margin-bottom: 4px !important;
+                        }
+                        .download-item-row .row-title {
+                            font-size: 14.5px !important;
+                            line-height: 1.3 !important;
+                        }
+                        .download-item-row .sound-tag {
+                            font-size: 11px !important;
+                            padding: 2px 7px !important;
+                        }
+                        .download-item-row .row-sub {
+                            font-size: 12px !important;
+                            line-height: 1.35 !important;
+                        }
+                        .download-item-row .row-right {
+                            width: 100% !important;
+                            display: flex !important;
+                            align-items: center !important;
+                            justify-content: space-between !important;
+                            gap: 10px !important;
+                            padding-top: 10px !important;
+                            border-top: 1px dashed #e2e8f0 !important;
+                        }
+                        .download-item-row .row-size-pill {
+                            font-size: 12px !important;
+                            padding: 6px 10px !important;
+                            border-radius: 8px !important;
+                        }
+                        .download-item-row .btn-row-download {
+                            flex: 1 !important;
+                            justify-content: center !important;
+                            padding: 10px 16px !important;
+                            font-size: 14px !important;
+                            border-radius: 9999px !important;
+                        }
                     }
                 `;
                 document.head.appendChild(styleEl);
