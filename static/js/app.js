@@ -230,6 +230,7 @@ function initMegaMenus() {
         // Toggle on click
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
+            e.preventDefault();
             const isOpen = wrapper.classList.contains('open');
 
             // Close other wrappers
@@ -241,8 +242,12 @@ function initMegaMenus() {
         });
     });
 
-    // Close any open dropdowns when clicking outside
+    // Close any open dropdowns when clicking outside (desktop only)
     document.addEventListener('click', (e) => {
+        // Do not auto-close accordions if user taps inside the mobile navigation drawer
+        if (document.querySelector('.antigravity-nav.mobile-active')) {
+            return;
+        }
         wrappers.forEach(wrapper => {
             if (!wrapper.contains(e.target)) {
                 wrapper.classList.remove('open');
@@ -349,14 +354,29 @@ function scrollHero() {
 function toggleMobileNav() {
     const nav = document.querySelector('.antigravity-nav');
     const toggleBtn = document.querySelector('.mobile-menu-toggle');
+    const header = document.querySelector('header');
     if (nav) {
         const isActive = nav.classList.toggle('mobile-active');
+        if (header) header.classList.toggle('mobile-nav-active', isActive);
+        document.body.classList.toggle('mobile-nav-active', isActive);
+
         if (toggleBtn) {
             const icon = toggleBtn.querySelector('i');
             if (icon) {
                 icon.className = isActive ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
             }
+            toggleBtn.setAttribute('aria-expanded', isActive ? 'true' : 'false');
         }
+
+        // When opening on mobile, automatically open the first accordion ("All Platforms")
+        // so the user immediately sees all available platforms!
+        if (isActive) {
+            const firstWrapper = nav.querySelector('.antigravity-dropdown-wrapper');
+            if (firstWrapper) {
+                firstWrapper.classList.add('open');
+            }
+        }
+
         document.body.style.overflow = isActive ? 'hidden' : '';
     }
 }
