@@ -402,6 +402,12 @@ async def serve_twitter():
 async def serve_pinterest():
     return serve_html_file("pinterest.html")
 
+@app.get("/download", response_class=HTMLResponse)
+@app.get("/download/", response_class=HTMLResponse)
+@app.get("/downloads", response_class=HTMLResponse)
+async def serve_download():
+    return serve_html_file("download.html")
+
 @app.get("/about-us", response_class=HTMLResponse)
 @app.get("/about-us/", response_class=HTMLResponse)
 @app.get("/about", response_class=HTMLResponse)

@@ -13,6 +13,7 @@
     { "source": "/api/health", "destination": "/api/index.py" },
     { "source": "/api/(.*)", "destination": "/api/index.py" },
     { "source": "/reels", "destination": "/instagram.html" },
+    { "source": "/download", "destination": "/download.html" },
     { "source": "/about", "destination": "/about-us.html" },
     { "source": "/contact", "destination": "/contact-us.html" },
     { "source": "/help", "destination": "/faq.html" },
