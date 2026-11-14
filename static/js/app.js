@@ -1026,14 +1026,662 @@ window.copyMediaLink = copyMediaLink;
 window.shareMedia = shareMedia;
 
 // ==========================================================================
-// 6. GOOGLE ANTIGRAVITY LANGUAGE SELECTOR & OS SWITCHER ENGINE
+// 6. GOOGLE ANTIGRAVITY MULTI-LANGUAGE TRANSLATION & OS SWITCHER ENGINE
 // ==========================================================================
+const UI_TRANSLATIONS = {
+    EN: {
+        title: 'Download Social Media Instantly. <span class="gradient">No Ads. No Watermarks.</span>',
+        desc: 'From viral reels to high-res photos and crystal-clear audio, VidSavor lets you download unlimited, watermark-free content across all major social networks instantly.',
+        placeholder: 'Paste link from Instagram, TikTok, YouTube, Facebook, Twitter...',
+        paste: 'Paste',
+        download: 'Download',
+        subtext: 'Paste any public social media link above & it will start fetching automatically!',
+        badge: '<i class="fa-solid fa-shield-heart"></i> 100% Free • No Login • 4K HD Quality',
+        freeBadge: '<i class="fa-solid fa-circle-check"></i> 100% Free',
+        stepsBadge: 'Super Simple 3-Step Process',
+        stepsTitle: 'Steps to Download Videos & Reels',
+        stepsSubhead: "Here's a quick and effortless way to save your favorite media for offline viewing:",
+        step1Title: 'Copy Link',
+        step1Desc: 'Copy the public link of the video, reel, post, or short from your favorite social platform.',
+        step2Title: 'Paste Link',
+        step2Desc: 'Paste the copied link into the VidSavor input box above using the one-click Paste button.',
+        step3Title: 'Download Media',
+        step3Desc: 'Select your preferred video resolution or MP3 format and click download instantly.',
+        faqTitle: 'Frequently Asked Questions',
+        faqSubhead: 'Everything you need to know about using VidSavor.com',
+        dlTitle: 'Download VidSavor<span class="agy-blinking-cursor"></span>',
+        dlReleases: 'View previous releases',
+        dlExtTitle: 'VidSavor Web Extension',
+        dlExtBtn: 'Download Extension (.zip)',
+        dlAndroidTitle: 'VidSavor Android Share App',
+        dlAndroidBtn: 'Download Android APK',
+        dlIosTitle: 'VidSavor iOS QuickShare',
+        dlIosBtn: 'Download iOS Shortcut',
+        dlCliTitle: 'VidSavor CLI & API'
+    },
+    HI: {
+        title: 'सोशल मीडिया तुरंत डाउनलोड करें। <span class="gradient">कोई विज्ञापन नहीं। कोई वॉटरमार्क नहीं।</span>',
+        desc: 'वायरल रील्स से लेकर हाई-रेजोल्यूशन फोटो और क्रिस्टल-क्लियर ऑडियो तक, VidSavor आपको सभी प्रमुख सोशल नेटवर्क से अनलिमिटेड वॉटरमार्क-फ्री कंटेंट तुरंत डाउनलोड करने की सुविधा देता है।',
+        placeholder: 'इंस्टाग्राम, टिकटॉक, यूट्यूब, फेसबुक, ट्विटर का लिंक पेस्ट करें...',
+        paste: 'पेस्ट करें',
+        download: 'डाउनलोड करें',
+        subtext: 'ऊपर कोई भी सार्वजनिक सोशल मीडिया लिंक पेस्ट करें और यह अपने आप फ़ेच होना शुरू हो जाएगा!',
+        badge: '<i class="fa-solid fa-shield-heart"></i> 100% मुफ़्त • कोई लॉगिन नहीं • 4K HD क्वालिटी',
+        freeBadge: '<i class="fa-solid fa-circle-check"></i> 100% मुफ़्त',
+        stepsBadge: 'अति सरल 3-चरणीय प्रक्रिया',
+        stepsTitle: 'वीडियो और रील्स डाउनलोड करने के चरण',
+        stepsSubhead: 'ऑफ़लाइन देखने के लिए अपने पसंदीदा मीडिया को सहेजने का त्वरित और आसान तरीका:',
+        step1Title: 'लिंक कॉपी करें',
+        step1Desc: 'अपने पसंदीदा सोशल प्लेटफ़ॉर्म से वीडियो, रील, पोस्ट या शॉर्ट का सार्वजनिक लिंक कॉपी करें।',
+        step2Title: 'लिंक पेस्ट करें',
+        step2Desc: 'कॉपी किए गए लिंक को एक-क्लिक पेस्ट बटन का उपयोग करके ऊपर VidSavor इनपुट बॉक्स में पेस्ट करें।',
+        step3Title: 'मीडिया डाउनलोड करें',
+        step3Desc: 'अपनी पसंदीदा वीडियो रिज़ॉल्यूशन या MP3 प्रारूप चुनें और तुरंत डाउनलोड पर क्लिक करें।',
+        faqTitle: 'अक्सर पूछे जाने वाले प्रश्न',
+        faqSubhead: 'VidSavor.com का उपयोग करने के बारे में आपको जो कुछ जानने की आवश्यकता है',
+        dlTitle: 'VidSavor डाउनलोड करें<span class="agy-blinking-cursor"></span>',
+        dlReleases: 'पिछली रिलीज़ देखें',
+        dlExtTitle: 'VidSavor वेब एक्सटेंशन',
+        dlExtBtn: 'एक्सटेंशन डाउनलोड करें (.zip)',
+        dlAndroidTitle: 'VidSavor एंड्रॉइड शेयर ऐप',
+        dlAndroidBtn: 'एंड्रॉइड APK डाउनलोड करें',
+        dlIosTitle: 'VidSavor iOS क्विकशेयर',
+        dlIosBtn: 'iOS शॉर्टकट प्राप्त करें',
+        dlCliTitle: 'VidSavor CLI और API'
+    },
+    ES: {
+        title: 'Descarga Redes Sociales al Instante. <span class="gradient">Sin Anuncios. Sin Marca de Agua.</span>',
+        desc: 'Desde reels virales hasta fotos de alta resolución y audio nítido, VidSavor te permite descargar contenido ilimitado y sin marcas de agua al instante.',
+        placeholder: 'Pega el enlace de Instagram, TikTok, YouTube, Facebook, Twitter...',
+        paste: 'Pegar',
+        download: 'Descargar',
+        subtext: '¡Pega cualquier enlace público arriba y comenzará a descargarse automáticamente!',
+        badge: '<i class="fa-solid fa-shield-heart"></i> 100% Gratis • Sin Registro • Calidad 4K HD',
+        freeBadge: '<i class="fa-solid fa-circle-check"></i> 100% Gratis',
+        stepsBadge: 'Proceso Súper Simple de 3 Pasos',
+        stepsTitle: 'Pasos para Descargar Videos y Reels',
+        stepsSubhead: 'Una forma rápida y sin esfuerzo de guardar tus videos favoritos para ver sin conexión:',
+        step1Title: 'Copiar Enlace',
+        step1Desc: 'Copia el enlace público del video, reel o short de tu red social favorita.',
+        step2Title: 'Pegar Enlace',
+        step2Desc: 'Pega el enlace copiado en la barra de búsqueda superior con un solo clic.',
+        step3Title: 'Descargar Medio',
+        step3Desc: 'Selecciona tu resolución de video o formato MP3 preferido y descarga al instante.',
+        faqTitle: 'Preguntas Frecuentes',
+        faqSubhead: 'Todo lo que necesitas saber sobre el uso de VidSavor.com',
+        dlTitle: 'Descargar VidSavor<span class="agy-blinking-cursor"></span>',
+        dlReleases: 'Ver versiones anteriores',
+        dlExtTitle: 'Extensión Web VidSavor',
+        dlExtBtn: 'Descargar Extensión (.zip)',
+        dlAndroidTitle: 'App VidSavor Android',
+        dlAndroidBtn: 'Descargar APK Android',
+        dlIosTitle: 'VidSavor iOS QuickShare',
+        dlIosBtn: 'Descargar Atajo de iOS',
+        dlCliTitle: 'VidSavor CLI y API'
+    },
+    ID: {
+        title: 'Unduh Media Sosial Seketika. <span class="gradient">Tanpa Iklan. Tanpa Watermark.</span>',
+        desc: 'Dari reels viral hingga foto resolusi tinggi dan audio jernih, VidSavor memungkinkan Anda mengunduh konten tanpa batas dan tanpa watermark secara instan.',
+        placeholder: 'Tempel tautan dari Instagram, TikTok, YouTube, Facebook, Twitter...',
+        paste: 'Tempel',
+        download: 'Unduh',
+        subtext: 'Tempel tautan media sosial publik di atas & pengambilan dimulai otomatis!',
+        badge: '<i class="fa-solid fa-shield-heart"></i> 100% Gratis • Tanpa Login • Kualitas 4K HD',
+        freeBadge: '<i class="fa-solid fa-circle-check"></i> 100% Gratis',
+        stepsBadge: 'Proses 3 Langkah Super Mudah',
+        stepsTitle: 'Langkah Mengunduh Video & Reels',
+        stepsSubhead: 'Cara cepat dan mudah untuk menyimpan media favorit Anda untuk ditonton offline:',
+        step1Title: 'Salin Tautan',
+        step1Desc: 'Salin tautan publik video, reel, atau postingan dari platform media sosial favorit Anda.',
+        step2Title: 'Tempel Tautan',
+        step2Desc: 'Tempel tautan yang disalin ke kotak input VidSavor di atas dengan satu klik.',
+        step3Title: 'Unduh Media',
+        step3Desc: 'Pilih resolusi video atau format MP3 pilihan Anda dan klik unduh seketika.',
+        faqTitle: 'Pertanyaan yang Sering Diajukan',
+        faqSubhead: 'Semua yang perlu Anda ketahui tentang menggunakan VidSavor.com',
+        dlTitle: 'Unduh VidSavor<span class="agy-blinking-cursor"></span>',
+        dlReleases: 'Lihat rilis sebelumnya',
+        dlExtTitle: 'Ekstensi Web VidSavor',
+        dlExtBtn: 'Unduh Ekstensi (.zip)',
+        dlAndroidTitle: 'Aplikasi Android VidSavor',
+        dlAndroidBtn: 'Unduh APK Android',
+        dlIosTitle: 'Pintasan Cepat iOS VidSavor',
+        dlIosBtn: 'Dapatkan Pintasan iOS',
+        dlCliTitle: 'VidSavor CLI & API'
+    },
+    DE: {
+        title: 'Social Media Sofort Herunterladen. <span class="gradient">Ohne Werbung. Ohne Wasserzeichen.</span>',
+        desc: 'Von viralen Reels bis zu hochauflösenden Fotos und kristallklarem Audio – VidSavor ermöglicht den unbegrenzten, wasserzeichenfreien Download.',
+        placeholder: 'Link von Instagram, TikTok, YouTube, Facebook, Twitter einfügen...',
+        paste: 'Einfügen',
+        download: 'Herunterladen',
+        subtext: 'Fügen Sie oben einen öffentlichen Link ein – der Download startet automatisch!',
+        badge: '<i class="fa-solid fa-shield-heart"></i> 100% Kostenlos • Kein Login • 4K HD Qualität',
+        freeBadge: '<i class="fa-solid fa-circle-check"></i> 100% Kostenlos',
+        stepsBadge: 'Super Einfacher 3-Schritte-Prozess',
+        stepsTitle: 'Schritte zum Herunterladen von Videos & Reels',
+        stepsSubhead: 'Der mühelose Weg, Ihre Lieblingsmedien für die Offline-Wiedergabe zu speichern:',
+        step1Title: 'Link kopieren',
+        step1Desc: 'Kopieren Sie den öffentlichen Link des Videos von Ihrer Lieblingsplattform.',
+        step2Title: 'Link einfügen',
+        step2Desc: 'Fügen Sie den kopierten Link mit der Einfügen-Schaltfläche oben ein.',
+        step3Title: 'Medien herunterladen',
+        step3Desc: 'Wählen Sie die Videoauflösung oder das MP3-Format und laden Sie es sofort herunter.',
+        faqTitle: 'Häufig gestellte Fragen',
+        faqSubhead: 'Alles, was Sie über die Nutzung von VidSavor.com wissen müssen',
+        dlTitle: 'VidSavor Herunterladen<span class="agy-blinking-cursor"></span>',
+        dlReleases: 'Frühere Versionen anzeigen',
+        dlExtTitle: 'VidSavor Web-Erweiterung',
+        dlExtBtn: 'Erweiterung Herunterladen (.zip)',
+        dlAndroidTitle: 'VidSavor Android Share App',
+        dlAndroidBtn: 'Android APK Herunterladen',
+        dlIosTitle: 'VidSavor iOS QuickShare',
+        dlIosBtn: 'iOS Shortcut Herunterladen',
+        dlCliTitle: 'VidSavor CLI & API'
+    },
+    FR: {
+        title: 'Téléchargez les Réseaux Sociaux Instantanément. <span class="gradient">Sans Pub. Sans Filigrane.</span>',
+        desc: 'Des reels viraux aux photos haute résolution et audios cristallins, VidSavor vous permet de télécharger du contenu illimité et sans filigrane instantanément.',
+        placeholder: 'Collez le lien Instagram, TikTok, YouTube, Facebook, Twitter...',
+        paste: 'Coller',
+        download: 'Télécharger',
+        subtext: 'Collez un lien public ci-dessus et la récupération démarre automatiquement!',
+        badge: '<i class="fa-solid fa-shield-heart"></i> 100% Gratuit • Sans Connexion • Qualité 4K HD',
+        freeBadge: '<i class="fa-solid fa-circle-check"></i> 100% Gratuit',
+        stepsBadge: 'Processus Ultra Simple en 3 Étapes',
+        stepsTitle: 'Étapes pour Télécharger des Vidéos & Reels',
+        stepsSubhead: 'Le moyen le plus rapide d’enregistrer vos vidéos préférées pour un visionnage hors ligne :',
+        step1Title: 'Copier le lien',
+        step1Desc: 'Copiez le lien public de la vidéo ou du reel depuis votre réseau social préféré.',
+        step2Title: 'Coller le lien',
+        step2Desc: 'Collez le lien copié dans la barre de recherche VidSavor en un clic.',
+        step3Title: 'Télécharger le média',
+        step3Desc: 'Sélectionnez votre résolution vidéo ou le format MP3 et téléchargez instantanément.',
+        faqTitle: 'Foire Aux Questions',
+        faqSubhead: 'Tout ce que vous devez savoir sur l’utilisation de VidSavor.com',
+        dlTitle: 'Télécharger VidSavor<span class="agy-blinking-cursor"></span>',
+        dlReleases: 'Voir les versions précédentes',
+        dlExtTitle: 'Extension Web VidSavor',
+        dlExtBtn: "Télécharger l'Extension (.zip)",
+        dlAndroidTitle: 'Application Android VidSavor',
+        dlAndroidBtn: "Télécharger l'APK Android",
+        dlIosTitle: 'VidSavor iOS QuickShare',
+        dlIosBtn: 'Obtenir le Raccourci iOS',
+        dlCliTitle: 'VidSavor CLI & API'
+    },
+    PT: {
+        title: 'Baixe Redes Sociais Instantaneamente. <span class="gradient">Sem Anúncios. Sem Marca d\'Água.</span>',
+        desc: 'De reels virais a fotos em alta resolução e áudio cristalino, o VidSavor permite baixar conteúdo ilimitado e sem marca d\'água instantaneamente.',
+        placeholder: 'Cole o link do Instagram, TikTok, YouTube, Facebook, Twitter...',
+        paste: 'Colar',
+        download: 'Baixar',
+        subtext: 'Cole qualquer link público acima e o download começará automaticamente!',
+        badge: '<i class="fa-solid fa-shield-heart"></i> 100% Grátis • Sem Login • Qualidade 4K HD',
+        freeBadge: '<i class="fa-solid fa-circle-check"></i> 100% Grátis',
+        stepsBadge: 'Processo Super Simples em 3 Passos',
+        stepsTitle: 'Passos para Baixar Vídeos & Reels',
+        stepsSubhead: 'Uma maneira rápida e fácil de salvar suas mídias favoritas para assistir offline:',
+        step1Title: 'Copiar Link',
+        step1Desc: 'Copie o link público do vídeo ou reel na sua rede social favorita.',
+        step2Title: 'Colar Link',
+        step2Desc: 'Cole o link copiado no campo do VidSavor com apenas um clique no botão Colar.',
+        step3Title: 'Baixar Mídia',
+        step3Desc: 'Escolha a resolução desejada ou formato MP3 e faça o download imediatamente.',
+        faqTitle: 'Perguntas Frequentes',
+        faqSubhead: 'Tudo o que você precisa saber sobre como usar o VidSavor.com',
+        dlTitle: 'Baixar VidSavor<span class="agy-blinking-cursor"></span>',
+        dlReleases: 'Ver versões anteriores',
+        dlExtTitle: 'Extensão Web VidSavor',
+        dlExtBtn: 'Baixar Extensão (.zip)',
+        dlAndroidTitle: 'App Android VidSavor',
+        dlAndroidBtn: 'Baixar APK para Android',
+        dlIosTitle: 'VidSavor iOS QuickShare',
+        dlIosBtn: 'Baixar Atalho para iOS',
+        dlCliTitle: 'VidSavor CLI & API'
+    },
+    TR: {
+        title: 'Sosyal Medyayı Anında İndirin. <span class="gradient">Reklamsız. Filigransız.</span>',
+        desc: 'Viral videolardan yüksek çözünürlüklü fotoğraflara ve net seslere kadar VidSavor, sınırsız ve filigransız içerik indirmenizi sağlar.',
+        placeholder: 'Instagram, TikTok, YouTube, Facebook, Twitter bağlantısını yapıştırın...',
+        paste: 'Yapıştır',
+        download: 'İndir',
+        subtext: 'Yukarıya herkese açık herhangi bir bağlantı yapıştırın, otomatik olarak başlayacaktır!',
+        badge: '<i class="fa-solid fa-shield-heart"></i> %100 Ücretsiz • Giriş Yok • 4K HD Kalite',
+        freeBadge: '<i class="fa-solid fa-circle-check"></i> %100 Ücretsiz',
+        stepsBadge: 'Süper Basit 3 Adımlı Süreç',
+        stepsTitle: 'Video ve Reels İndirme Adımları',
+        stepsSubhead: 'Çevrimdışı izlemek için favori medyanızı kaydetmenin en hızlı ve kolay yolu:',
+        step1Title: 'Bağlantıyı Kopyala',
+        step1Desc: 'Favori platformunuzdan videonun veya reels içeriğinin bağlantısını kopyalayın.',
+        step2Title: 'Bağlantıyı Yapıştır',
+        step2Desc: 'Kopyalanan bağlantıyı yukarıdaki kutuya tek tıkla Yapıştır butonuyla yapıştırın.',
+        step3Title: 'Medyayı İndir',
+        step3Desc: 'Tercih ettiğiniz video çözünürlüğünü veya MP3 formatını seçin ve anında indirin.',
+        faqTitle: 'Sıkça Sorulan Sorular',
+        faqSubhead: 'VidSavor.com kullanımı hakkında bilmeniz gereken her şey burada',
+        dlTitle: "VidSavor'ı İndir<span class=\"agy-blinking-cursor\"></span>",
+        dlReleases: 'Önceki sürümleri görüntüle',
+        dlExtTitle: 'VidSavor Web Uzantısı',
+        dlExtBtn: 'Uzantıyı İndir (.zip)',
+        dlAndroidTitle: 'VidSavor Android Paylaşım Uygulaması',
+        dlAndroidBtn: 'Android APK İndir',
+        dlIosTitle: 'VidSavor iOS QuickShare',
+        dlIosBtn: 'iOS Kestirmesini Al',
+        dlCliTitle: 'VidSavor CLI & API'
+    },
+    RU: {
+        title: 'Скачивайте видео мгновенно. <span class="gradient">Без рекламы. Без водяных знаков.</span>',
+        desc: 'От вирусных рилс до фото высокого разрешения и чистого звука — VidSavor позволяет скачивать контент без ограничений и водяных знаков.',
+        placeholder: 'Вставьте ссылку из Instagram, TikTok, YouTube, Facebook, Twitter...',
+        paste: 'Вставить',
+        download: 'Скачать',
+        subtext: 'Вставьте любую ссылку выше, и загрузка начнется автоматически!',
+        badge: '<i class="fa-solid fa-shield-heart"></i> 100% Бесплатно • Без входа • 4K HD качество',
+        freeBadge: '<i class="fa-solid fa-circle-check"></i> 100% Бесплатно',
+        stepsBadge: 'Супер простой процесс в 3 шага',
+        stepsTitle: 'Шаги для скачивания видео и рилс',
+        stepsSubhead: 'Быстрый способ сохранить любимые медиа для просмотра офлайн:',
+        step1Title: 'Скопируйте ссылку',
+        step1Desc: 'Скопируйте ссылку на видео или рилс из вашей любимой соцсети.',
+        step2Title: 'Вставьте ссылку',
+        step2Desc: 'Вставьте ссылку в поле выше с помощью кнопки "Вставить".',
+        step3Title: 'Скачайте файл',
+        step3Desc: 'Выберите нужное качество видео или MP3 и нажмите "Скачать".',
+        faqTitle: 'Часто задаваемые вопросы',
+        faqSubhead: 'Все, что вам нужно знать об использовании VidSavor.com',
+        dlTitle: 'Скачать VidSavor<span class="agy-blinking-cursor"></span>',
+        dlReleases: 'Посмотреть предыдущие выпуски',
+        dlExtTitle: 'Веб-расширение VidSavor',
+        dlExtBtn: 'Скачать расширение (.zip)',
+        dlAndroidTitle: 'Android-приложение VidSavor',
+        dlAndroidBtn: 'Скачать APK для Android',
+        dlIosTitle: 'VidSavor iOS QuickShare',
+        dlIosBtn: 'Получить команду iOS',
+        dlCliTitle: 'VidSavor CLI & API'
+    },
+    AR: {
+        title: 'تحميل من وسائل التواصل فوراً. <span class="gradient">بدون إعلانات. بدون علامة مائية.</span>',
+        desc: 'من الريلز الشهيرة إلى الصور عالية الدقة والصوت النقي، يتيح لك VidSavor تنزيل محتوى غير محدود وبدون علامة مائية على الفور.',
+        placeholder: 'الصق الرابط من Instagram أو TikTok أو YouTube أو Facebook أو Twitter...',
+        paste: 'لصق',
+        download: 'تحميل',
+        subtext: 'الصق أي رابط عام أعلاه وسيبدأ الجلب تلقائياً!',
+        badge: '<i class="fa-solid fa-shield-heart"></i> 100% مجاني • بدون تسجيل • جودة 4K HD',
+        freeBadge: '<i class="fa-solid fa-circle-check"></i> 100% مجاني',
+        stepsBadge: 'عملية سهلة للغاية من 3 خطوات',
+        stepsTitle: 'خطوات تحميل الفيديوهات والريلز',
+        stepsSubhead: 'طريقة سريعة وبدون مجهود لحفظ مقاطعك المفضلة للمشاهدة بدون إنترنت:',
+        step1Title: 'نسخ الرابط',
+        step1Desc: 'انسخ الرابط العام للفيديو أو المنشور من منصتك المفضلة.',
+        step2Title: 'لصق الرابط',
+        step2Desc: 'الصق الرابط المنسوخ في خانة البحث أعلاه بنقرة واحدة.',
+        step3Title: 'تحميل الوسائط',
+        step3Desc: 'اختر الدقة المناسبة أو صيغة MP3 واضغط على تحميل فوراً.',
+        faqTitle: 'الأسئلة الشائعة',
+        faqSubhead: 'كل ما تحتاج لمعرفته حول استخدام VidSavor.com',
+        dlTitle: 'تحميل VidSavor<span class="agy-blinking-cursor"></span>',
+        dlReleases: 'عرض الإصدارات السابقة',
+        dlExtTitle: 'إضافة متصفح VidSavor',
+        dlExtBtn: 'تحميل الإضافة (.zip)',
+        dlAndroidTitle: 'تطبيق أندرويد VidSavor',
+        dlAndroidBtn: 'تحميل تطبيق أندرويد APK',
+        dlIosTitle: 'VidSavor iOS QuickShare',
+        dlIosBtn: 'الحصول على اختصار iOS',
+        dlCliTitle: 'VidSavor CLI & API'
+    },
+    JA: {
+        title: 'ソーシャルメディアを瞬時にダウンロード。<span class="gradient">広告なし。透かしなし。</span>',
+        desc: '話題のリールから高解像度写真、クリアな音声まで、VidSavorなら透かしなしで無制限に瞬時にダウンロードできます。',
+        placeholder: 'Instagram、TikTok、YouTube、Facebook、Twitterのリンクを貼り付け...',
+        paste: '貼り付け',
+        download: 'ダウンロード',
+        subtext: '上に公開リンクを貼り付けると、自動的に取得が開始されます！',
+        badge: '<i class="fa-solid fa-shield-heart"></i> 完全無料 • ログイン不要 • 4K HD画質',
+        freeBadge: '<i class="fa-solid fa-circle-check"></i> 完全無料',
+        stepsBadge: '超簡単な3ステップ手順',
+        stepsTitle: '動画＆リールのダウンロード手順',
+        stepsSubhead: 'お気に入りのメディアをオフライン再生用に保存する最も簡単な方法：',
+        step1Title: 'リンクをコピー',
+        step1Desc: 'お気に入りのSNSから動画やリールの公開リンクをコピーします。',
+        step2Title: 'リンクを貼り付け',
+        step2Desc: 'ワンクリックの貼り付けボタンを使って、上の入力欄にリンクを貼り付けます。',
+        step3Title: 'メディアをダウンロード',
+        step3Desc: '希望の動画解像度またはMP3形式を選択して、すぐにダウンロードします。',
+        faqTitle: 'よくある質問',
+        faqSubhead: 'VidSavor.comの使い方に関するよくある質問とガイド',
+        dlTitle: 'VidSavorをダウンロード<span class="agy-blinking-cursor"></span>',
+        dlReleases: '以前のリリースを表示',
+        dlExtTitle: 'VidSavor Web拡張機能',
+        dlExtBtn: '拡張機能をダウンロード (.zip)',
+        dlAndroidTitle: 'VidSavor Android共有アプリ',
+        dlAndroidBtn: 'Android APKをダウンロード',
+        dlIosTitle: 'VidSavor iOS QuickShare',
+        dlIosBtn: 'iOSショートカットを取得',
+        dlCliTitle: 'VidSavor CLI & API'
+    },
+    KO: {
+        title: '소셜 미디어 즉시 다운로드. <span class="gradient">광고 없음. 워터마크 없음.</span>',
+        desc: '인기 릴스부터 고해상도 사진 및 선명한 오디오까지, VidSavor는 워터마크 없는 콘텐츠를 무제한으로 다운로드할 수 있게 해줍니다.',
+        placeholder: 'Instagram, TikTok, YouTube, Facebook, Twitter 링크를 붙여넣으세요...',
+        paste: '붙여넣기',
+        download: '다운로드',
+        subtext: '위에 공개 링크를 붙여넣으면 자동으로 불러오기가 시작됩니다!',
+        badge: '<i class="fa-solid fa-shield-heart"></i> 100% 무료 • 로그인 불필요 • 4K HD 화질',
+        freeBadge: '<i class="fa-solid fa-circle-check"></i> 100% 무료',
+        stepsBadge: '매우 간단한 3단계 과정',
+        stepsTitle: '비디오 및 릴스 다운로드 방법',
+        stepsSubhead: '오프라인 감상을 위해 좋아하는 미디어를 저장하는 가장 빠르고 쉬운 방법:',
+        step1Title: '링크 복사',
+        step1Desc: '원하는 플랫폼에서 비디오 또는 릴스의 공개 링크를 복사합니다.',
+        step2Title: '링크 붙여넣기',
+        step2Desc: '한 번의 클릭으로 붙여넣기 버튼을 눌러 위 입력창에 링크를 붙여넣습니다.',
+        step3Title: '미디어 다운로드',
+        step3Desc: '원하는 비디오 해상도 또는 MP3 형식을 선택하고 즉시 다운로드합니다.',
+        faqTitle: '자주 묻는 질문',
+        faqSubhead: 'VidSavor.com 이용에 대해 알아야 할 모든 것',
+        dlTitle: 'VidSavor 다운로드<span class="agy-blinking-cursor"></span>',
+        dlReleases: '이전 릴리스 보기',
+        dlExtTitle: 'VidSavor 웹 확장 프로그램',
+        dlExtBtn: '확장 프로그램 다운로드 (.zip)',
+        dlAndroidTitle: 'VidSavor 안드로이드 공유 앱',
+        dlAndroidBtn: 'Android APK 다운로드',
+        dlIosTitle: 'VidSavor iOS QuickShare',
+        dlIosBtn: 'iOS 단축어 가져오기',
+        dlCliTitle: 'VidSavor CLI & API'
+    },
+    ZH: {
+        title: '即时下载社交媒体视频。<span class="gradient">无广告。无水印。</span>',
+        desc: '从热门 Reels 到高清照片和清晰音频，VidSavor 让您即时下载无限制、无水印的优质内容。',
+        placeholder: '粘贴来自 Instagram、TikTok、YouTube、Facebook、Twitter 的链接...',
+        paste: '粘贴',
+        download: '下载',
+        subtext: '在上方粘贴任何公开社交媒体链接，即可自动开始解析！',
+        badge: '<i class="fa-solid fa-shield-heart"></i> 100% 免费 • 无需登录 • 4K 超清画质',
+        freeBadge: '<i class="fa-solid fa-circle-check"></i> 100% 免费',
+        stepsBadge: '超简单的 3 步操作',
+        stepsTitle: '下载视频与 Reels 的步骤',
+        stepsSubhead: '轻松几步即可保存您喜爱的视频以供离线观看：',
+        step1Title: '复制链接',
+        step1Desc: '在您喜爱的社交平台上复制视频或 Reels 的公开链接。',
+        step2Title: '粘贴链接',
+        step2Desc: '点击“粘贴”按钮将复制的链接填入上方的 VidSavor 输入框。',
+        step3Title: '下载媒体',
+        step3Desc: '选择您喜欢的高清分辨率或 MP3 格式，即刻点击下载。',
+        faqTitle: '常见问题解答',
+        faqSubhead: '关于使用 VidSavor.com 的一切解答与指南',
+        dlTitle: '下载 VidSavor<span class="agy-blinking-cursor"></span>',
+        dlReleases: '查看以往版本',
+        dlExtTitle: 'VidSavor 网页扩展程序',
+        dlExtBtn: '下载扩展程序 (.zip)',
+        dlAndroidTitle: 'VidSavor 安卓快捷分享 App',
+        dlAndroidBtn: '下载 Android APK',
+        dlIosTitle: 'VidSavor iOS 快捷指令',
+        dlIosBtn: '获取 iOS 快捷指令',
+        dlCliTitle: 'VidSavor 命令行工具与 API'
+    },
+    VI: {
+        title: 'Tải Video Mạng Xã Hội Ngay Lập Tức. <span class="gradient">Không Quảng Cáo. Không Logo.</span>',
+        desc: 'Từ video reels đến ảnh độ phân giải cao và âm thanh rõ nét, VidSavor giúp bạn tải xuống nội dung không giới hạn và không có watermark.',
+        placeholder: 'Dán liên kết từ Instagram, TikTok, YouTube, Facebook, Twitter...',
+        paste: 'Dán',
+        download: 'Tải xuống',
+        subtext: 'Dán bất kỳ liên kết công khai nào vào ô trên để tự động tải!',
+        badge: '<i class="fa-solid fa-shield-heart"></i> 100% Miễn phí • Không cần đăng nhập • Chất lượng 4K HD',
+        freeBadge: '<i class="fa-solid fa-circle-check"></i> 100% Miễn phí',
+        stepsBadge: 'Quy trình 3 bước siêu đơn giản',
+        stepsTitle: 'Các bước tải video & Reels',
+        stepsSubhead: 'Cách nhanh chóng và dễ dàng để lưu video yêu thích của bạn về máy:',
+        step1Title: 'Sao chép liên kết',
+        step1Desc: 'Sao chép liên kết công khai của video từ mạng xã hội.',
+        step2Title: 'Dán liên kết',
+        step2Desc: 'Dán liên kết vào ô nhập liệu VidSavor ở trên bằng nút Dán nhanh.',
+        step3Title: 'Tải xuống tệp',
+        step3Desc: 'Chọn độ phân giải video hoặc định dạng MP3 và bấm tải xuống ngay lập tức.',
+        faqTitle: 'Câu hỏi thường gặp',
+        faqSubhead: 'Mọi thông tin bạn cần biết về việc sử dụng VidSavor.com',
+        dlTitle: 'Tải xuống VidSavor<span class="agy-blinking-cursor"></span>',
+        dlReleases: 'Xem các bản phát hành trước',
+        dlExtTitle: 'Tiện ích VidSavor',
+        dlExtBtn: 'Tải Tiện ích (.zip)',
+        dlAndroidTitle: 'Ứng dụng Android VidSavor',
+        dlAndroidBtn: 'Tải APK Android',
+        dlIosTitle: 'VidSavor iOS QuickShare',
+        dlIosBtn: 'Nhận Phím tắt iOS',
+        dlCliTitle: 'VidSavor CLI & API'
+    },
+    PL: {
+        title: 'Pobieraj z mediów społecznościowych. <span class="gradient">Bez reklam. Bez znaku wodnego.</span>',
+        desc: 'Od wiralowych rolek po zdjęcia w wysokiej rozdzielczości i krystaliczny dźwięk — VidSavor umożliwia natychmiastowe pobieranie bez limitów.',
+        placeholder: 'Wklej link z Instagrama, TikToka, YouTube, Facebooka, Twittera...',
+        paste: 'Wklej',
+        download: 'Pobierz',
+        subtext: 'Wklej dowolny publiczny link powyżej, aby rozpocząć automatyczne pobieranie!',
+        badge: '<i class="fa-solid fa-shield-heart"></i> 100% Za darmo • Bez logowania • Jakość 4K HD',
+        freeBadge: '<i class="fa-solid fa-circle-check"></i> 100% Za darmo',
+        stepsBadge: 'Super prosty proces w 3 krokach',
+        stepsTitle: 'Kroki do pobrania filmów i rolek',
+        stepsSubhead: 'Szybki i łatwy sposób na zapisanie ulubionych multimediów do oglądania offline:',
+        step1Title: 'Skopiuj link',
+        step1Desc: 'Skopiuj publiczny link do filmu lub rolki ze swojej ulubionej platformy.',
+        step2Title: 'Wklej link',
+        step2Desc: 'Wklej skopiowany link do pola wyszukiwania VidSavor za pomocą przycisku Wklej.',
+        step3Title: 'Pobierz plik',
+        step3Desc: 'Wybierz preferowaną rozdzielczość lub format MP3 i kliknij pobierz.',
+        faqTitle: 'Często zadawane pytania',
+        faqSubhead: 'Wszystko, co musisz wiedzieć o korzystaniu z VidSavor.com',
+        dlTitle: 'Pobierz VidSavor<span class="agy-blinking-cursor"></span>',
+        dlReleases: 'Zobacz poprzednie wydania',
+        dlExtTitle: 'Rozszerzenie przeglądarki VidSavor',
+        dlExtBtn: 'Pobierz rozszerzenie (.zip)',
+        dlAndroidTitle: 'Aplikacja VidSavor na Androida',
+        dlAndroidBtn: 'Pobierz APK na Androida',
+        dlIosTitle: 'VidSavor iOS QuickShare',
+        dlIosBtn: 'Pobierz skrót iOS',
+        dlCliTitle: 'VidSavor CLI & API'
+    },
+    IT: {
+        title: 'Scarica da Social Media Istantaneamente. <span class="gradient">Senza Pubblicità. Senza Watermark.</span>',
+        desc: 'Dai reel virali alle foto ad alta risoluzione e all’audio cristallino, VidSavor ti consente di scaricare contenuti illimitati e senza watermark.',
+        placeholder: 'Incolla il link da Instagram, TikTok, YouTube, Facebook, Twitter...',
+        paste: 'Incolla',
+        download: 'Scarica',
+        subtext: 'Incolla qualsiasi link pubblico qui sopra e l’estrazione inizierà automaticamente!',
+        badge: '<i class="fa-solid fa-shield-heart"></i> 100% Gratuito • Nessun Accesso • Qualità 4K HD',
+        freeBadge: '<i class="fa-solid fa-circle-check"></i> 100% Gratuito',
+        stepsBadge: 'Processo Super Semplice in 3 Passaggi',
+        stepsTitle: 'Passaggi per Scaricare Video e Reel',
+        stepsSubhead: 'Un modo rapido e semplice per salvare i tuoi video preferiti per la visione offline:',
+        step1Title: 'Copia Link',
+        step1Desc: 'Copia il link pubblico del video o del reel dalla tua piattaforma preferita.',
+        step2Title: 'Incolla Link',
+        step2Desc: 'Incolla il link copiato nella casella di input sopra con il pulsante Incolla.',
+        step3Title: 'Scarica Media',
+        step3Desc: 'Seleziona la tua risoluzione preferita o formato MP3 e scarica immediatamente.',
+        faqTitle: 'Domande Frequenti',
+        faqSubhead: 'Tutto ciò che devi sapere sull’utilizzo di VidSavor.com',
+        dlTitle: 'Scarica VidSavor<span class="agy-blinking-cursor"></span>',
+        dlReleases: 'Visualizza versioni precedenti',
+        dlExtTitle: 'Estensione Web VidSavor',
+        dlExtBtn: 'Scarica Estensione (.zip)',
+        dlAndroidTitle: 'App Android VidSavor',
+        dlAndroidBtn: 'Scarica APK per Android',
+        dlIosTitle: 'VidSavor iOS QuickShare',
+        dlIosBtn: 'Ottieni Comando Rapido iOS',
+        dlCliTitle: 'VidSavor CLI & API'
+    }
+};
+
+function applyTranslations(code) {
+    const raw = (code || 'EN').toUpperCase();
+    const baseCode = raw.split('-')[0];
+    const t = UI_TRANSLATIONS[raw] || UI_TRANSLATIONS[baseCode] || UI_TRANSLATIONS['EN'];
+    if (!t) return;
+
+    // 1. Hero Title & Desc
+    const titleEl = document.getElementById('mainTitle');
+    if (titleEl && t.title) titleEl.innerHTML = t.title;
+
+    const descEl = document.getElementById('mainDesc');
+    if (descEl && t.desc) descEl.textContent = t.desc;
+
+    // 2. Input Box & Buttons
+    const urlEl = document.getElementById('videoUrl');
+    if (urlEl && t.placeholder) urlEl.placeholder = t.placeholder;
+
+    const pasteBtn = document.querySelector('.paste-btn span');
+    if (pasteBtn && t.paste) pasteBtn.textContent = t.paste;
+
+    document.querySelectorAll('.download-btn span, #mainFetchBtn span').forEach(el => {
+        if (t.download) el.textContent = t.download;
+    });
+
+    const subEl = document.querySelector('.input-subtext');
+    if (subEl && t.subtext) subEl.textContent = t.subtext;
+
+    // 3. Badges
+    const badgeEl = document.querySelector('.hero .badge');
+    if (badgeEl && t.badge) badgeEl.innerHTML = t.badge;
+
+    const freeEl = document.querySelector('.antigravity-badge-free');
+    if (freeEl && t.freeBadge) freeEl.innerHTML = t.freeBadge;
+
+    const headerDl = document.querySelector('.header-actions .antigravity-pill-btn span');
+    if (headerDl && t.download) headerDl.textContent = t.download;
+
+    // 4. How it works steps
+    const stepsBadge = document.querySelector('.steps-container .section-label');
+    if (stepsBadge && t.stepsBadge) stepsBadge.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> ${t.stepsBadge}`;
+
+    const stepsTitle = document.querySelector('.steps-container h2');
+    if (stepsTitle && t.stepsTitle) stepsTitle.textContent = t.stepsTitle;
+
+    const stepsSub = document.querySelector('.steps-container .section-subhead');
+    if (stepsSub && t.stepsSubhead) stepsSub.textContent = t.stepsSubhead;
+
+    const stepCards = document.querySelectorAll('.steps-grid .step-card');
+    if (stepCards.length >= 3) {
+        if (t.step1Title) {
+            const h3 = stepCards[0].querySelector('h3');
+            if (h3) h3.textContent = t.step1Title;
+        }
+        if (t.step1Desc) {
+            const p = stepCards[0].querySelector('p');
+            if (p) p.textContent = t.step1Desc;
+        }
+        if (t.step2Title) {
+            const h3 = stepCards[1].querySelector('h3');
+            if (h3) h3.textContent = t.step2Title;
+        }
+        if (t.step2Desc) {
+            const p = stepCards[1].querySelector('p');
+            if (p) p.textContent = t.step2Desc;
+        }
+        if (t.step3Title) {
+            const h3 = stepCards[2].querySelector('h3');
+            if (h3) h3.textContent = t.step3Title;
+        }
+        if (t.step3Desc) {
+            const p = stepCards[2].querySelector('p');
+            if (p) p.textContent = t.step3Desc;
+        }
+    }
+
+    // 5. FAQ Header
+    const faqTitle = document.querySelector('.faq-header-custom h2');
+    if (faqTitle && t.faqTitle) faqTitle.textContent = t.faqTitle;
+
+    const faqSub = document.querySelector('.faq-header-custom .section-subhead');
+    if (faqSub && t.faqSubhead) faqSub.textContent = t.faqSubhead;
+
+    // 6. Download Page Elements
+    const agyTitle = document.querySelector('.agy-dl-title');
+    if (agyTitle && t.dlTitle) agyTitle.innerHTML = t.dlTitle;
+
+    const agyRel = document.querySelector('.agy-btn-releases span');
+    if (agyRel && t.dlReleases) agyRel.textContent = t.dlReleases;
+
+    const extTitle = document.querySelector('#sec-extension .agy-section-title');
+    if (extTitle && t.dlExtTitle) extTitle.textContent = t.dlExtTitle;
+    const btnExt = document.querySelector('#btnDlExtension span');
+    if (btnExt && t.dlExtBtn) btnExt.textContent = t.dlExtBtn;
+
+    const andTitle = document.querySelector('#sec-android .agy-section-title');
+    if (andTitle && t.dlAndroidTitle) andTitle.textContent = t.dlAndroidTitle;
+    const btnAnd = document.querySelector('#btnDlAndroid span');
+    if (btnAnd && t.dlAndroidBtn) btnAnd.textContent = t.dlAndroidBtn;
+
+    const iosTitle = document.querySelector('#sec-ios .agy-section-title');
+    if (iosTitle && t.dlIosTitle) iosTitle.textContent = t.dlIosTitle;
+    const btnIos = document.querySelector('#btnDlIos span');
+    if (btnIos && t.dlIosBtn) btnIos.textContent = t.dlIosBtn;
+
+    const cliTitle = document.querySelector('#sec-cli .agy-section-title');
+    if (cliTitle && t.dlCliTitle) cliTitle.textContent = t.dlCliTitle;
+}
+
+function applyGoogleTranslate(code) {
+    let raw = (code || 'EN').toUpperCase();
+    let lang = raw.toLowerCase().split('-')[0];
+    if (raw === 'ZH') lang = 'zh-CN';
+
+    // Set or clear cookie
+    if (lang === 'en') {
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        try {
+            document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + window.location.hostname;
+            document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + window.location.hostname.replace(/^www\./, '');
+        } catch (e) {}
+    } else {
+        document.cookie = 'googtrans=/en/' + lang + '; path=/;';
+        try {
+            document.cookie = 'googtrans=/en/' + lang + '; path=/; domain=' + window.location.hostname;
+            document.cookie = 'googtrans=/en/' + lang + '; path=/; domain=.' + window.location.hostname.replace(/^www\./, '');
+        } catch (e) {}
+    }
+
+    // Trigger existing combo if loaded
+    const combo = document.querySelector('.goog-te-combo');
+    if (combo) {
+        combo.value = lang;
+        combo.dispatchEvent(new Event('change'));
+    } else if (lang !== 'en') {
+        // Dynamically inject Google Website Translator
+        if (!document.getElementById('google-translate-script')) {
+            const container = document.createElement('div');
+            container.id = 'google_translate_element';
+            container.style.display = 'none';
+            document.body.appendChild(container);
+
+            window.googleTranslateElementInit = function() {
+                try {
+                    new google.translate.TranslateElement({
+                        pageLanguage: 'en',
+                        autoDisplay: false
+                    }, 'google_translate_element');
+                    setTimeout(() => {
+                        const c = document.querySelector('.goog-te-combo');
+                        if (c) {
+                            c.value = lang;
+                            c.dispatchEvent(new Event('change'));
+                        }
+                    }, 400);
+                } catch (err) {}
+            };
+
+            const s = document.createElement('script');
+            s.id = 'google-translate-script';
+            s.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+            document.body.appendChild(s);
+        }
+    }
+}
+
 function initLanguageSelector() {
     const btn = document.getElementById('langSelectorBtn');
     const menu = document.getElementById('langDropdownMenu');
     if (!btn || !menu) return;
 
-    // Load saved language
+    // Load saved language or default to EN
     const savedCode = localStorage.getItem('vidsavor_lang') || 'EN';
     updateLanguageUI(savedCode);
 
@@ -1060,20 +1708,27 @@ function initLanguageSelector() {
 }
 
 function updateLanguageUI(code) {
+    const raw = (code || 'EN').toUpperCase();
     const btnText = document.getElementById('currentLangCode');
-    if (btnText) btnText.textContent = code;
+    if (btnText) btnText.textContent = raw;
 
     const menu = document.getElementById('langDropdownMenu');
-    if (!menu) return;
+    if (menu) {
+        menu.querySelectorAll('.lang-option').forEach(opt => {
+            const itemCode = opt.getAttribute('data-code');
+            if (itemCode === raw) {
+                opt.classList.add('active');
+            } else {
+                opt.classList.remove('active');
+            }
+        });
+    }
 
-    menu.querySelectorAll('.lang-option').forEach(opt => {
-        const itemCode = opt.getAttribute('data-code');
-        if (itemCode === code) {
-            opt.classList.add('active');
-        } else {
-            opt.classList.remove('active');
-        }
-    });
+    // 1. Instant client-side DOM translation
+    applyTranslations(raw);
+
+    // 2. Full-page Google Translate translation
+    applyGoogleTranslate(raw);
 }
 
 // OS Switcher for Download Page (Exact Google Antigravity behavior)
@@ -1102,6 +1757,8 @@ function switchAgyOsTab(targetOs) {
 
 window.switchAgyOsTab = switchAgyOsTab;
 window.initLanguageSelector = initLanguageSelector;
+window.updateLanguageUI = updateLanguageUI;
+window.applyTranslations = applyTranslations;
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', () => {

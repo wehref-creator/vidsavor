@@ -3647,3 +3647,46 @@ footer.footer-antigravity-layout {
     border-top: 1px solid #e5e7eb;
     margin: 36px 0;
 }
+
+
+/* ==========================================================================
+   GOOGLE TRANSLATE SEAMLESS INTEGRATION & TOP-BAR SUPPRESSION
+   ========================================================================== */
+.goog-te-banner-frame.skiptranslate,
+iframe.goog-te-banner-frame,
+#goog-gt-tt,
+.goog-te-balloon-frame,
+#goog-gt-votingHTML,
+.goog-te-spinner-pos {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+body {
+    top: 0px !important;
+    position: static !important;
+}
+
+.skiptranslate {
+    display: none !important;
+}
+
+.lang-selector-wrapper .skiptranslate,
+#google_translate_element {
+    display: none !important;
+}
+
+font[style] {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Ensure language dropdown is always above canvas and hero layers */
+.lang-selector-wrapper {
+    position: relative;
+    z-index: 9999;
+}
+
+.lang-dropdown-menu {
+    z-index: 10000;
+}

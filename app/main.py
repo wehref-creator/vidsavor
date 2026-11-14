@@ -404,6 +404,7 @@ async def serve_pinterest():
 
 @app.get("/download", response_class=HTMLResponse)
 @app.get("/download/", response_class=HTMLResponse)
+@app.get("/download.html", response_class=HTMLResponse)
 async def serve_download():
     return serve_html_file("download.html")
 
@@ -496,24 +497,28 @@ async def universal_catch_all(catch_all: str, request: Request):
             pass
         return JSONResponse(status_code=200, content={"status": "error", "message": "Please provide a valid media link."})
 
-    # If GET request: check if matches physical downloadable file
-    for folder in [BASE_DIR, STATIC_DIR]:
-        direct_file = os.path.join(folder, catch_all)
-        if os.path.exists(direct_file) and os.path.isfile(direct_file):
-            filename = os.path.basename(direct_file)
-            return FileResponse(
-                path=direct_file,
-                filename=filename,
-                media_type="application/octet-stream",
-                headers={"Content-Disposition": f'attachment; filename="{filename}"'}
-            )
-
-    # If GET request: check if matches static page
+    # If GET request: check if matches static page FIRST (HTML files should always render in browser)
     clean = catch_all.strip("/").replace(".html", "")
     target = f"{clean}.html"
     for folder in [BASE_DIR, STATIC_DIR]:
         candidate = os.path.join(folder, target)
-        if os.path.exists(candidate):
+        if os.path.exists(candidate) and os.path.isfile(candidate):
             return serve_html_file(target)
+
+    # If GET request: check if it's an explicit downloadable package in downloads/
+    if catch_all.startswith("downloads/") or catch_all.startswith("static/downloads/"):
+        for folder in [BASE_DIR, STATIC_DIR]:
+            direct_file = os.path.join(folder, catch_all)
+            if os.path.exists(direct_file) and os.path.isfile(direct_file):
+                filename = os.path.basename(direct_file)
+                if filename.endswith(".html"):
+                    return serve_html_file(filename)
+                return FileResponse(
+                    path=direct_file,
+                    filename=filename,
+                    media_type="application/octet-stream",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+                )
+
     # Default fallback to home
     return serve_html_file("index.html")
