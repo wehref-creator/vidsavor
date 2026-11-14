@@ -1057,7 +1057,11 @@ const UI_TRANSLATIONS = {
         dlAndroidBtn: 'Download Android APK',
         dlIosTitle: 'VidSavor iOS QuickShare',
         dlIosBtn: 'Download iOS Shortcut',
-        dlCliTitle: 'VidSavor CLI & API'
+        dlCliTitle: 'VidSavor CLI & API',
+        dlMobileBtn: 'Unduh Aplikasi',
+        dlMobileSub: 'Ekstensi, APK Android & iOS',
+        dlMobileBtn: 'Download Apps',
+        dlMobileSub: 'Extension, Android APK & iOS'
     },
     HI: {
         title: 'सोशल मीडिया तुरंत डाउनलोड करें। <span class="gradient">कोई विज्ञापन नहीं। कोई वॉटरमार्क नहीं।</span>',
@@ -1087,7 +1091,9 @@ const UI_TRANSLATIONS = {
         dlAndroidBtn: 'एंड्रॉइड APK डाउनलोड करें',
         dlIosTitle: 'VidSavor iOS क्विकशेयर',
         dlIosBtn: 'iOS शॉर्टकट प्राप्त करें',
-        dlCliTitle: 'VidSavor CLI और API'
+        dlCliTitle: 'VidSavor CLI और API',
+        dlMobileBtn: 'ऐप्स डाउनलोड करें',
+        dlMobileSub: 'एक्सटेंशन, एंड्रॉइड APK और iOS'
     },
     ES: {
         title: 'Descarga Redes Sociales al Instante. <span class="gradient">Sin Anuncios. Sin Marca de Agua.</span>',
@@ -1117,7 +1123,9 @@ const UI_TRANSLATIONS = {
         dlAndroidBtn: 'Descargar APK Android',
         dlIosTitle: 'VidSavor iOS QuickShare',
         dlIosBtn: 'Descargar Atajo de iOS',
-        dlCliTitle: 'VidSavor CLI y API'
+        dlCliTitle: 'VidSavor CLI y API',
+        dlMobileBtn: 'Descargar Apps',
+        dlMobileSub: 'Extensión, APK Android e iOS'
     },
     ID: {
         title: 'Unduh Media Sosial Seketika. <span class="gradient">Tanpa Iklan. Tanpa Watermark.</span>',
@@ -1147,7 +1155,9 @@ const UI_TRANSLATIONS = {
         dlAndroidBtn: 'Unduh APK Android',
         dlIosTitle: 'Pintasan Cepat iOS VidSavor',
         dlIosBtn: 'Dapatkan Pintasan iOS',
-        dlCliTitle: 'VidSavor CLI & API'
+        dlCliTitle: 'VidSavor CLI & API',
+        dlMobileBtn: 'Download Apps',
+        dlMobileSub: 'Extension, Android APK & iOS'
     },
     DE: {
         title: 'Social Media Sofort Herunterladen. <span class="gradient">Ohne Werbung. Ohne Wasserzeichen.</span>',
@@ -1177,7 +1187,9 @@ const UI_TRANSLATIONS = {
         dlAndroidBtn: 'Android APK Herunterladen',
         dlIosTitle: 'VidSavor iOS QuickShare',
         dlIosBtn: 'iOS Shortcut Herunterladen',
-        dlCliTitle: 'VidSavor CLI & API'
+        dlCliTitle: 'VidSavor CLI & API',
+        dlMobileBtn: 'Download Apps',
+        dlMobileSub: 'Extension, Android APK & iOS'
     },
     FR: {
         title: 'Téléchargez les Réseaux Sociaux Instantanément. <span class="gradient">Sans Pub. Sans Filigrane.</span>',
@@ -1207,7 +1219,9 @@ const UI_TRANSLATIONS = {
         dlAndroidBtn: "Télécharger l'APK Android",
         dlIosTitle: 'VidSavor iOS QuickShare',
         dlIosBtn: 'Obtenir le Raccourci iOS',
-        dlCliTitle: 'VidSavor CLI & API'
+        dlCliTitle: 'VidSavor CLI & API',
+        dlMobileBtn: 'Download Apps',
+        dlMobileSub: 'Extension, Android APK & iOS'
     },
     PT: {
         title: 'Baixe Redes Sociais Instantaneamente. <span class="gradient">Sem Anúncios. Sem Marca d\'Água.</span>',
@@ -1237,7 +1251,9 @@ const UI_TRANSLATIONS = {
         dlAndroidBtn: 'Baixar APK para Android',
         dlIosTitle: 'VidSavor iOS QuickShare',
         dlIosBtn: 'Baixar Atalho para iOS',
-        dlCliTitle: 'VidSavor CLI & API'
+        dlCliTitle: 'VidSavor CLI & API',
+        dlMobileBtn: 'Download Apps',
+        dlMobileSub: 'Extension, Android APK & iOS'
     },
     TR: {
         title: 'Sosyal Medyayı Anında İndirin. <span class="gradient">Reklamsız. Filigransız.</span>',
@@ -1267,7 +1283,9 @@ const UI_TRANSLATIONS = {
         dlAndroidBtn: 'Android APK İndir',
         dlIosTitle: 'VidSavor iOS QuickShare',
         dlIosBtn: 'iOS Kestirmesini Al',
-        dlCliTitle: 'VidSavor CLI & API'
+        dlCliTitle: 'VidSavor CLI & API',
+        dlMobileBtn: 'Download Apps',
+        dlMobileSub: 'Extension, Android APK & iOS'
     },
     RU: {
         title: 'Скачивайте видео мгновенно. <span class="gradient">Без рекламы. Без водяных знаков.</span>',
@@ -1297,7 +1315,9 @@ const UI_TRANSLATIONS = {
         dlAndroidBtn: 'Скачать APK для Android',
         dlIosTitle: 'VidSavor iOS QuickShare',
         dlIosBtn: 'Получить команду iOS',
-        dlCliTitle: 'VidSavor CLI & API'
+        dlCliTitle: 'VidSavor CLI & API',
+        dlMobileBtn: 'Download Apps',
+        dlMobileSub: 'Extension, Android APK & iOS'
     },
     AR: {
         title: 'تحميل من وسائل التواصل فوراً. <span class="gradient">بدون إعلانات. بدون علامة مائية.</span>',
@@ -1327,7 +1347,9 @@ const UI_TRANSLATIONS = {
         dlAndroidBtn: 'تحميل تطبيق أندرويد APK',
         dlIosTitle: 'VidSavor iOS QuickShare',
         dlIosBtn: 'الحصول على اختصار iOS',
-        dlCliTitle: 'VidSavor CLI & API'
+        dlCliTitle: 'VidSavor CLI & API',
+        dlMobileBtn: 'Download Apps',
+        dlMobileSub: 'Extension, Android APK & iOS'
     },
     JA: {
         title: 'ソーシャルメディアを瞬時にダウンロード。<span class="gradient">広告なし。透かしなし。</span>',
@@ -1357,7 +1379,9 @@ const UI_TRANSLATIONS = {
         dlAndroidBtn: 'Android APKをダウンロード',
         dlIosTitle: 'VidSavor iOS QuickShare',
         dlIosBtn: 'iOSショートカットを取得',
-        dlCliTitle: 'VidSavor CLI & API'
+        dlCliTitle: 'VidSavor CLI & API',
+        dlMobileBtn: 'Download Apps',
+        dlMobileSub: 'Extension, Android APK & iOS'
     },
     KO: {
         title: '소셜 미디어 즉시 다운로드. <span class="gradient">광고 없음. 워터마크 없음.</span>',
@@ -1387,7 +1411,9 @@ const UI_TRANSLATIONS = {
         dlAndroidBtn: 'Android APK 다운로드',
         dlIosTitle: 'VidSavor iOS QuickShare',
         dlIosBtn: 'iOS 단축어 가져오기',
-        dlCliTitle: 'VidSavor CLI & API'
+        dlCliTitle: 'VidSavor CLI & API',
+        dlMobileBtn: 'Download Apps',
+        dlMobileSub: 'Extension, Android APK & iOS'
     },
     ZH: {
         title: '即时下载社交媒体视频。<span class="gradient">无广告。无水印。</span>',
@@ -1447,7 +1473,9 @@ const UI_TRANSLATIONS = {
         dlAndroidBtn: 'Tải APK Android',
         dlIosTitle: 'VidSavor iOS QuickShare',
         dlIosBtn: 'Nhận Phím tắt iOS',
-        dlCliTitle: 'VidSavor CLI & API'
+        dlCliTitle: 'VidSavor CLI & API',
+        dlMobileBtn: 'Download Apps',
+        dlMobileSub: 'Extension, Android APK & iOS'
     },
     PL: {
         title: 'Pobieraj z mediów społecznościowych. <span class="gradient">Bez reklam. Bez znaku wodnego.</span>',
@@ -1477,7 +1505,9 @@ const UI_TRANSLATIONS = {
         dlAndroidBtn: 'Pobierz APK na Androida',
         dlIosTitle: 'VidSavor iOS QuickShare',
         dlIosBtn: 'Pobierz skrót iOS',
-        dlCliTitle: 'VidSavor CLI & API'
+        dlCliTitle: 'VidSavor CLI & API',
+        dlMobileBtn: 'Download Apps',
+        dlMobileSub: 'Extension, Android APK & iOS'
     },
     IT: {
         title: 'Scarica da Social Media Istantaneamente. <span class="gradient">Senza Pubblicità. Senza Watermark.</span>',
@@ -1507,7 +1537,9 @@ const UI_TRANSLATIONS = {
         dlAndroidBtn: 'Scarica APK per Android',
         dlIosTitle: 'VidSavor iOS QuickShare',
         dlIosBtn: 'Ottieni Comando Rapido iOS',
-        dlCliTitle: 'VidSavor CLI & API'
+        dlCliTitle: 'VidSavor CLI & API',
+        dlMobileBtn: 'Download Apps',
+        dlMobileSub: 'Extension, Android APK & iOS'
     }
 };
 
@@ -1547,6 +1579,11 @@ function applyTranslations(code) {
 
     const headerDl = document.querySelector('.header-actions .antigravity-pill-btn span');
     if (headerDl && t.download) headerDl.textContent = t.download;
+
+    const mobDlPrimary = document.querySelector('.mobile-dl-primary-text');
+    if (mobDlPrimary && t.dlMobileBtn) mobDlPrimary.textContent = t.dlMobileBtn;
+    const mobDlSecondary = document.querySelector('.mobile-dl-secondary-text');
+    if (mobDlSecondary && t.dlMobileSub) mobDlSecondary.textContent = t.dlMobileSub;
 
     // 4. How it works steps
     const stepsBadge = document.querySelector('.steps-container .section-label');

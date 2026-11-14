@@ -3690,3 +3690,93 @@ font[style] {
 .lang-dropdown-menu {
     z-index: 10000;
 }
+
+
+/* ==========================================================================
+   MOBILE HAMBURGER DOWNLOAD BUTTON
+   ========================================================================== */
+.mobile-nav-download-item {
+    display: none;
+    width: 100%;
+    margin-top: 10px;
+    margin-bottom: 6px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    .mobile-nav-download-item {
+        display: block !important;
+    }
+
+    .mobile-download-cta-btn {
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 13px 16px !important;
+        background: #111827 !important;
+        color: #ffffff !important;
+        border-radius: 14px !important;
+        text-decoration: none !important;
+        box-shadow: 0 4px 14px rgba(17, 24, 39, 0.18) !important;
+        transition: transform 0.15s ease, background 0.15s ease !important;
+        box-sizing: border-box !important;
+    }
+
+    .mobile-download-cta-btn:active {
+        transform: scale(0.98) !important;
+        background: #000000 !important;
+    }
+
+    .mobile-download-btn-inner {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+    }
+
+    .mobile-dl-icon-badge {
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 10px !important;
+        background: rgba(255, 255, 255, 0.16) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        color: #ffffff !important;
+        font-size: 15px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .mobile-dl-text-wrap {
+        display: flex !important;
+        flex-direction: column !important;
+        text-align: left !important;
+        gap: 2px !important;
+    }
+
+    .mobile-dl-primary-text {
+        font-size: 14.5px !important;
+        font-weight: 700 !important;
+        color: #ffffff !important;
+        letter-spacing: -0.2px !important;
+        line-height: 1.2 !important;
+    }
+
+    .mobile-dl-secondary-text {
+        font-size: 11px !important;
+        font-weight: 500 !important;
+        color: rgba(255, 255, 255, 0.72) !important;
+        line-height: 1.2 !important;
+    }
+
+    .mobile-dl-arrow {
+        font-size: 13px !important;
+        color: rgba(255, 255, 255, 0.65) !important;
+        transition: transform 0.15s ease !important;
+    }
+
+    .mobile-download-cta-btn:hover .mobile-dl-arrow {
+        transform: translateX(3px) !important;
+        color: #ffffff !important;
+    }
+}
