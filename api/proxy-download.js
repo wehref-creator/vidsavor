@@ -62,12 +62,10 @@ export default async function handler(request) {
     headers.set('Sec-Fetch-Mode', 'no-cors');
     headers.set('Sec-Fetch-Site', 'cross-site');
 
-    // Forward range header if client requested range (enables Chrome download resume!)
+    // Forward range header ONLY if client requested range (enables download resume)
     const clientRange = request.headers.get('range');
     if (clientRange) {
       headers.set('Range', clientRange);
-    } else {
-      headers.set('Range', 'bytes=0-');
     }
 
     // Determine platform referer
@@ -201,12 +199,16 @@ export default async function handler(request) {
       responseHeaders.set('Content-Length', contentLength);
     }
 
-    const contentRange = cdnRes.headers.get('content-range');
-    if (contentRange) {
-      responseHeaders.set('Content-Range', contentRange);
-    }
+    // Only return 206 Partial Content if the client explicitly requested a Range
+    const isRangeRequest = !!clientRange;
+    const status = (isRangeRequest && cdnRes.status === 206) ? 206 : 200;
 
-    const status = cdnRes.status === 206 ? 206 : 200;
+    if (isRangeRequest) {
+      const contentRange = cdnRes.headers.get('content-range');
+      if (contentRange) {
+        responseHeaders.set('Content-Range', contentRange);
+      }
+    }
 
     if (request.method === 'HEAD') {
       return new Response(null, {

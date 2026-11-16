@@ -920,9 +920,18 @@ async function downloadNow() {
                     `;
                     const singleDownloadBtn = singleRow.querySelector('.btn-row-download');
                     singleDownloadBtn.addEventListener('click', (e) => {
-                        e.preventDefault();
                         e.stopPropagation();
-                        triggerInstantDownload(data.download, cleanName, singleDownloadBtn);
+                        if (singleDownloadBtn.dataset.downloading === 'true') {
+                            e.preventDefault();
+                            return;
+                        }
+                        singleDownloadBtn.dataset.downloading = 'true';
+                        const origHTML = singleDownloadBtn.innerHTML;
+                        singleDownloadBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
+                        setTimeout(() => {
+                            singleDownloadBtn.innerHTML = origHTML;
+                            singleDownloadBtn.dataset.downloading = 'false';
+                        }, 4000);
                     });
                     container.appendChild(singleRow);
                 }
@@ -999,11 +1008,34 @@ async function downloadNow() {
                         `;
 
                         const downloadBtn = rowEl.querySelector('.btn-row-download');
-                        downloadBtn.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            triggerInstantDownload(item.url, cleanFilename, downloadBtn, item);
-                        });
+                        const isRowYouTubeToken = !isPhoto && (
+                            (item && item.token) ||
+                            (typeof item.url === 'string' && item.url.startsWith('Z0ve')) ||
+                            (typeof item.url === 'string' && !item.url.startsWith('http') && (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be')))
+                        );
+
+                        if (isRowYouTubeToken) {
+                            downloadBtn.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                triggerInstantDownload(item.url, cleanFilename, downloadBtn, item);
+                            });
+                        } else {
+                            downloadBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                if (downloadBtn.dataset.downloading === 'true') {
+                                    e.preventDefault();
+                                    return;
+                                }
+                                downloadBtn.dataset.downloading = 'true';
+                                const origHTML = downloadBtn.innerHTML;
+                                downloadBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
+                                setTimeout(() => {
+                                    downloadBtn.innerHTML = origHTML;
+                                    downloadBtn.dataset.downloading = 'false';
+                                }, 4000);
+                            });
+                        }
 
                         container.appendChild(rowEl);
                     });

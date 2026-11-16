@@ -278,15 +278,17 @@ async def proxy_download(
         parsed = urllib.parse.urlparse(target_url)
         domain = (parsed.netloc or "").lower()
 
+        client_range = request.headers.get("range")
         base_headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
             'Accept': '*/*',
             'Accept-Encoding': 'identity',
-            'Range': 'bytes=0-',
             'Sec-Fetch-Dest': 'video',
             'Sec-Fetch-Mode': 'no-cors',
             'Sec-Fetch-Site': 'cross-site'
         }
+        if client_range:
+            base_headers['Range'] = client_range
 
         # Build list of candidate header strategies for strict platform CDNs (TikTok, Instagram, YouTube)
         candidate_headers = []
