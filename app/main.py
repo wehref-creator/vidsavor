@@ -36,6 +36,35 @@ if os.path.exists(STATIC_DIR):
 class FetchRequest(BaseModel):
     url: str
 
+@app.get("/api/test-yt")
+async def test_yt(v: str = "d3NJyNn6vTQ"):
+    out = {}
+    url = f"https://www.youtube.com/watch?v={v}"
+    try:
+        p_url = "https://grapweb.com/youtube/api.php?action=parse&url=" + urllib.parse.quote(url)
+        r = requests.get(p_url, timeout=6, headers={'User-Agent': 'Mozilla/5.0'})
+        out['grapweb_status'] = r.status_code
+        out['grapweb_data'] = r.text[:300]
+    except Exception as e:
+        out['grapweb_error'] = str(e)
+
+    try:
+        import yt_dlp
+        ydl_opts = {
+            'quiet': True,
+            'skip_download': True,
+            'socket_timeout': 5,
+            'format': 'best[ext=mp4]/best',
+            'extractor_args': {'youtube': {'player_client': ['ios', 'android', 'mweb']}}
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            out['ytdlp_title'] = info.get('title')
+            out['ytdlp_url'] = info.get('url')[:60] if info.get('url') else 'no url'
+    except Exception as e:
+        out['ytdlp_error'] = str(e)
+    return out
+
 @app.post("/fetch")
 @app.post("/api/fetch")
 @app.post("/api/index.py")
