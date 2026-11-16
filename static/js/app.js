@@ -454,53 +454,31 @@ let currentTitle = "Extracted Content";
 
 // Instant Direct Download Engine (Using grapweb Hostinger streaming attachment engine for TikTok, Instagram, Facebook, and YouTube)
 function resolveDownloadUrl(streamUrl, filename, item = null) {
-    if (!streamUrl) return '#';
+    if (!streamUrl) return '';
     const currentPostUrl = document.getElementById('videoUrl')?.value?.trim() || '';
     const safeTitle = (filename || 'video').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
     const ext = (filename || '').split('.').pop() || 'mp4';
 
-    // 1. TIKTOK: Route through dedicated grapweb.com/tiktok/download.php engine (Hostinger cURL attachment streaming)
-    const isTikTok = currentPostUrl.includes('tiktok.com') ||
-                     streamUrl.includes('tiktok') ||
-                     streamUrl.includes('byteoversea') ||
-                     streamUrl.includes('tikwm') ||
-                     streamUrl.includes('musical.ly') ||
-                     streamUrl.includes('rapidcdn');
-    if (isTikTok) {
-        return `https://grapweb.com/tiktok/download.php?url=${encodeURIComponent(streamUrl)}&title=${encodeURIComponent(safeTitle)}&ext=${encodeURIComponent(ext)}`;
+    // 1. If it's already a direct download redirect or proxy url
+    if (streamUrl.includes('/api/proxy-download') || streamUrl.includes('download_redirect')) {
+        return streamUrl;
     }
 
-    // 2. INSTAGRAM & FACEBOOK: Route through dedicated grapweb.com/facebook/download.php engine (supports cdninstagram.com, fbcdn.net, facebook.com)
-    const isMeta = currentPostUrl.includes('instagram.com') ||
-                   currentPostUrl.includes('instagr.am') ||
-                   currentPostUrl.includes('facebook.com') ||
-                   currentPostUrl.includes('fb.watch') ||
-                   currentPostUrl.includes('fb.com') ||
-                   streamUrl.includes('cdninstagram.com') ||
-                   streamUrl.includes('instagram.com') ||
-                   streamUrl.includes('fbcdn.net') ||
-                   streamUrl.includes('facebook.com');
-    if (isMeta) {
-        return `https://grapweb.com/facebook/download.php?url=${encodeURIComponent(streamUrl)}&title=${encodeURIComponent(safeTitle)}&ext=${encodeURIComponent(ext)}`;
-    }
-
-    // 3. DIRECT VIDSSAVE RESOLVED LINK (already converted and unrestricted):
+    // 2. Direct Vidssave resolved link (already converted and unrestricted)
     if (streamUrl.includes('vidssave.com') && streamUrl.includes('/tmp/recycle/')) {
         return streamUrl;
     }
 
-    // 4. YOUTUBE (dynamic resolution trigger):
-    const isYouTube = currentPostUrl.includes('youtube.com') ||
-                      currentPostUrl.includes('youtu.be') ||
-                      (item && item.token) ||
-                      streamUrl.startsWith('Z0ve');
-    if (isYouTube) {
+    // 3. YouTube conversion tokens that require dynamic resolution
+    const isYouTubeToken = (item && item.token) || (typeof streamUrl === 'string' && streamUrl.startsWith('Z0ve'));
+    if (isYouTubeToken) {
         return 'javascript:void(0);';
     }
 
+    // 4. Route all direct streams through our edge proxy to force direct attachment download
     const params = new URLSearchParams({
         url: streamUrl,
-        filename: filename || 'video.mp4'
+        filename: filename || `${safeTitle}.${ext}`
     });
     if (currentPostUrl) {
         params.set('referer', currentPostUrl);
@@ -519,12 +497,14 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
     const ext = (filename || '').split('.').pop() || 'mp4';
 
     // Check if this is a YouTube stream requiring cloud task conversion
-    const isYouTube = currentPostUrl.includes('youtube.com') ||
-                      currentPostUrl.includes('youtu.be') ||
-                      (item && item.token) ||
-                      (streamUrl && streamUrl.startsWith('Z0ve'));
+    const isPhoto = (item && item.type === 'photo') || (streamUrl && (streamUrl.includes('ytimg.com') || streamUrl.endsWith('.jpg') || streamUrl.endsWith('.png')));
+    const isYouTubeToken = !isPhoto && (
+        (item && item.token) ||
+        (typeof streamUrl === 'string' && streamUrl.startsWith('Z0ve')) ||
+        (typeof streamUrl === 'string' && !streamUrl.startsWith('http') && (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be')))
+    );
 
-    if (isYouTube) {
+    if (isYouTubeToken) {
         const token = (item && item.token) ? item.token : streamUrl;
         const origHTML = btnElement ? btnElement.innerHTML : '';
         if (btnElement) {
@@ -576,7 +556,7 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
         }
     }
 
-    // Standard Direct Download Flow (TikTok, Instagram, Facebook, Pinterest, Twitter)
+    // Standard Direct Download Flow (TikTok, Instagram, Facebook, Pinterest, Twitter, YouTube Photos)
     const downloadUrl = resolveDownloadUrl(streamUrl, filename, item);
 
     if (btnElement) {

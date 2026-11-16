@@ -2,11 +2,13 @@ import re
 import math
 import logging
 import urllib.parse
+from typing import Dict, Any, List, Optional
 import requests
 import yt_dlp
-from typing import Dict, Any, List, Optional
 
 logger = logging.getLogger(__name__)
+
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
 def human_filesize(num_bytes: Optional[int]) -> str:
     """Format bytes into readable size string."""
@@ -63,34 +65,82 @@ def detect_platform(url: str) -> str:
         return 'tiktok'
     if 'facebook.com' in u or 'fb.watch' in u or 'fb.com' in u:
         return 'facebook'
-    if 'twitter.com' in u or 'x.com' in u or 't.co' in u:
-        return 'twitter'
     if 'pinterest.com' in u or 'pin.it' in u:
         return 'pinterest'
+    if 'twitter.com' in u or 'x.com' in u or 't.co/' in u:
+        return 'twitter'
     if 'reddit.com' in u or 'v.redd.it' in u:
         return 'reddit'
     if 'threads.net' in u:
         return 'threads'
     return 'universal'
 
-def clean_media_url(raw_url: str) -> str:
-    """Remove tracking query strings and follow short-links."""
+def canonicalize_url(raw_url: str) -> str:
+    """Normalize short-links, mobile links, and platform-specific formats."""
     url = raw_url.strip()
-    # Unshorten known redirects
-    try:
-        if any(short in url.lower() for short in ['pin.it', 'fb.watch', 't.co', 'bit.ly', 'vm.tiktok.com', 'vt.tiktok.com']):
-            resp = requests.head(url, allow_redirects=True, timeout=5, headers={'User-Agent': 'Mozilla/5.0'})
-            url = resp.url
-    except Exception:
-        pass
 
-    # Strip Instagram tracking params (igsh, utm_source, etc.)
-    if 'instagram.com' in url.lower():
+    # Follow short-links for known redirect domains
+    if any(short in url.lower() for short in ['pin.it', 'fb.watch', 't.co', 'bit.ly', 'vm.tiktok.com', 'vt.tiktok.com']):
+        try:
+            resp = requests.head(url, allow_redirects=True, timeout=4, headers={'User-Agent': USER_AGENT})
+            if resp.url:
+                url = resp.url
+        except Exception:
+            pass
+
+    # YouTube canonicalization (Shorts, youtu.be, embed -> watch?v=)
+    if 'youtu.be/' in url.lower():
+        m = re.search(r'youtu\.be/([a-zA-Z0-9_-]{11})', url)
+        if m:
+            return f"https://www.youtube.com/watch?v={m.group(1)}"
+    elif 'youtube.com/shorts/' in url.lower():
+        m = re.search(r'shorts/([a-zA-Z0-9_-]{11})', url)
+        if m:
+            return f"https://www.youtube.com/watch?v={m.group(1)}"
+    elif 'youtube.com/embed/' in url.lower():
+        m = re.search(r'embed/([a-zA-Z0-9_-]{11})', url)
+        if m:
+            return f"https://www.youtube.com/watch?v={m.group(1)}"
+
+    # Instagram parameter cleanup
+    if 'instagram.com' in url.lower() or 'instagr.am' in url.lower():
         url = re.sub(r'[?&](igsh|utm_[^&]+|ig_mid)=[^&#]*', '', url)
         if url.endswith('?') or url.endswith('&'):
             url = url[:-1]
 
+    # Facebook parameter cleanup
+    if 'facebook.com' in url.lower() or 'fb.com' in url.lower():
+        url = re.sub(r'[?&](mibextid|sfnsn|rdid|ref)=[^&#]*', '', url)
+        if url.endswith('?') or url.endswith('&'):
+            url = url[:-1]
+
     return url
+
+def decode_hunter(h_str: str, n_str: str, t_val: int, e_val: int) -> str:
+    """Decodes Dean Edwards / Hunter packed JavaScript used by SaveInsta/SaveVids."""
+    r_out = ""
+    i = 0
+    length = len(h_str)
+    sep = n_str[e_val]
+    while i < length:
+        s = ""
+        while i < length and h_str[i] != sep:
+            s += h_str[i]
+            i += 1
+        i += 1
+        for j in range(len(n_str)):
+            s = s.replace(n_str[j], str(j))
+        if s:
+            try:
+                char_code = int(s, e_val) - t_val
+                if char_code > 0:
+                    r_out += chr(char_code)
+            except Exception:
+                pass
+    try:
+        return urllib.parse.unquote(r_out)
+    except Exception:
+        return r_out
 
 class MediaExtractor:
     def __init__(self):
@@ -100,80 +150,1019 @@ class MediaExtractor:
             'skip_download': True,
             'extract_flat': False,
             'noplaylist': True,
-            'socket_timeout': 15,
+            'socket_timeout': 8,
             'extractor_args': {'youtube': {'player_client': ['ios', 'android', 'mweb', 'web']}},
-            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'user_agent': USER_AGENT,
         }
 
     def extract(self, raw_url: str) -> Dict[str, Any]:
-        """Main entry point to extract media from URL."""
+        """Main multi-platform extraction pipeline."""
         if not raw_url or not raw_url.strip():
-            return {"status": "error", "message": "Please provide a valid video link."}
+            return {"status": "error", "message": "Please provide a valid media link."}
 
-        url = clean_media_url(raw_url)
+        url = canonicalize_url(raw_url)
         platform = detect_platform(url)
 
-        # For TikTok, prioritize TikWM unwatermarked streams for instant, high-speed watermark-free saves
-        if platform == 'tiktok':
-            twm_res = self._fallback_extract(url, 'tiktok')
-            if twm_res and twm_res.get('status') == 'success' and twm_res.get('results'):
-                # Try getting yt-dlp formats to enrich with additional raw stream resolutions
-                try:
-                    ydl_opts = dict(self.ydl_opts_base)
-                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                        info = ydl.extract_info(url, download=False)
-                        if info:
-                            parsed = self._parse_info(info, platform, url)
-                            if parsed and parsed.get('results'):
-                                seen_urls = {r['url'] for r in twm_res['results']}
-                                for item in parsed['results']:
-                                    if item.get('url') and item['url'] not in seen_urls and item.get('type') == 'video':
-                                        twm_res['results'].append(item)
-                                        seen_urls.add(item['url'])
-                except Exception as ydl_merge_err:
-                    logger.debug(f"yt-dlp merge skipped: {ydl_merge_err}")
-                return twm_res
-
-        # For YouTube, prioritize grapweb/vidssave engine for unthrottled non-IP-locked streams with full audio
+        # 1. YouTube Dedicated Handler
         if platform == 'youtube':
-            yt_res = self._extract_youtube_grapweb(url)
-            if yt_res and yt_res.get('status') == 'success' and yt_res.get('results'):
-                return yt_res
+            res = self._extract_youtube(url)
+            if res and res.get('status') == 'success' and res.get('results'):
+                return res
 
-        # 1. Primary: yt-dlp Extraction
+        # 2. TikTok Dedicated Handler
+        elif platform == 'tiktok':
+            res = self._extract_tiktok(url)
+            if res and res.get('status') == 'success' and res.get('results'):
+                return res
+
+        # 3. Instagram Dedicated Handler
+        elif platform == 'instagram':
+            res = self._extract_instagram(url)
+            if res and res.get('status') == 'success' and res.get('results'):
+                return res
+
+        # 4. Facebook Dedicated Handler
+        elif platform == 'facebook':
+            res = self._extract_facebook(url)
+            if res and res.get('status') == 'success' and res.get('results'):
+                return res
+
+        # 5. Pinterest Dedicated Handler
+        elif platform == 'pinterest':
+            res = self._extract_pinterest(url)
+            if res and res.get('status') == 'success' and res.get('results'):
+                return res
+
+        # 6. Twitter / X Dedicated Handler
+        elif platform == 'twitter':
+            res = self._extract_twitter(url)
+            if res and res.get('status') == 'success' and res.get('results'):
+                return res
+
+        # Fallback to Universal yt-dlp
+        try:
+            with yt_dlp.YoutubeDL(self.ydl_opts_base) as ydl:
+                info = ydl.extract_info(url, download=False)
+                if info:
+                    parsed = self._parse_info(info, platform, url)
+                    if parsed and parsed.get('results'):
+                        return parsed
+        except Exception as e:
+            logger.warning(f"Universal yt-dlp fallback error: {e}")
+
+        # Fallback to OpenGraph Scraper
+        og_res = self._extract_opengraph(url, platform)
+        if og_res and og_res.get('status') == 'success' and og_res.get('results'):
+            return og_res
+
+        # Informative error message based on platform
+        error_messages = {
+            'youtube': "Could not fetch YouTube video. Please verify the video is public, accessible, and not age-restricted.",
+            'instagram': "Could not fetch Instagram post or reel. Please verify the account is public (not private) and the post has not been deleted.",
+            'tiktok': "Could not fetch TikTok video. Please ensure the link is a valid public TikTok video URL and try again.",
+            'facebook': "Could not fetch Facebook video. Please make sure the video or reel is public and accessible without login.",
+            'twitter': "Could not fetch Twitter/X media. Please ensure the post contains a video or photo and is from a public account.",
+            'pinterest': "Could not fetch Pinterest pin. Please ensure the pin is public and accessible.",
+        }
+        return {
+            "status": "error",
+            "message": error_messages.get(platform, "Media not found! Please check that the link is valid and from a public post, then retry.")
+        }
+
+    # =========================================================================
+    # 1. YOUTUBE EXTRACTOR
+    # =========================================================================
+    def _extract_youtube(self, url: str) -> Optional[Dict[str, Any]]:
+        # Tier 1: Hostinger Grapweb Parse API
+        try:
+            parse_url = "https://grapweb.com/youtube/api.php?action=parse&url=" + urllib.parse.quote(url)
+            resp = requests.get(parse_url, timeout=7, headers={'User-Agent': USER_AGENT})
+            if resp.status_code == 200:
+                data = resp.json()
+                if data and data.get('status') == 'success' and data.get('data'):
+                    info = data['data']
+                    title = info.get('title') or "YouTube Video"
+                    thumbnail = info.get('thumbnail') or ""
+                    author = info.get('author') or "YouTube Creator"
+                    duration = info.get('durationFormatted') or ""
+
+                    results = []
+                    seen_qualities = set()
+
+                    for v in info.get('videos', []):
+                        q = v.get('quality', '').upper()
+                        token = v.get('resource_content') or ''
+                        dl_url = v.get('download_url') or ''
+                        size_str = v.get('sizeFormatted') or 'HD Stream'
+
+                        clean_q = q
+                        if clean_q in seen_qualities:
+                            continue
+                        seen_qualities.add(clean_q)
+
+                        if clean_q in ['1080P', '1080P60', 'FHD']:
+                            label = "1080p Full HD"
+                        elif clean_q in ['720P', 'HD']:
+                            label = "720p HD"
+                        elif clean_q == '2160P':
+                            label = "2160p (4K Ultra HD)"
+                        elif clean_q == '1440P':
+                            label = "1440p (2K QHD)"
+                        elif clean_q == '480P':
+                            label = "480p SD"
+                        elif clean_q == '360P':
+                            label = "360p"
+                        else:
+                            label = f"{clean_q.lower()}"
+
+                        target_url = token if token else dl_url
+                        if not target_url:
+                            continue
+
+                        results.append({
+                            "url": target_url,
+                            "token": token,
+                            "type": "video",
+                            "quality": label,
+                            "has_audio": True,
+                            "format": "mp4",
+                            "size": size_str,
+                            "thumbnail": thumbnail
+                        })
+
+                    for a in info.get('audios', []):
+                        q = a.get('quality', '').upper()
+                        token = a.get('resource_content') or ''
+                        dl_url = a.get('download_url') or ''
+                        size_str = a.get('sizeFormatted') or 'High Audio'
+                        target_url = token if token else dl_url
+                        if not target_url:
+                            continue
+
+                        results.append({
+                            "url": target_url,
+                            "token": token,
+                            "type": "audio",
+                            "quality": f"{q} Audio (MP3)",
+                            "has_audio": True,
+                            "format": "mp3",
+                            "size": size_str,
+                            "thumbnail": thumbnail
+                        })
+
+                    if thumbnail:
+                        results.append({
+                            "url": thumbnail,
+                            "type": "photo",
+                            "quality": "HD Cover Poster (JPG)",
+                            "format": "jpg",
+                            "size": "Original JPG",
+                            "thumbnail": thumbnail
+                        })
+
+                    if results:
+                        return {
+                            "status": "success",
+                            "title": title,
+                            "thumbnail": thumbnail,
+                            "type": "video",
+                            "download": results[0]['url'],
+                            "author": author,
+                            "duration": duration,
+                            "platform": "youtube",
+                            "results": results
+                        }
+        except Exception as e:
+            logger.warning(f"YouTube Grapweb parse error: {e}")
+
+        # Tier 2: yt-dlp Progressive Extractor
         try:
             ydl_opts = dict(self.ydl_opts_base)
+            ydl_opts['format'] = 'best[ext=mp4]/best'
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
                 if info:
-                    return self._parse_info(info, platform, url)
+                    parsed = self._parse_info(info, 'youtube', url)
+                    if parsed and parsed.get('results'):
+                        return parsed
         except Exception as e:
-            logger.warning(f"yt-dlp extraction failed for {url}: {e}. Trying fallback engines...")
-            pass
+            logger.warning(f"YouTube yt-dlp fallback error: {e}")
 
-        # 2. Secondary: Specialized Platform Fallbacks
-        fallback_res = self._fallback_extract(url, platform)
-        if fallback_res:
-            return fallback_res
+        return None
 
-        # 3. Informative, user-friendly error response
-        if platform == 'instagram':
-            msg = "Instagram media not found or inaccessible. Please verify the account is public (not private), the post hasn't been deleted, and retry."
-        elif platform == 'tiktok':
-            msg = "TikTok video not found. Please ensure the link is a valid public TikTok video URL and try again."
-        elif platform == 'youtube':
-            msg = "YouTube video not found. Please verify the link is public and accessible."
-        else:
-            msg = "Media not found! Please check that the link is valid and from a public post, then retry."
+    # =========================================================================
+    # 2. TIKTOK EXTRACTOR
+    # =========================================================================
+    def _extract_tiktok(self, url: str) -> Optional[Dict[str, Any]]:
+        # Tier 1: SSSTik High-Speed Unwatermarked Extractor
+        try:
+            s_ss = requests.Session()
+            r_ss = s_ss.get('https://ssstik.io/en', headers={'User-Agent': USER_AGENT}, timeout=4)
+            m_tt = re.search(r"s_tt\s*=\s*'([^']+)'", r_ss.text) or re.search(r'data-tt="([^"]+)"', r_ss.text) or re.search(r"tt:\s*'([^']+)'", r_ss.text)
+            tt_val = m_tt.group(1) if m_tt else 'MjJ5OUoz'
+            r_post = s_ss.post('https://ssstik.io/abc?url=dl', data={'id': url, 'locale': 'en', 'tt': tt_val}, headers={'User-Agent': USER_AGENT}, timeout=5)
+            if r_post.status_code == 200:
+                html = r_post.text
+                tm = re.search(r'<h2>([^<]+)</h2>|<p class="maintext">([^<]+)</p>', html)
+                title = (tm.group(1) or tm.group(2)).strip() if tm else "TikTok Video Without Watermark"
+                im = re.search(r'<img[^>]+src="([^"]+)"', html)
+                thumb = im.group(1) if im else ""
 
-        return {
-            "status": "error",
-            "message": msg
-        }
+                results = []
+                for href, label in re.findall(r'<a[^>]+href="([^"]+)"[^>]*>([^<]+)</a>', html):
+                    label_clean = label.strip()
+                    if any(k in label_clean.lower() for k in ['without watermark', 'download', 'direct', 'mp3']):
+                        is_mp3 = 'mp3' in label_clean.lower() or 'audio' in label_clean.lower()
+                        if href not in [res['url'] for res in results]:
+                            results.append({
+                                "url": href,
+                                "type": "audio" if is_mp3 else "video",
+                                "quality": "HD (No Watermark)" if not is_mp3 else "Original Audio (MP3)",
+                                "format": "mp3" if is_mp3 else "mp4",
+                                "has_audio": True,
+                                "size": "Original Stream",
+                                "thumbnail": thumb
+                            })
+                if thumb and thumb not in [res['url'] for res in results]:
+                    results.append({
+                        "url": thumb,
+                        "type": "photo",
+                        "quality": "Cover Photo",
+                        "format": "jpg",
+                        "has_audio": False,
+                        "size": "Original JPG",
+                        "thumbnail": thumb
+                    })
+                if results:
+                    return {
+                        "status": "success",
+                        "title": title[:100],
+                        "thumbnail": thumb,
+                        "type": results[0]["type"],
+                        "download": results[0]["url"],
+                        "author": "TikTok Creator",
+                        "duration": "",
+                        "platform": "tiktok",
+                        "results": results
+                    }
+        except Exception as e:
+            logger.warning(f"TikTok SSSTik error: {e}")
 
+        # Tier 2: Hostinger Grapweb TikTok POST API (High Speed, Unwatermarked)
+        try:
+            r = requests.post("https://grapweb.com/tiktok/api.php", data={"url": url}, timeout=5, headers={'User-Agent': USER_AGENT})
+            if r.status_code == 200:
+                d = r.json()
+                if d.get("status") == "success" and d.get("medias"):
+                    title = d.get("title") or "TikTok Video Without Watermark"
+                    thumb = d.get("thumbnail") or ""
+                    author_obj = d.get("author") or {}
+                    author = author_obj.get("name") or author_obj.get("username") or "TikTok Creator"
+                    results = []
+
+                    for m in d["medias"]:
+                        m_url = m.get("url")
+                        if not m_url:
+                            continue
+                        q = m.get("quality") or "HD No Watermark"
+                        fmt = (m.get("format") or "mp4").lower()
+                        is_aud = (fmt == "mp3" or "audio" in q.lower())
+                        results.append({
+                            "url": m_url,
+                            "type": "audio" if is_aud else "video",
+                            "quality": q,
+                            "format": fmt,
+                            "has_audio": True,
+                            "size": "Original Stream",
+                            "thumbnail": thumb
+                        })
+
+                    if thumb:
+                        results.append({
+                            "url": thumb,
+                            "type": "photo",
+                            "quality": "Cover Photo (JPG)",
+                            "format": "jpg",
+                            "size": "Original JPG",
+                            "thumbnail": thumb
+                        })
+
+                    if results:
+                        return {
+                            "status": "success",
+                            "title": title[:100],
+                            "thumbnail": thumb,
+                            "type": results[0]["type"],
+                            "download": results[0]["url"],
+                            "author": author,
+                            "duration": "",
+                            "platform": "tiktok",
+                            "results": results
+                        }
+        except Exception as e:
+            logger.warning(f"TikTok Grapweb error: {e}")
+
+        # Tier 2: TikWM API
+        try:
+            twm_res = requests.get(f"https://www.tikwm.com/api/?url={urllib.parse.quote(url)}", timeout=4, headers={'User-Agent': USER_AGENT})
+            if twm_res.status_code == 200:
+                tdata = twm_res.json()
+                if tdata.get('code') == 0 and tdata.get('data'):
+                    d = tdata['data']
+                    results = []
+                    play_url = d.get('play') or d.get('wmplay')
+                    hdplay = d.get('hdplay')
+                    music = d.get('music')
+                    cover = d.get('cover') or d.get('origin_cover')
+                    title = d.get('title') or "TikTok Video Without Watermark"
+                    author = d.get('author', {}).get('nickname') or d.get('author', {}).get('unique_id') or "TikTok Creator"
+                    duration_s = d.get('duration') or 0
+
+                    if hdplay:
+                        results.append({
+                            "url": hdplay,
+                            "type": "video",
+                            "quality": "1080p HD (No Watermark)",
+                            "format": "mp4",
+                            "has_audio": True,
+                            "size": human_filesize(d.get('size')),
+                            "thumbnail": cover
+                        })
+                    if play_url:
+                        results.append({
+                            "url": play_url,
+                            "type": "video",
+                            "quality": "HD Video (No Watermark)",
+                            "format": "mp4",
+                            "has_audio": True,
+                            "size": human_filesize(d.get('size')),
+                            "thumbnail": cover
+                        })
+                    if music:
+                        results.append({
+                            "url": music,
+                            "type": "audio",
+                            "quality": "Original Audio (MP3)",
+                            "format": "mp3",
+                            "has_audio": True,
+                            "size": "Audio Stream",
+                            "thumbnail": cover
+                        })
+                    if cover:
+                        results.append({
+                            "url": cover,
+                            "type": "photo",
+                            "quality": "Cover Photo",
+                            "format": "jpg",
+                            "size": "Original",
+                            "thumbnail": cover
+                        })
+
+                    if results:
+                        return {
+                            "status": "success",
+                            "title": title[:100],
+                            "thumbnail": cover or "",
+                            "type": "video",
+                            "download": results[0]['url'],
+                            "author": author,
+                            "duration": format_duration(duration_s),
+                            "platform": "tiktok",
+                            "results": results
+                        }
+        except Exception as e:
+            logger.warning(f"TikTok TikWM error: {e}")
+
+        # Tier 3: yt-dlp
+        try:
+            with yt_dlp.YoutubeDL(self.ydl_opts_base) as ydl:
+                info = ydl.extract_info(url, download=False)
+                if info:
+                    parsed = self._parse_info(info, 'tiktok', url)
+                    if parsed and parsed.get('results'):
+                        return parsed
+        except Exception as e:
+            logger.warning(f"TikTok yt-dlp error: {e}")
+
+        return None
+
+    # =========================================================================
+    # 3. INSTAGRAM EXTRACTOR
+    # =========================================================================
+    def _extract_instagram(self, url: str) -> Optional[Dict[str, Any]]:
+        # Tier 1: SaveInsta Token + SaveVids Ajax + Hunter Unpacker Decoder
+        try:
+            session = requests.Session()
+            r_page = session.get('https://saveinsta.io', headers={'User-Agent': USER_AGENT}, timeout=4)
+            exp_m = re.search(r'k_exp\s*=\s*["\'](\d+)["\']', r_page.text)
+            token_m = re.search(r'k_token\s*=\s*["\']([a-f0-9]+)["\']', r_page.text)
+            if exp_m and token_m:
+                k_exp = exp_m.group(1)
+                k_token = token_m.group(1)
+                payload = {'k_exp': k_exp, 'k_token': k_token, 'q': url, 't': 'media', 'lang': 'en', 'v': 'v2'}
+                api_headers = {
+                    'User-Agent': USER_AGENT,
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    'Origin': 'https://saveinsta.io',
+                    'Referer': 'https://saveinsta.io/',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+                res = session.post('https://savevids.to/api/ajaxSearch', data=payload, headers=api_headers, timeout=6)
+                if res.status_code == 200:
+                    j = res.json()
+                    html = j.get('data', '')
+                    if html:
+                        m = re.search(r'}\s*\(\s*"([^"]+)"\s*,\s*(\d+|"[^"]*")\s*,\s*"([^"]+)"\s*,\s*(\d+)\s*,\s*(\d+)\s*,', html)
+                        decoded = decode_hunter(m.group(1), m.group(3), int(m.group(4)), int(m.group(5))) if m else html
+
+                        dl_urls = re.findall(r'href=\\?"([^"\\]+)\\?"', decoded)
+                        img_urls = re.findall(r'src=\\?"([^"\\]+)\\?"', decoded)
+
+                        videos = [u for u in dl_urls if u.startswith('http') and ('mp4' in u or 'dl.snapcdn.app' in u or 'download' in u)]
+                        photos = [u for u in dl_urls if u.startswith('http') and u not in videos]
+                        thumb = img_urls[0] if img_urls else ""
+
+                        results = []
+                        for idx, v in enumerate(videos):
+                            results.append({
+                                "url": v,
+                                "type": "video",
+                                "quality": f"{1080 if idx == 0 else 720}p Full HD" if idx == 0 else "720p HD",
+                                "format": "mp4",
+                                "has_audio": True,
+                                "size": "HD MP4",
+                                "thumbnail": thumb
+                            })
+
+                        for idx, p in enumerate(photos):
+                            results.append({
+                                "url": p,
+                                "type": "photo",
+                                "quality": f"Photo #{idx+1}",
+                                "format": "jpg",
+                                "size": "Original JPG",
+                                "thumbnail": p
+                            })
+
+                        if thumb and not photos:
+                            results.append({
+                                "url": thumb,
+                                "type": "photo",
+                                "quality": "Cover Image",
+                                "format": "jpg",
+                                "size": "Original JPG",
+                                "thumbnail": thumb
+                            })
+
+                        if results:
+                            return {
+                                "status": "success",
+                                "title": "Instagram Media",
+                                "thumbnail": thumb,
+                                "type": results[0]["type"],
+                                "download": results[0]["url"],
+                                "author": "Instagram Creator",
+                                "duration": "",
+                                "platform": "instagram",
+                                "results": results
+                            }
+        except Exception as e:
+            logger.warning(f"Instagram SaveInsta error: {e}")
+
+        # Tier 2: Hostinger Grapweb Instagram API
+        try:
+            r = requests.post("https://grapweb.com/instagram/api.php", data={"url": url}, timeout=5, headers={'User-Agent': USER_AGENT})
+            if r.status_code == 200:
+                d = r.json()
+                if d.get("status") == "success" and d.get("medias"):
+                    results = []
+                    thumb = d.get("thumbnail") or ""
+                    for m in d["medias"]:
+                        target = m.get("url")
+                        if not target:
+                            continue
+                        is_v = m.get("type") == "video" or "mp4" in (m.get("format") or "").lower()
+                        results.append({
+                            "url": target,
+                            "type": "video" if is_v else "photo",
+                            "quality": m.get("quality") or ("1080p Full HD" if is_v else "Original Image"),
+                            "format": m.get("format") or ("mp4" if is_v else "jpg"),
+                            "has_audio": is_v,
+                            "size": "Source Stream",
+                            "thumbnail": thumb
+                        })
+                    if results:
+                        return {
+                            "status": "success",
+                            "title": d.get("title") or "Instagram Media",
+                            "thumbnail": thumb,
+                            "type": results[0]["type"],
+                            "download": results[0]["url"],
+                            "author": "Instagram Creator",
+                            "duration": "",
+                            "platform": "instagram",
+                            "results": results
+                        }
+        except Exception as e:
+            logger.warning(f"Instagram Grapweb error: {e}")
+
+        # Tier 3: yt-dlp with mobile iOS client headers
+        try:
+            ydl_opts = dict(self.ydl_opts_base)
+            ydl_opts['http_headers'] = {
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
+                'X-IG-App-ID': '936619743392459',
+                'Referer': 'https://www.instagram.com/'
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                if info:
+                    parsed = self._parse_info(info, 'instagram', url)
+                    if parsed and parsed.get('results'):
+                        return parsed
+        except Exception as e:
+            logger.warning(f"Instagram yt-dlp error: {e}")
+
+        return None
+
+    # =========================================================================
+    # 4. FACEBOOK EXTRACTOR
+    # =========================================================================
+    def _extract_facebook(self, url: str) -> Optional[Dict[str, Any]]:
+        # Tier 1: Hostinger Grapweb Facebook API
+        try:
+            r = requests.post("https://grapweb.com/facebook/api.php", data={"url": url}, timeout=5, headers={'User-Agent': USER_AGENT})
+            if r.status_code == 200:
+                d = r.json()
+                if d.get("status") == "success" and d.get("medias"):
+                    results = []
+                    thumb = d.get("thumbnail") or ""
+                    title = d.get("title") or "Facebook Video"
+                    for m in d["medias"]:
+                        target = m.get("url")
+                        if not target:
+                            continue
+                        q = m.get("quality") or "HD Video"
+                        results.append({
+                            "url": target,
+                            "type": "video",
+                            "quality": f"{q} (MP4)",
+                            "format": "mp4",
+                            "has_audio": True,
+                            "size": "HD Stream",
+                            "thumbnail": thumb
+                        })
+                    if thumb:
+                        results.append({
+                            "url": thumb,
+                            "type": "photo",
+                            "quality": "Cover Photo (JPG)",
+                            "format": "jpg",
+                            "size": "Original JPG",
+                            "thumbnail": thumb
+                        })
+                    if results:
+                        return {
+                            "status": "success",
+                            "title": title,
+                            "thumbnail": thumb,
+                            "type": "video",
+                            "download": results[0]["url"],
+                            "author": "Facebook Creator",
+                            "duration": "",
+                            "platform": "facebook",
+                            "results": results
+                        }
+        except Exception as e:
+            logger.warning(f"Facebook Grapweb error: {e}")
+
+        # Tier 2: Direct HTML Scraping for playable URLs
+        try:
+            r = requests.get(url, headers={'User-Agent': USER_AGENT, 'Accept-Language': 'en-US,en;q=0.9'}, timeout=5)
+            text = r.text.replace(r'\/', '/')
+            sd = re.findall(r'"browser_native_sd_url":"([^"]+)"', text) or re.findall(r'"playable_url":"([^"]+)"', text)
+            hd = re.findall(r'"browser_native_hd_url":"([^"]+)"', text) or re.findall(r'"playable_url_quality_hd":"([^"]+)"', text)
+            thumb_m = re.findall(r'"preferred_thumbnail":\{"image":\{"uri":"([^"]+)"', text) or re.findall(r'property="og:image" content="([^"]+)"', text)
+            title_m = re.findall(r'<title>([^<]+)</title>', text)
+
+            results = []
+            thumb = thumb_m[0] if thumb_m else ""
+            title = title_m[0] if title_m else "Facebook Video"
+
+            if hd:
+                results.append({
+                    "url": hd[0],
+                    "type": "video",
+                    "quality": "720p HD",
+                    "format": "mp4",
+                    "has_audio": True,
+                    "size": "HD MP4",
+                    "thumbnail": thumb
+                })
+            if sd and (not hd or sd[0] != hd[0]):
+                results.append({
+                    "url": sd[0],
+                    "type": "video",
+                    "quality": "360p SD",
+                    "format": "mp4",
+                    "has_audio": True,
+                    "size": "SD MP4",
+                    "thumbnail": thumb
+                })
+            if thumb:
+                results.append({
+                    "url": thumb,
+                    "type": "photo",
+                    "quality": "Cover Photo",
+                    "format": "jpg",
+                    "size": "Original JPG",
+                    "thumbnail": thumb
+                })
+            if results:
+                return {
+                    "status": "success",
+                    "title": title,
+                    "thumbnail": thumb,
+                    "type": "video",
+                    "download": results[0]["url"],
+                    "author": "Facebook Creator",
+                    "duration": "",
+                    "platform": "facebook",
+                    "results": results
+                }
+        except Exception as e:
+            logger.warning(f"Facebook HTML scraping error: {e}")
+
+        # Tier 3: yt-dlp
+        try:
+            with yt_dlp.YoutubeDL(self.ydl_opts_base) as ydl:
+                info = ydl.extract_info(url, download=False)
+                if info:
+                    parsed = self._parse_info(info, 'facebook', url)
+                    if parsed and parsed.get('results'):
+                        return parsed
+        except Exception as e:
+            logger.warning(f"Facebook yt-dlp error: {e}")
+
+        return None
+
+    # =========================================================================
+    # 5. PINTEREST EXTRACTOR
+    # =========================================================================
+    def _extract_pinterest(self, url: str) -> Optional[Dict[str, Any]]:
+        # Tier 1: Direct HTML Regex Scraping (HLS to MP4, Direct MP4, /originals/ High-Res)
+        try:
+            r = requests.get(url, headers={'User-Agent': USER_AGENT, 'Accept-Language': 'en-US,en;q=0.9'}, timeout=5)
+            html = r.text
+
+            title_m = re.findall(r'<title>([^<]+)</title>', html)
+            title = title_m[0].split('|')[0].strip() if title_m else "Pinterest Media"
+
+            results = []
+            seen_urls = set()
+
+            # 1. Look for direct MP4 videos
+            mp4s = re.findall(r'https://v[0-9]?\.pinimg\.com/videos/[^\s"\'<>]+\.mp4', html)
+            for m in mp4s:
+                if m not in seen_urls:
+                    seen_urls.add(m)
+                    results.append({
+                        "url": m,
+                        "type": "video",
+                        "quality": "720p HD Video",
+                        "format": "mp4",
+                        "has_audio": True,
+                        "size": "HD MP4",
+                        "thumbnail": ""
+                    })
+
+            # 2. Look for HLS m3u8 streams and convert to 720p MP4
+            m3u8s = re.findall(r'https://v[0-9]?\.pinimg\.com/videos/[^\s"\'<>]+\.m3u8', html)
+            for m in m3u8s:
+                conv_mp4 = m.replace('/hls/', '/720p/').replace('.m3u8', '.mp4')
+                if conv_mp4 not in seen_urls:
+                    seen_urls.add(conv_mp4)
+                    results.append({
+                        "url": conv_mp4,
+                        "type": "video",
+                        "quality": "HD Video (MP4)",
+                        "format": "mp4",
+                        "has_audio": True,
+                        "size": "720p MP4",
+                        "thumbnail": ""
+                    })
+
+            # 3. Look for high-resolution images and upgrade to /originals/
+            imgs = re.findall(r'https://i\.pinimg\.com/[0-9a-zA-Z_/-]+/[a-f0-9]{32}\.(?:jpg|png|webp)', html)
+            thumb = ""
+            for img in imgs:
+                orig_img = re.sub(r'https://i\.pinimg\.com/[^/]+/', 'https://i.pinimg.com/originals/', img)
+                if not thumb:
+                    thumb = orig_img
+                if orig_img not in seen_urls:
+                    seen_urls.add(orig_img)
+                    ext = orig_img.split('.')[-1].lower()
+                    results.append({
+                        "url": orig_img,
+                        "type": "photo",
+                        "quality": f"Original High-Res ({ext.upper()})",
+                        "format": ext,
+                        "has_audio": False,
+                        "size": "Original Resolution",
+                        "thumbnail": orig_img
+                    })
+                if len(results) >= 4:
+                    break
+
+            if results:
+                # Update thumbnail on videos if available
+                if thumb:
+                    for item in results:
+                        if not item.get('thumbnail'):
+                            item['thumbnail'] = thumb
+
+                return {
+                    "status": "success",
+                    "title": title,
+                    "thumbnail": thumb,
+                    "type": results[0]["type"],
+                    "download": results[0]["url"],
+                    "author": "Pinterest Creator",
+                    "duration": "",
+                    "platform": "pinterest",
+                    "results": results
+                }
+        except Exception as e:
+            logger.warning(f"Pinterest HTML scraping error: {e}")
+
+        # Tier 2: yt-dlp
+        try:
+            with yt_dlp.YoutubeDL(self.ydl_opts_base) as ydl:
+                info = ydl.extract_info(url, download=False)
+                if info:
+                    parsed = self._parse_info(info, 'pinterest', url)
+                    if parsed and parsed.get('results'):
+                        return parsed
+        except Exception as e:
+            logger.warning(f"Pinterest yt-dlp error: {e}")
+
+        return None
+
+    # =========================================================================
+    # 6. TWITTER / X EXTRACTOR
+    # =========================================================================
+    def _extract_twitter(self, url: str) -> Optional[Dict[str, Any]]:
+        m = re.search(r'status/(\d+)', url)
+        if not m:
+            return None
+        tweet_id = m.group(1)
+
+        # Tier 1: FxTwitter TelegramBot OpenGraph Engine (Instant 720p/1080p MP4 + High-Res Photos)
+        try:
+            r_fx = requests.get(
+                f"https://fxtwitter.com/i/status/{tweet_id}",
+                headers={'User-Agent': 'TelegramBot (like TwitterBot)'},
+                timeout=5
+            )
+            if r_fx.status_code == 200:
+                html = r_fx.text
+                desc_m = re.search(r'<meta[^>]+property="og:description"[^>]+content="([^"]+)"', html)
+                desc = desc_m.group(1).strip() if desc_m else ""
+                title_m = re.search(r'<meta[^>]+property="og:title"[^>]+content="([^"]+)"', html)
+                title = title_m.group(1).strip() if title_m else "Twitter / X Post"
+
+                if "post doesn't exist" not in desc and "Post Not Found" not in desc:
+                    if desc and len(desc) > len(title):
+                        title = desc
+
+                    img_m = re.search(r'<meta[^>]+property="og:image"[^>]+content="([^"]+)"', html)
+                    thumb = img_m.group(1) if img_m else ""
+
+                    results = []
+                    # Extract direct video URLs
+                    for vm in re.finditer(r'<meta[^>]+property="og:video(?::secure_url)?"[^>]+content="([^"]+)"', html):
+                        v_raw = vm.group(1)
+                        v_final = v_raw
+                        if 'url=' in v_raw:
+                            v_final = urllib.parse.unquote(v_raw.split('url=')[1])
+                        if v_final.startswith('http') and v_final not in [res['url'] for res in results]:
+                            results.append({
+                                "url": v_final,
+                                "type": "video",
+                                "quality": "HD Video (MP4)",
+                                "format": "mp4",
+                                "has_audio": True,
+                                "size": "Direct Stream",
+                                "thumbnail": thumb
+                            })
+
+                    # Extract photo
+                    if thumb and "default-og.jpg" not in thumb and thumb not in [res['url'] for res in results]:
+                        results.append({
+                            "url": thumb,
+                            "type": "photo",
+                            "quality": "HD Photo",
+                            "format": "jpg",
+                            "has_audio": False,
+                            "size": "Original Resolution",
+                            "thumbnail": thumb
+                        })
+
+                    if results:
+                        return {
+                            "status": "success",
+                            "title": title[:100],
+                            "thumbnail": thumb,
+                            "type": results[0]["type"],
+                            "download": results[0]["url"],
+                            "author": "Twitter User",
+                            "duration": "",
+                            "platform": "twitter",
+                            "results": results
+                        }
+        except Exception as e:
+            logger.warning(f"Twitter FxTwitter error: {e}")
+
+        # Tier 2: TwitSave Info Parser
+        try:
+            r = requests.get(f"https://twitsave.com/info?url=https://twitter.com/i/status/{tweet_id}", headers={'User-Agent': USER_AGENT}, timeout=5)
+            if r.status_code == 200:
+                dls = re.findall(r'href="([^"]+)"', r.text)
+                video_links = [l for l in dls if "twitsave.com/download" in l or "video.twimg.com" in l or ".mp4" in l]
+                thumbs = re.findall(r'<img[^>]+src="([^"]+)"', r.text)
+                tw_thumbs = [t for t in thumbs if "twimg.com" in t or "media" in t]
+                title_m = re.search(r'<p class="[^"]*text-white[^"]*"[^>]*>([\s\S]*?)</p>', r.text)
+                title = re.sub(r'<[^>]+>', '', title_m.group(1)).strip() if title_m else f"Twitter Post {tweet_id}"
+                thumb = tw_thumbs[0] if tw_thumbs else ""
+
+                if video_links:
+                    results = []
+                    for idx, vl in enumerate(video_links):
+                        results.append({
+                            "url": vl,
+                            "type": "video",
+                            "quality": f"{1080 if idx == 0 else (720 if idx == 1 else 480)}p HD Video",
+                            "format": "mp4",
+                            "has_audio": True,
+                            "size": "Direct Stream",
+                            "thumbnail": thumb
+                        })
+                    if thumb:
+                        results.append({
+                            "url": thumb,
+                            "type": "photo",
+                            "quality": "Cover Photo",
+                            "format": "jpg",
+                            "size": "Original JPG",
+                            "thumbnail": thumb
+                        })
+                    return {
+                        "status": "success",
+                        "title": title[:100],
+                        "thumbnail": thumb,
+                        "type": "video",
+                        "download": results[0]["url"],
+                        "author": "Twitter User",
+                        "duration": "",
+                        "platform": "twitter",
+                        "results": results
+                    }
+        except Exception as e:
+            logger.warning(f"Twitter TwitSave error: {e}")
+
+        # Tier 2: FxTwitter API
+        try:
+            r = requests.get(f"https://api.fxtwitter.com/i/status/{tweet_id}", headers={'User-Agent': USER_AGENT}, timeout=4)
+            if r.status_code == 200:
+                data = r.json().get('tweet', {})
+                media = data.get('media', {})
+                videos = media.get('videos', [])
+                photos = media.get('photos', [])
+                results = []
+                thumb = data.get('thumbnail') or ""
+
+                for v in videos:
+                    v_url = v.get('url')
+                    if v_url:
+                        results.append({
+                            "url": v_url,
+                            "type": "video",
+                            "quality": "HD Video",
+                            "format": "mp4",
+                            "has_audio": True,
+                            "size": "Direct Stream",
+                            "thumbnail": v.get('thumbnail_url') or thumb
+                        })
+
+                for p in photos:
+                    p_url = p.get('url')
+                    if p_url:
+                        results.append({
+                            "url": p_url,
+                            "type": "photo",
+                            "quality": "HD Photo",
+                            "format": "jpg",
+                            "size": "Direct Image",
+                            "thumbnail": p_url
+                        })
+
+                if results:
+                    return {
+                        "status": "success",
+                        "title": data.get('text', f"Twitter Post {tweet_id}")[:80],
+                        "thumbnail": results[0].get('thumbnail') or thumb,
+                        "type": results[0]['type'],
+                        "download": results[0]['url'],
+                        "author": data.get('author', {}).get('name', 'Twitter User'),
+                        "duration": "",
+                        "platform": "twitter",
+                        "results": results
+                    }
+        except Exception as e:
+            logger.warning(f"Twitter FxTwitter error: {e}")
+
+        # Tier 3: yt-dlp
+        try:
+            with yt_dlp.YoutubeDL(self.ydl_opts_base) as ydl:
+                info = ydl.extract_info(url, download=False)
+                if info:
+                    parsed = self._parse_info(info, 'twitter', url)
+                    if parsed and parsed.get('results'):
+                        return parsed
+        except Exception as e:
+            logger.warning(f"Twitter yt-dlp error: {e}")
+
+        return None
+
+    # =========================================================================
+    # 7. OPENGRAPH SCRAPER FALLBACK
+    # =========================================================================
+    def _extract_opengraph(self, url: str, platform: str) -> Optional[Dict[str, Any]]:
+        try:
+            resp = requests.get(url, timeout=5, headers={
+                'User-Agent': USER_AGENT,
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            })
+            html = resp.text
+
+            og_title = re.search(r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']+)["\']', html)
+            og_video = re.search(r'<meta[^>]+property=["\']og:video(?:[:_]url)?["\'][^>]+content=["\']([^"\']+)["\']', html)
+            og_image = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']', html)
+
+            title = og_title.group(1) if og_title else f"{platform.capitalize()} Extracted Media"
+            video_url = og_video.group(1) if og_video else None
+            image_url = og_image.group(1) if og_image else None
+
+            # Filter out 404 error pages or default placeholder images
+            if any(k in title.lower() for k in ["404 error", "post not found", "page not found"]):
+                return None
+            if image_url and "default-og.jpg" in image_url:
+                return None
+            if video_url and "youtube.com/embed" in video_url:
+                video_url = None
+
+            results = []
+            if video_url and video_url.startswith('http'):
+                results.append({
+                    "url": video_url,
+                    "type": "video",
+                    "quality": "HD MP4",
+                    "format": "mp4",
+                    "has_audio": True,
+                    "size": "Source Stream",
+                    "thumbnail": image_url or ""
+                })
+            if image_url and image_url.startswith('http'):
+                results.append({
+                    "url": image_url,
+                    "type": "photo",
+                    "quality": "Original Image",
+                    "format": "jpg",
+                    "size": "Original",
+                    "thumbnail": image_url
+                })
+
+            if results:
+                return {
+                    "status": "success",
+                    "title": title,
+                    "thumbnail": image_url or "",
+                    "type": results[0]['type'],
+                    "download": results[0]['url'],
+                    "author": "",
+                    "duration": "",
+                    "platform": platform,
+                    "results": results
+                }
+        except Exception as e:
+            logger.debug(f"OpenGraph scraper error: {e}")
+
+        return None
+
+    # =========================================================================
+    # 8. YT-DLP INFO PARSER (Helper)
+    # =========================================================================
     def _parse_info(self, info: Dict[str, Any], platform: str, url: str) -> Dict[str, Any]:
-        """Convert yt-dlp info dictionary to standard VidSavor format."""
-        # Check if this is a playlist/carousel (e.g. Instagram multi-slide post)
         entries = info.get('entries')
         if entries and isinstance(entries, list):
             return self._parse_carousel(entries, info, platform)
@@ -192,7 +1181,6 @@ class MediaExtractor:
         audio_streams = []
         seen_urls = set()
 
-        # Find maximum height across formats
         max_height = 0
         for f in formats:
             h = f.get('height') or 0
@@ -215,19 +1203,14 @@ class MediaExtractor:
             format_note = str(f.get('format_note') or '').lower()
             format_id = str(f.get('format_id') or '')
 
-            # Check if audio only
             is_audio_only = (vcodec == 'none' and acodec not in [None, 'none']) or ('audio only' in format_note) or (f.get('resolution') == 'audio only')
-
-            # Check if video only (DASH video without audio)
             is_video_only = (acodec == 'none' and vcodec not in [None, 'none']) or ('dash video' in format_note)
 
-            # Combined video (Has both video and audio)
             is_combined = False
             if not is_audio_only and not is_video_only:
                 if vcodec not in [None, 'none'] and acodec not in [None, 'none']:
                     is_combined = True
                 elif ext == 'mp4' and 'dash' not in format_note:
-                    # In Instagram, TikTok, Facebook, progressive MP4 formats have audio and video
                     is_combined = True
                 elif format_id.isdigit() and ext == 'mp4':
                     is_combined = True
@@ -279,7 +1262,6 @@ class MediaExtractor:
                     "thumbnail": thumbnail
                 })
 
-        # Sort and deduplicate combined videos with sound
         combined_videos.sort(key=lambda x: x.get('height', 0), reverse=True)
         seen_h = set()
         for v in combined_videos:
@@ -288,8 +1270,6 @@ class MediaExtractor:
                 seen_h.add(h)
                 results.append(v)
 
-        # If only 1 resolution was found with audio (like Instagram reel format 1),
-        # also provide a 720p HD option
         if len(results) == 1 and results[0].get('height', 0) >= 1080:
             top_v = results[0]
             results.append({
@@ -303,7 +1283,6 @@ class MediaExtractor:
                 "thumbnail": thumbnail
             })
 
-        # If no combined stream was found, use the best video stream
         if not results and video_only:
             video_only.sort(key=lambda x: x.get('height', 0), reverse=True)
             for v in video_only:
@@ -314,7 +1293,6 @@ class MediaExtractor:
                 if len(results) >= 2:
                     break
 
-        # Audio streams (deduplicated by abr)
         audio_streams.sort(key=lambda x: x.get('abr', 0), reverse=True)
         seen_abr = set()
         for a in audio_streams:
@@ -325,7 +1303,6 @@ class MediaExtractor:
             if len(seen_abr) >= 1:
                 break
 
-        # Fallback if no audio stream extracted
         if not any(r.get('type') == 'audio' for r in results) and results:
             results.append({
                 "url": results[0]['url'],
@@ -337,7 +1314,6 @@ class MediaExtractor:
                 "thumbnail": thumbnail
             })
 
-        # Fallback if no format parsed but info has a direct url
         if not results and info.get('url'):
             results.append({
                 "url": info.get('url'),
@@ -349,7 +1325,6 @@ class MediaExtractor:
                 "thumbnail": thumbnail
             })
 
-        # Always offer original thumbnail / poster download
         if thumbnail:
             results.append({
                 "url": thumbnail,
@@ -377,7 +1352,6 @@ class MediaExtractor:
         }
 
     def _parse_carousel(self, entries: List[Dict[str, Any]], info: Dict[str, Any], platform: str) -> Dict[str, Any]:
-        """Handle multi-item posts (Instagram albums, playlists, carousel slides)."""
         title = info.get('title') or f"{platform.capitalize()} Album / Gallery"
         thumbnail = info.get('thumbnail') or ""
         results = []
@@ -387,7 +1361,7 @@ class MediaExtractor:
                 continue
             entry_thumb = entry.get('thumbnail') or thumbnail
             entry_formats = entry.get('formats') or []
-            
+
             stream_url = None
             media_type = 'photo'
             size_bytes = None
@@ -412,6 +1386,7 @@ class MediaExtractor:
                 "type": media_type,
                 "quality": f"{media_type.capitalize()} #{idx + 1}",
                 "format": "mp4" if media_type == 'video' else "jpg",
+                "has_audio": (media_type == 'video'),
                 "size": human_filesize(size_bytes),
                 "thumbnail": entry_thumb
             })
@@ -430,324 +1405,6 @@ class MediaExtractor:
             "platform": platform,
             "results": results
         }
-
-    def _extract_youtube_grapweb(self, url: str) -> Optional[Dict[str, Any]]:
-        """Extract YouTube videos and audio via Hostinger grapweb engine."""
-        try:
-            parse_url = "https://grapweb.com/youtube/api.php?action=parse&url=" + urllib.parse.quote(url)
-            resp = requests.get(parse_url, timeout=12, headers={
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-            })
-            if resp.status_code != 200:
-                return None
-            
-            data = resp.json()
-            if not data or data.get('status') != 'success' or not data.get('data'):
-                return None
-            
-            info = data['data']
-            title = info.get('title') or "YouTube Video"
-            thumbnail = info.get('thumbnail') or ""
-            author = info.get('author') or "YouTube Creator"
-            duration = info.get('durationFormatted') or ""
-
-            results = []
-            seen_qualities = set()
-
-            # Process Video Options
-            for v in info.get('videos', []):
-                q = v.get('quality', '').upper()
-                token = v.get('resource_content') or ''
-                dl_url = v.get('download_url') or ''
-                size_str = v.get('sizeFormatted') or 'HD Stream'
-                
-                clean_q = q
-                if clean_q in seen_qualities:
-                    continue
-                seen_qualities.add(clean_q)
-
-                if clean_q in ['1080P', '1080P60', 'FHD']:
-                    label = "1080p Full HD"
-                elif clean_q in ['720P', 'HD']:
-                    label = "720p HD"
-                elif clean_q == '2160P':
-                    label = "2160p (4K Ultra HD)"
-                elif clean_q == '1440P':
-                    label = "1440p (2K QHD)"
-                elif clean_q == '480P':
-                    label = "480p SD"
-                elif clean_q == '360P':
-                    label = "360p"
-                else:
-                    label = f"{clean_q.lower()}"
-
-                target_url = token if token else dl_url
-                if not target_url:
-                    continue
-
-                results.append({
-                    "url": target_url,
-                    "token": token,
-                    "type": "video",
-                    "quality": label,
-                    "has_audio": True,
-                    "format": "mp4",
-                    "size": size_str,
-                    "thumbnail": thumbnail
-                })
-
-            # Process Audio Options (MP3)
-            for a in info.get('audios', []):
-                q = a.get('quality', '').upper()
-                token = a.get('resource_content') or ''
-                dl_url = a.get('download_url') or ''
-                size_str = a.get('sizeFormatted') or 'High Audio'
-                target_url = token if token else dl_url
-                if not target_url:
-                    continue
-
-                results.append({
-                    "url": target_url,
-                    "token": token,
-                    "type": "audio",
-                    "quality": f"{q} Audio (MP3)",
-                    "has_audio": True,
-                    "format": "mp3",
-                    "size": size_str,
-                    "thumbnail": thumbnail
-                })
-
-            # Add Cover Photo
-            if thumbnail:
-                results.append({
-                    "url": thumbnail,
-                    "type": "photo",
-                    "quality": "HD Cover Poster (JPG)",
-                    "format": "jpg",
-                    "size": "Original JPG",
-                    "thumbnail": thumbnail
-                })
-
-            if results:
-                primary = results[0]
-                return {
-                    "status": "success",
-                    "title": title,
-                    "thumbnail": thumbnail,
-                    "type": "video",
-                    "download": primary['url'],
-                    "author": author,
-                    "duration": duration,
-                    "platform": "youtube",
-                    "results": results
-                }
-        except Exception as yt_err:
-            logger.warning(f"YouTube grapweb engine error: {yt_err}")
-        return None
-
-    def _fallback_extract(self, url: str, platform: str) -> Optional[Dict[str, Any]]:
-        """Fallback extractors using platform-specific APIs and HTML metadata."""
-        # 1. TikTok fallback via TikWM
-        if platform == 'tiktok':
-            try:
-                twm_res = requests.get(f"https://www.tikwm.com/api/?url={urllib.parse.quote(url)}", timeout=8, headers={'User-Agent': 'Mozilla/5.0'})
-                if twm_res.status_code == 200:
-                    tdata = twm_res.json()
-                    if tdata.get('code') == 0 and tdata.get('data'):
-                        d = tdata['data']
-                        results = []
-                        play_url = d.get('play') or d.get('wmplay')
-                        hdplay = d.get('hdplay')
-                        music = d.get('music')
-                        cover = d.get('cover') or d.get('origin_cover')
-                        title = d.get('title') or "TikTok Video Without Watermark"
-                        author = d.get('author', {}).get('nickname') or d.get('author', {}).get('unique_id') or "TikTok Creator"
-                        duration_s = d.get('duration') or 0
-
-                        if hdplay:
-                            results.append({
-                                "url": hdplay,
-                                "type": "video",
-                                "quality": "1080p HD (No Watermark)",
-                                "format": "mp4",
-                                "size": human_filesize(d.get('size')),
-                                "thumbnail": cover
-                            })
-                        if play_url:
-                            results.append({
-                                "url": play_url,
-                                "type": "video",
-                                "quality": "HD Video (No Watermark)",
-                                "format": "mp4",
-                                "size": human_filesize(d.get('size')),
-                                "thumbnail": cover
-                            })
-                        if music:
-                            results.append({
-                                "url": music,
-                                "type": "audio",
-                                "quality": "Original Audio MP3",
-                                "format": "mp3",
-                                "size": "Audio Stream",
-                                "thumbnail": cover
-                            })
-                        if cover:
-                            results.append({
-                                "url": cover,
-                                "type": "photo",
-                                "quality": "Cover Photo",
-                                "format": "jpg",
-                                "size": "Original",
-                                "thumbnail": cover
-                            })
-
-                        if results:
-                            return {
-                                "status": "success",
-                                "title": title[:100],
-                                "thumbnail": cover or "",
-                                "type": "video",
-                                "download": results[0]['url'],
-                                "author": author,
-                                "duration": format_duration(duration_s),
-                                "platform": "tiktok",
-                                "results": results
-                            }
-            except Exception as e:
-                logger.warning(f"TikWM fallback failed: {e}")
-
-        # 2. Twitter / X fallback via FixupX
-        if platform == 'twitter':
-            try:
-                tw_match = re.search(r'status/(\d+)', url)
-                if tw_match:
-                    tweet_id = tw_match.group(1)
-                    api_url = f"https://api.fxtwitter.com/status/{tweet_id}"
-                    resp = requests.get(api_url, timeout=6, headers={'User-Agent': 'Mozilla/5.0'})
-                    if resp.status_code == 200:
-                        data = resp.json().get('tweet', {})
-                        media = data.get('media', {})
-                        videos = media.get('videos', [])
-                        photos = media.get('photos', [])
-                        results = []
-                        thumb = data.get('thumbnail') or ""
-                        
-                        for v in videos:
-                            results.append({
-                                "url": v.get('url'),
-                                "type": "video",
-                                "quality": "HD Video",
-                                "format": "mp4",
-                                "size": "Direct Stream",
-                                "thumbnail": v.get('thumbnail_url') or thumb
-                            })
-                        for p in photos:
-                            results.append({
-                                "url": p.get('url'),
-                                "type": "photo",
-                                "quality": "HD Photo",
-                                "format": "jpg",
-                                "size": "Direct Image",
-                                "thumbnail": p.get('url')
-                            })
-
-                        if results:
-                            return {
-                                "status": "success",
-                                "title": data.get('text', f"Twitter Post {tweet_id}")[:60],
-                                "thumbnail": results[0].get('thumbnail') or thumb,
-                                "type": results[0]['type'],
-                                "download": results[0]['url'],
-                                "author": data.get('author', {}).get('name', 'Twitter User'),
-                                "duration": "",
-                                "platform": "twitter",
-                                "results": results
-                            }
-            except Exception as e:
-                logger.warning(f"Twitter fallback failed: {e}")
-
-        # 3. Instagram oEmbed fallback
-        if platform == 'instagram':
-            try:
-                oembed_res = requests.get(f"https://api.instagram.com/oembed/?url={urllib.parse.quote(url)}", timeout=5, headers={'User-Agent': 'Mozilla/5.0'})
-                if oembed_res.status_code == 200:
-                    odata = oembed_res.json()
-                    thumb = odata.get('thumbnail_url')
-                    if thumb:
-                        return {
-                            "status": "success",
-                            "title": odata.get('title') or "Instagram Media",
-                            "thumbnail": thumb,
-                            "type": "photo",
-                            "download": thumb,
-                            "author": odata.get('author_name') or "Instagram User",
-                            "duration": "",
-                            "platform": "instagram",
-                            "results": [{
-                                "url": thumb,
-                                "type": "photo",
-                                "quality": "High-Res Image / Cover",
-                                "format": "jpg",
-                                "size": "Source Quality",
-                                "thumbnail": thumb
-                            }]
-                        }
-            except Exception as e:
-                logger.warning(f"Instagram oEmbed fallback failed: {e}")
-
-        # 4. General OpenGraph scraping fallback
-        try:
-            resp = requests.get(url, timeout=8, headers={
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-            })
-            html = resp.text
-
-            og_title = re.search(r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']+)["\']', html)
-            og_video = re.search(r'<meta[^>]+property=["\']og:video(?:[:_]url)?["\'][^>]+content=["\']([^"\']+)["\']', html)
-            og_image = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']', html)
-
-            video_url = og_video.group(1) if og_video else None
-            image_url = og_image.group(1) if og_image else None
-            title = og_title.group(1) if og_title else f"{platform.capitalize()} Extracted Media"
-
-            results = []
-            if video_url:
-                results.append({
-                    "url": video_url,
-                    "type": "video",
-                    "quality": "HD MP4",
-                    "format": "mp4",
-                    "size": "Source Stream",
-                    "thumbnail": image_url or ""
-                })
-            if image_url:
-                results.append({
-                    "url": image_url,
-                    "type": "photo",
-                    "quality": "Original Image",
-                    "format": "jpg",
-                    "size": "Original",
-                    "thumbnail": image_url
-                })
-
-            if results:
-                return {
-                    "status": "success",
-                    "title": title,
-                    "thumbnail": image_url or "",
-                    "type": results[0]['type'],
-                    "download": results[0]['url'],
-                    "author": "",
-                    "duration": "",
-                    "platform": platform,
-                    "results": results
-                }
-
-        except Exception as fallback_err:
-            logger.error(f"Fallback scraper failed: {fallback_err}")
-
-        return None
 
 # Global extractor singleton
 extractor = MediaExtractor()
