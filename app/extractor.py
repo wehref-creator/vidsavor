@@ -90,17 +90,12 @@ def canonicalize_url(raw_url: str) -> str:
         except Exception:
             pass
 
-    # YouTube canonicalization (Shorts, youtu.be, embed -> watch?v=)
-    if 'youtu.be/' in url.lower():
-        m = re.search(r'youtu\.be/([a-zA-Z0-9_-]{11})', url)
-        if m:
-            return f"https://www.youtube.com/watch?v={m.group(1)}"
-    elif 'youtube.com/shorts/' in url.lower():
-        m = re.search(r'shorts/([a-zA-Z0-9_-]{11})', url)
-        if m:
-            return f"https://www.youtube.com/watch?v={m.group(1)}"
-    elif 'youtube.com/embed/' in url.lower():
-        m = re.search(r'embed/([a-zA-Z0-9_-]{11})', url)
+    # YouTube canonicalization (Shorts, youtu.be, embed, watch?v=, mobile -> clean watch?v=ID)
+    if 'youtube.com' in url.lower() or 'youtu.be' in url.lower():
+        m = (
+            re.search(r'(?:v=|\/v\/|\/embed\/|\/shorts\/|\/live\/|youtu\.be\/)([a-zA-Z0-9_-]{11})', url) or
+            re.search(r'(?:^|[\?&])v=([a-zA-Z0-9_-]{11})', url)
+        )
         if m:
             return f"https://www.youtube.com/watch?v={m.group(1)}"
 
@@ -281,107 +276,125 @@ class MediaExtractor:
     # 1. YOUTUBE EXTRACTOR
     # =========================================================================
     def _extract_youtube(self, url: str) -> Optional[Dict[str, Any]]:
-        # Tier 1: Hostinger Grapweb Parse API
-        try:
-            parse_url = "https://grapweb.com/youtube/api.php?action=parse&url=" + urllib.parse.quote(url)
-            resp = requests.get(parse_url, timeout=7, headers={'User-Agent': USER_AGENT})
-            if resp.status_code == 200:
-                data = resp.json()
-                if data and data.get('status') == 'success' and data.get('data'):
-                    info = data['data']
-                    title = info.get('title') or "YouTube Video"
-                    thumbnail = info.get('thumbnail') or ""
-                    author = info.get('author') or "YouTube Creator"
-                    duration = info.get('durationFormatted') or ""
+        # Extract 11-char video ID and ensure clean canonical URL
+        m = (
+            re.search(r'(?:v=|\/v\/|\/embed\/|\/shorts\/|\/live\/|youtu\.be\/)([a-zA-Z0-9_-]{11})', url) or
+            re.search(r'(?:^|[\?&])v=([a-zA-Z0-9_-]{11})', url)
+        )
+        video_id = m.group(1) if m else None
+        clean_url = f"https://www.youtube.com/watch?v={video_id}" if video_id else url
 
-                    results = []
-                    seen_qualities = set()
+        # Tier 1: Hostinger Grapweb Parse API (Try POST first to avoid ModSecurity query string filtering, then GET fallback)
+        for method in ['POST', 'GET']:
+            try:
+                if method == 'POST':
+                    resp = requests.post(
+                        "https://grapweb.com/youtube/api.php",
+                        data={"action": "parse", "url": clean_url},
+                        timeout=5,
+                        headers={'User-Agent': USER_AGENT, 'Accept': 'application/json'}
+                    )
+                else:
+                    parse_url = "https://grapweb.com/youtube/api.php?action=parse&url=" + urllib.parse.quote(clean_url)
+                    resp = requests.get(parse_url, timeout=5, headers={'User-Agent': USER_AGENT, 'Accept': 'application/json'})
 
-                    for v in info.get('videos', []):
-                        q = v.get('quality', '').upper()
-                        token = v.get('resource_content') or ''
-                        dl_url = v.get('download_url') or ''
-                        size_str = v.get('sizeFormatted') or 'HD Stream'
+                if resp and resp.status_code == 200:
+                    data = resp.json()
+                    if data and data.get('status') == 'success' and data.get('data'):
+                        info = data['data']
+                        title = info.get('title') or "YouTube Video"
+                        thumbnail = info.get('thumbnail') or (f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg" if video_id else "")
+                        author = info.get('author') or "YouTube Creator"
+                        duration = info.get('durationFormatted') or ""
 
-                        clean_q = q
-                        if clean_q in seen_qualities:
-                            continue
-                        seen_qualities.add(clean_q)
+                        results = []
+                        seen_qualities = set()
 
-                        if clean_q in ['1080P', '1080P60', 'FHD']:
-                            label = "1080p Full HD"
-                        elif clean_q in ['720P', 'HD']:
-                            label = "720p HD"
-                        elif clean_q == '2160P':
-                            label = "2160p (4K Ultra HD)"
-                        elif clean_q == '1440P':
-                            label = "1440p (2K QHD)"
-                        elif clean_q == '480P':
-                            label = "480p SD"
-                        elif clean_q == '360P':
-                            label = "360p"
-                        else:
-                            label = f"{clean_q.lower()}"
+                        for v in info.get('videos', []):
+                            q = v.get('quality', '').upper()
+                            token = v.get('resource_content') or ''
+                            dl_url = v.get('download_url') or ''
+                            size_str = v.get('sizeFormatted') or 'HD Stream'
 
-                        target_url = token if token else dl_url
-                        if not target_url:
-                            continue
+                            clean_q = q
+                            if clean_q in seen_qualities:
+                                continue
+                            seen_qualities.add(clean_q)
 
-                        results.append({
-                            "url": target_url,
-                            "token": token,
-                            "type": "video",
-                            "quality": label,
-                            "has_audio": True,
-                            "format": "mp4",
-                            "size": size_str,
-                            "thumbnail": thumbnail
-                        })
+                            if clean_q in ['1080P', '1080P60', 'FHD']:
+                                label = "1080p Full HD"
+                            elif clean_q in ['720P', 'HD']:
+                                label = "720p HD"
+                            elif clean_q == '2160P':
+                                label = "2160p (4K Ultra HD)"
+                            elif clean_q == '1440P':
+                                label = "1440p (2K QHD)"
+                            elif clean_q == '480P':
+                                label = "480p SD"
+                            elif clean_q == '360P':
+                                label = "360p"
+                            else:
+                                label = f"{clean_q.lower()}"
 
-                    for a in info.get('audios', []):
-                        q = a.get('quality', '').upper()
-                        token = a.get('resource_content') or ''
-                        dl_url = a.get('download_url') or ''
-                        size_str = a.get('sizeFormatted') or 'High Audio'
-                        target_url = token if token else dl_url
-                        if not target_url:
-                            continue
+                            target_url = token if token else dl_url
+                            if not target_url:
+                                continue
 
-                        results.append({
-                            "url": target_url,
-                            "token": token,
-                            "type": "audio",
-                            "quality": f"{q} Audio (MP3)",
-                            "has_audio": True,
-                            "format": "mp3",
-                            "size": size_str,
-                            "thumbnail": thumbnail
-                        })
+                            results.append({
+                                "url": target_url,
+                                "token": token,
+                                "type": "video",
+                                "quality": label,
+                                "has_audio": True,
+                                "format": "mp4",
+                                "size": size_str,
+                                "thumbnail": thumbnail
+                            })
 
-                    if thumbnail:
-                        results.append({
-                            "url": thumbnail,
-                            "type": "photo",
-                            "quality": "HD Cover Poster (JPG)",
-                            "format": "jpg",
-                            "size": "Original JPG",
-                            "thumbnail": thumbnail
-                        })
+                        for a in info.get('audios', []):
+                            q = a.get('quality', '').upper()
+                            token = a.get('resource_content') or ''
+                            dl_url = a.get('download_url') or ''
+                            size_str = a.get('sizeFormatted') or 'High Audio'
+                            target_url = token if token else dl_url
+                            if not target_url:
+                                continue
 
-                    if results:
-                        return {
-                            "status": "success",
-                            "title": title,
-                            "thumbnail": thumbnail,
-                            "type": "video",
-                            "download": results[0]['url'],
-                            "author": author,
-                            "duration": duration,
-                            "platform": "youtube",
-                            "results": results
-                        }
-        except Exception as e:
-            logger.warning(f"YouTube Grapweb parse error: {e}")
+                            results.append({
+                                "url": target_url,
+                                "token": token,
+                                "type": "audio",
+                                "quality": f"{q} Audio (MP3)",
+                                "has_audio": True,
+                                "format": "mp3",
+                                "size": size_str,
+                                "thumbnail": thumbnail
+                            })
+
+                        if thumbnail:
+                            results.append({
+                                "url": thumbnail,
+                                "type": "photo",
+                                "quality": "HD Cover Poster (JPG)",
+                                "format": "jpg",
+                                "size": "Original JPG",
+                                "thumbnail": thumbnail
+                            })
+
+                        if results:
+                            return {
+                                "status": "success",
+                                "title": title,
+                                "thumbnail": thumbnail,
+                                "type": "video",
+                                "download": results[0]['url'],
+                                "author": author,
+                                "duration": duration,
+                                "platform": "youtube",
+                                "results": results
+                            }
+            except Exception as e:
+                logger.warning(f"YouTube Grapweb parse {method} error: {e}")
 
         # Tier 2: yt-dlp Progressive Extractor
         try:

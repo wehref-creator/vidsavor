@@ -549,7 +549,7 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
         }
 
         try {
-            const res = await fetch('/api/resolve-youtube', {
+            let res = await fetch('/api/resolve-youtube', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -559,7 +559,32 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
                     url: currentPostUrl
                 })
             });
-            const data = await res.json();
+            let data = await res.json();
+
+            // If task is pending, poll until complete (up to 30s)
+            let pollAttempts = 0;
+            while (data && data.status === 'pending' && data.task_id && pollAttempts < 25) {
+                pollAttempts++;
+                if (btnElement) {
+                    const prog = data.progress ? `${data.progress}%` : `${Math.min(95, pollAttempts * 5)}%`;
+                    btnElement.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Converting (${prog})...</span>`;
+                }
+                await new Promise(r => setTimeout(r, 1200));
+                try {
+                    const pollRes = await fetch(`/api/resolve-youtube?task_id=${encodeURIComponent(data.task_id)}&title=${encodeURIComponent(safeTitle)}&format=${ext}`);
+                    data = await pollRes.json();
+                } catch (pe) {
+                    // Direct Hostinger Grapweb fallback if Vercel Edge errors
+                    try {
+                        const gwRes = await fetch(`https://grapweb.com/youtube/api.php?action=check_task&task_id=${encodeURIComponent(data.task_id)}&title=${encodeURIComponent(safeTitle)}&format=${ext}`);
+                        const gwData = await gwRes.json();
+                        if (gwData.direct_link || gwData.download_link) {
+                            data = { status: 'success', download_url: gwData.direct_link || gwData.download_link, filename: `${safeTitle}.${ext}` };
+                        }
+                    } catch (gwe) {}
+                }
+            }
+
             if (data && data.status === 'success' && data.download_url) {
                 if (btnElement) {
                     btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';

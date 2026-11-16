@@ -34,50 +34,44 @@ if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 class FetchRequest(BaseModel):
-    url: str
-
-@app.get("/api/test-yt")
-async def test_yt(v: str = "d3NJyNn6vTQ"):
-    out = {}
-    url = f"https://www.youtube.com/watch?v={v}"
-    try:
-        p_url = "https://grapweb.com/youtube/api.php?action=parse&url=" + urllib.parse.quote(url)
-        r = requests.get(p_url, timeout=6, headers={'User-Agent': 'Mozilla/5.0'})
-        out['grapweb_status'] = r.status_code
-        out['grapweb_data'] = r.text[:300]
-    except Exception as e:
-        out['grapweb_error'] = str(e)
-
-    try:
-        import yt_dlp
-        ydl_opts = {
-            'quiet': True,
-            'skip_download': True,
-            'socket_timeout': 5,
-            'format': 'best[ext=mp4]/best',
-            'extractor_args': {'youtube': {'player_client': ['ios', 'android', 'mweb']}}
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            out['ytdlp_title'] = info.get('title')
-            out['ytdlp_url'] = info.get('url')[:60] if info.get('url') else 'no url'
-    except Exception as e:
-        out['ytdlp_error'] = str(e)
-    return out
+    url: Optional[str] = None
+    token: Optional[str] = None
+    title: Optional[str] = "youtube_video"
+    format: Optional[str] = "mp4"
+    task_id: Optional[str] = None
 
 @app.post("/fetch")
 @app.post("/api/fetch")
 @app.post("/api/index.py")
 @app.post("/api")
-async def fetch_media(req: FetchRequest):
+async def fetch_media(request: Request, req: Optional[FetchRequest] = None):
     """Primary extraction endpoint matching freevideosave.com contract."""
-    if not req.url or not req.url.strip():
+    body_dict = {}
+    try:
+        body_dict = await request.json()
+    except Exception:
+        pass
+
+    target_token = (req.token if req else None) or body_dict.get("token") or body_dict.get("task_id")
+    target_url = (req.url if req else None) or body_dict.get("url")
+
+    # If it's a resolve-youtube conversion request forwarded to /api/index.py
+    if target_token and not target_url:
+        return await resolve_youtube(
+            request,
+            token=target_token,
+            title=body_dict.get("title", "youtube_video"),
+            format=body_dict.get("format", "mp4"),
+            task_id=body_dict.get("task_id")
+        )
+
+    if not target_url or not target_url.strip():
         return JSONResponse(
             status_code=200,
             content={"status": "error", "message": "Please paste a valid video or post link."}
         )
     
-    result = extractor.extract(req.url.strip())
+    result = extractor.extract(target_url.strip())
     return JSONResponse(status_code=200, content=result)
 
 @app.api_route("/api/resolve-youtube", methods=["GET", "POST"])
@@ -109,6 +103,7 @@ async def resolve_youtube(
     req_title = title or body_data.get("title") or request.query_params.get("title", "youtube_video")
     req_format = format or body_data.get("format") or request.query_params.get("format", "mp4")
     original_url = url or body_data.get("url") or request.query_params.get("url") or ""
+    req_task_id = request.query_params.get("task_id") or body_data.get("task_id")
 
     # Sanitize title and format
     clean_title = re.sub(r'[^a-zA-Z0-9_\-\s]', '', req_title).strip()
@@ -117,7 +112,38 @@ async def resolve_youtube(
     if clean_format not in ["mp4", "mp3", "m4a", "webm"]:
         clean_format = "mp4"
 
-    if not req_token and not original_url:
+    # Polling existing task_id
+    if req_task_id:
+        try:
+            chk_resp = requests.get(
+                f"https://grapweb.com/youtube/api.php?action=check_task&task_id={urllib.parse.quote(req_task_id)}&title={urllib.parse.quote(clean_title)}&format={clean_format}",
+                headers={'User-Agent': 'Mozilla/5.0'},
+                timeout=4
+            )
+            chk_data = chk_resp.json()
+            cand_link = chk_data.get("direct_link") or chk_data.get("download_link")
+            if cand_link and cand_link.startswith("http"):
+                try:
+                    r = requests.get(cand_link, headers={'User-Agent': 'Mozilla/5.0'}, allow_redirects=False, timeout=3)
+                    loc = r.headers.get("Location")
+                    if loc:
+                        return JSONResponse({"status": "success", "download_url": loc, "filename": f"{clean_title}.{clean_format}"})
+                except Exception:
+                    pass
+                return JSONResponse({"status": "success", "download_url": cand_link, "filename": f"{clean_title}.{clean_format}"})
+
+            if chk_data.get("status") == "running":
+                return JSONResponse({
+                    "status": "pending",
+                    "task_id": req_task_id,
+                    "progress": chk_data.get("progress"),
+                    "title": clean_title,
+                    "format": clean_format
+                })
+        except Exception as e:
+            logger.warning(f"Check task error: {e}")
+
+    if not req_token and not original_url and not req_task_id:
         return JSONResponse({"status": "error", "message": "Missing conversion token or URL"}, status_code=200)
 
     # Fast Path 1: If req_token is already a direct googlevideo / cdn stream, stream via proxy immediately
@@ -230,6 +256,14 @@ async def resolve_youtube(
                         "download_url": cand_link,
                         "filename": f"{clean_title}.{clean_format}"
                     })
+
+            # If task is still converting (e.g. 1080p muxing), return pending status with task_id
+            return JSONResponse({
+                "status": "pending",
+                "task_id": task_id,
+                "title": clean_title,
+                "format": clean_format
+            })
     except Exception as gw_err:
         logger.warning(f"Grapweb task error: {gw_err}")
 
@@ -276,9 +310,22 @@ async def resolve_youtube(
         "message": "Could not prepare YouTube stream. Please choose another quality or retry."
     }, status_code=200)
 
+@app.api_route("/api/index.py", methods=["GET", "HEAD"])
+async def index_py_dispatcher(
+    request: Request,
+    url: Optional[str] = Query(None),
+    token: Optional[str] = Query(None),
+    task_id: Optional[str] = Query(None),
+    filename: Optional[str] = Query("video.mp4")
+):
+    if task_id or token:
+        return await resolve_youtube(request, token=token, url=url)
+    if url:
+        return await proxy_download(request, url=url, filename=filename)
+    return JSONResponse({"status": "ok", "service": "VidSavor Multi-Platform Engine v2.0"})
+
 @app.api_route("/api/proxy-download", methods=["GET", "HEAD"])
 @app.api_route("/proxy-download", methods=["GET", "HEAD"])
-@app.api_route("/api/index.py", methods=["GET", "HEAD"])
 async def proxy_download(
     request: Request,
     url: Optional[str] = Query(None),
