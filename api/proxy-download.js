@@ -2,6 +2,33 @@ export const config = {
   runtime: 'edge',
 };
 
+function unpackTokenUrl(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== 'string') return rawUrl;
+  if (rawUrl.includes('token=')) {
+    try {
+      const match = rawUrl.match(/[?&]token=([^&#\s]+)/);
+      if (match) {
+        const parts = match[1].split('.');
+        if (parts.length >= 2) {
+          let payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          while (payload.length % 4) {
+            payload += '=';
+          }
+          const decoded = atob(payload);
+          const data = JSON.parse(decoded);
+          if (data && data.url && typeof data.url === 'string') {
+            const cand = data.url.replace(/&amp;/g, '&').trim();
+            if (cand.startsWith('http')) {
+              return unpackTokenUrl(cand);
+            }
+          }
+        }
+      }
+    } catch (e) {}
+  }
+  return rawUrl;
+}
+
 export default async function handler(request) {
   try {
     const url = new URL(request.url);
@@ -16,12 +43,14 @@ export default async function handler(request) {
       );
     }
 
+    const resolvedTargetUrl = unpackTokenUrl(targetUrl);
+
     let cleanFilename = decodeURIComponent(rawFilename).replace(/["\r\n]/g, '').trim();
     if (!cleanFilename) {
       cleanFilename = 'vidsavor_video.mp4';
     }
 
-    const domain = targetUrl.toLowerCase();
+    const domain = resolvedTargetUrl.toLowerCase();
     const headers = new Headers();
     headers.set(
       'User-Agent',
@@ -57,7 +86,7 @@ export default async function handler(request) {
     }
 
     // If fileUrl is a vidssave download_redirect, resolve 302 first
-    let finalFetchUrl = targetUrl;
+    let finalFetchUrl = resolvedTargetUrl;
     if (targetUrl.includes('download_redirect')) {
       try {
         const redirRes = await fetch(targetUrl, {

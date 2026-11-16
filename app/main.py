@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from app.extractor import extractor
+from app.extractor import extractor, unpack_token_url
 
 logger = logging.getLogger(__name__)
 
@@ -264,6 +264,8 @@ async def proxy_download(
     if not target_url or not target_url.strip():
         # If called without url parameter, return service status
         return JSONResponse({"status": "ok", "service": "VidSavor Download Proxy Engine v2.0"})
+
+    target_url = unpack_token_url(target_url)
 
     raw_filename = filename or request.query_params.get("filename", "vidsavor_video.mp4")
     clean_filename = urllib.parse.unquote(raw_filename).replace('"', '').replace('\r', '').replace('\n', '').strip()

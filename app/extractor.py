@@ -2,6 +2,8 @@ import re
 import math
 import logging
 import urllib.parse
+import base64
+import json
 from typing import Dict, Any, List, Optional
 import requests
 import yt_dlp
@@ -142,6 +144,52 @@ def decode_hunter(h_str: str, n_str: str, t_val: int, e_val: int) -> str:
     except Exception:
         return r_out
 
+def unpack_token_url(url: Optional[str]) -> str:
+    """
+    Unpacks direct origin CDN media URLs (e.g. scontent.cdninstagram.com, fbcdn.net)
+    from JWT-proxied links (dl.snapcdn.app, d.rapidcdn.app, savevids, saveinsta).
+    """
+    if not url or not isinstance(url, str):
+        return "" if url is None else url
+
+    url = url.strip()
+    if "token=" in url:
+        try:
+            match = re.search(r'[?&]token=([^&#\s]+)', url)
+            if match:
+                token_str = match.group(1)
+                parts = token_str.split('.')
+                if len(parts) >= 2:
+                    payload = parts[1]
+                    payload += '=' * (-len(payload) % 4)
+                    raw_bytes = base64.urlsafe_b64decode(payload.encode('ascii'))
+                    data = json.loads(raw_bytes.decode('utf-8', errors='ignore'))
+                    if isinstance(data, dict) and data.get("url") and isinstance(data["url"], str):
+                        cand = data["url"].strip().replace('&amp;', '&')
+                        if cand.startswith("http"):
+                            return unpack_token_url(cand)
+        except Exception:
+            pass
+
+    return url
+
+def sanitize_result(res: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Sanitizes all media URLs in an extraction result to direct origin CDN links."""
+    if not res or not isinstance(res, dict):
+        return res
+    if res.get("download"):
+        res["download"] = unpack_token_url(res["download"])
+    if res.get("thumbnail"):
+        res["thumbnail"] = unpack_token_url(res["thumbnail"])
+    if res.get("results") and isinstance(res["results"], list):
+        for item in res["results"]:
+            if isinstance(item, dict):
+                if item.get("url"):
+                    item["url"] = unpack_token_url(item["url"])
+                if item.get("thumbnail"):
+                    item["thumbnail"] = unpack_token_url(item["thumbnail"])
+    return res
+
 class MediaExtractor:
     def __init__(self):
         self.ydl_opts_base = {
@@ -167,37 +215,37 @@ class MediaExtractor:
         if platform == 'youtube':
             res = self._extract_youtube(url)
             if res and res.get('status') == 'success' and res.get('results'):
-                return res
+                return sanitize_result(res)
 
         # 2. TikTok Dedicated Handler
         elif platform == 'tiktok':
             res = self._extract_tiktok(url)
             if res and res.get('status') == 'success' and res.get('results'):
-                return res
+                return sanitize_result(res)
 
         # 3. Instagram Dedicated Handler
         elif platform == 'instagram':
             res = self._extract_instagram(url)
             if res and res.get('status') == 'success' and res.get('results'):
-                return res
+                return sanitize_result(res)
 
         # 4. Facebook Dedicated Handler
         elif platform == 'facebook':
             res = self._extract_facebook(url)
             if res and res.get('status') == 'success' and res.get('results'):
-                return res
+                return sanitize_result(res)
 
         # 5. Pinterest Dedicated Handler
         elif platform == 'pinterest':
             res = self._extract_pinterest(url)
             if res and res.get('status') == 'success' and res.get('results'):
-                return res
+                return sanitize_result(res)
 
         # 6. Twitter / X Dedicated Handler
         elif platform == 'twitter':
             res = self._extract_twitter(url)
             if res and res.get('status') == 'success' and res.get('results'):
-                return res
+                return sanitize_result(res)
 
         # Fallback to Universal yt-dlp
         try:
@@ -206,14 +254,14 @@ class MediaExtractor:
                 if info:
                     parsed = self._parse_info(info, platform, url)
                     if parsed and parsed.get('results'):
-                        return parsed
+                        return sanitize_result(parsed)
         except Exception as e:
             logger.warning(f"Universal yt-dlp fallback error: {e}")
 
         # Fallback to OpenGraph Scraper
         og_res = self._extract_opengraph(url, platform)
         if og_res and og_res.get('status') == 'success' and og_res.get('results'):
-            return og_res
+            return sanitize_result(og_res)
 
         # Informative error message based on platform
         error_messages = {
@@ -575,12 +623,37 @@ class MediaExtractor:
                         m = re.search(r'}\s*\(\s*"([^"]+)"\s*,\s*(\d+|"[^"]*")\s*,\s*"([^"]+)"\s*,\s*(\d+)\s*,\s*(\d+)\s*,', html)
                         decoded = decode_hunter(m.group(1), m.group(3), int(m.group(4)), int(m.group(5))) if m else html
 
-                        dl_urls = re.findall(r'href=\\?"([^"\\]+)\\?"', decoded)
-                        img_urls = re.findall(r'src=\\?"([^"\\]+)\\?"', decoded)
+                        cand_links = []
+                        for m_link in re.finditer(r'<a[^>]+href=\\?"([^"\\]+)\\?"[^>]*title=\\?"([^"\\]*)\\?"', decoded):
+                            cand_links.append((m_link.group(1), m_link.group(2)))
+                        if not cand_links:
+                            for u in re.findall(r'href=\\?"([^"\\]+)\\?"', decoded):
+                                cand_links.append((u, ""))
 
-                        videos = [u for u in dl_urls if u.startswith('http') and ('mp4' in u or 'dl.snapcdn.app' in u or 'download' in u)]
-                        photos = [u for u in dl_urls if u.startswith('http') and u not in videos]
-                        thumb = img_urls[0] if img_urls else ""
+                        img_urls = re.findall(r'src=\\?"([^"\\]+)\\?"', decoded)
+                        raw_thumb = img_urls[0] if img_urls else ""
+                        thumb = unpack_token_url(raw_thumb)
+
+                        videos = []
+                        photos = []
+
+                        for u, title in cand_links:
+                            if not u.startswith("http"):
+                                continue
+                            clean_u = unpack_token_url(u)
+                            is_v = (".mp4" in clean_u.lower() or "video" in clean_u.lower() or 
+                                    "video" in title.lower() or "/o1/v/" in clean_u)
+                            is_thumb_or_photo = ("photo" in title.lower() or "thumb" in title.lower() or 
+                                                 ".jpg" in clean_u.lower() or ".jpeg" in clean_u.lower() or 
+                                                 ".png" in clean_u.lower() or ".webp" in clean_u.lower() or
+                                                 "/v/t51." in clean_u)
+
+                            if is_v and not is_thumb_or_photo:
+                                if clean_u not in videos:
+                                    videos.append(clean_u)
+                            else:
+                                if clean_u not in photos and clean_u != thumb:
+                                    photos.append(clean_u)
 
                         results = []
                         for idx, v in enumerate(videos):
@@ -636,9 +709,9 @@ class MediaExtractor:
                 d = r.json()
                 if d.get("status") == "success" and d.get("medias"):
                     results = []
-                    thumb = d.get("thumbnail") or ""
+                    thumb = unpack_token_url(d.get("thumbnail") or "")
                     for m in d["medias"]:
-                        target = m.get("url")
+                        target = unpack_token_url(m.get("url"))
                         if not target:
                             continue
                         is_v = m.get("type") == "video" or "mp4" in (m.get("format") or "").lower()
@@ -696,10 +769,10 @@ class MediaExtractor:
                 d = r.json()
                 if d.get("status") == "success" and d.get("medias"):
                     results = []
-                    thumb = d.get("thumbnail") or ""
+                    thumb = unpack_token_url(d.get("thumbnail") or "")
                     title = d.get("title") or "Facebook Video"
                     for m in d["medias"]:
-                        target = m.get("url")
+                        target = unpack_token_url(m.get("url"))
                         if not target:
                             continue
                         q = m.get("quality") or "HD Video"

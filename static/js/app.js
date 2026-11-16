@@ -452,9 +452,33 @@ function shareMedia() {
 let currentResults = [];
 let currentTitle = "Extracted Content";
 
+// Unpack raw origin CDN URLs from JWT token wrappers (dl.snapcdn.app, d.rapidcdn.app, savevids, saveinsta)
+function unpackSnapcdnUrl(rawUrl) {
+    if (!rawUrl || typeof rawUrl !== 'string') return rawUrl;
+    if (rawUrl.includes('token=')) {
+        try {
+            const match = rawUrl.match(/[?&]token=([^&#\s]+)/);
+            if (match) {
+                const parts = match[1].split('.');
+                if (parts.length >= 2) {
+                    let payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+                    while (payload.length % 4) payload += '=';
+                    const data = JSON.parse(atob(payload));
+                    if (data && data.url && typeof data.url === 'string') {
+                        const cand = data.url.replace(/&amp;/g, '&').trim();
+                        if (cand.startsWith('http')) return unpackSnapcdnUrl(cand);
+                    }
+                }
+            }
+        } catch (e) {}
+    }
+    return rawUrl;
+}
+
 // Instant Direct Download Engine (Using grapweb Hostinger streaming attachment engine for TikTok, Instagram, Facebook, and YouTube)
 function resolveDownloadUrl(streamUrl, filename, item = null) {
     if (!streamUrl) return '';
+    streamUrl = unpackSnapcdnUrl(streamUrl);
     const currentPostUrl = document.getElementById('videoUrl')?.value?.trim() || '';
     const safeTitle = (filename || 'video').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
     const ext = (filename || '').split('.').pop() || 'mp4';
@@ -487,6 +511,18 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
 }
 
 async function triggerInstantDownload(streamUrl, filename, btnElement, item = null) {
+    if (btnElement) {
+        if (btnElement.dataset.downloading === 'true') {
+            return; // Prevent duplicate triggers and "Download multiple files" browser warnings
+        }
+        btnElement.dataset.downloading = 'true';
+        setTimeout(() => {
+            if (btnElement) btnElement.dataset.downloading = 'false';
+        }, 3500);
+    }
+
+    streamUrl = unpackSnapcdnUrl(streamUrl);
+
     if (!streamUrl && (!item || !item.token)) {
         alert('Download stream URL not found.');
         return;
@@ -885,12 +921,8 @@ async function downloadNow() {
                     const singleDownloadBtn = singleRow.querySelector('.btn-row-download');
                     singleDownloadBtn.addEventListener('click', (e) => {
                         e.preventDefault();
+                        e.stopPropagation();
                         triggerInstantDownload(data.download, cleanName, singleDownloadBtn);
-                    });
-                    singleRow.addEventListener('click', (e) => {
-                        if (e.target !== singleDownloadBtn && !singleDownloadBtn.contains(e.target)) {
-                            triggerInstantDownload(data.download, cleanName, singleDownloadBtn);
-                        }
                     });
                     container.appendChild(singleRow);
                 }
@@ -969,12 +1001,8 @@ async function downloadNow() {
                         const downloadBtn = rowEl.querySelector('.btn-row-download');
                         downloadBtn.addEventListener('click', (e) => {
                             e.preventDefault();
+                            e.stopPropagation();
                             triggerInstantDownload(item.url, cleanFilename, downloadBtn, item);
-                        });
-                        rowEl.addEventListener('click', (e) => {
-                            if (e.target !== downloadBtn && !downloadBtn.contains(e.target)) {
-                                triggerInstantDownload(item.url, cleanFilename, downloadBtn, item);
-                            }
                         });
 
                         container.appendChild(rowEl);
