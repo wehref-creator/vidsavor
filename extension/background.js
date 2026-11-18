@@ -3,7 +3,7 @@
  * Handles context menus, tab monitoring, and download redirects
  */
 
-const VID_SAVOR_BASE = "https://vidsavor.vercel.app";
+const VID_SAVOR_BASE = "https://vidsavor.com";
 
 // 1. Create Context Menus upon extension install/update
 chrome.runtime.onInstalled.addListener(() => {

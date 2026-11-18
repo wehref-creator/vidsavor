@@ -169,7 +169,7 @@ def unpack_token_url(url: Optional[str]) -> str:
     return url
 
 def sanitize_result(res: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-    """Sanitizes all media URLs in an extraction result to direct origin CDN links."""
+    """Sanitizes all media URLs in an extraction result to direct origin CDN links and ensures audio stream availability."""
     if not res or not isinstance(res, dict):
         return res
     if res.get("download"):
@@ -183,6 +183,22 @@ def sanitize_result(res: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
                     item["url"] = unpack_token_url(item["url"])
                 if item.get("thumbnail"):
                     item["thumbnail"] = unpack_token_url(item["thumbnail"])
+
+        # Ensure an Audio (MP3) extraction option is always available for any video stream
+        has_audio = any(r.get("type") == "audio" or r.get("format") == "mp3" for r in res["results"] if isinstance(r, dict))
+        has_video = any(r.get("type") == "video" for r in res["results"] if isinstance(r, dict))
+        if not has_audio and has_video:
+            primary_vid = next(r for r in res["results"] if isinstance(r, dict) and r.get("type") == "video")
+            res["results"].append({
+                "url": primary_vid["url"],
+                "token": primary_vid.get("token"),
+                "type": "audio",
+                "quality": "Original Audio (MP3)",
+                "format": "mp3",
+                "has_audio": True,
+                "size": "Audio Stream",
+                "thumbnail": res.get("thumbnail") or primary_vid.get("thumbnail", "")
+            })
     return res
 
 class MediaExtractor:

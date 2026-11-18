@@ -68,17 +68,13 @@ export default async function handler(request) {
       headers.set('Range', clientRange);
     }
 
-    // Determine platform referer
-    if (clientReferer && clientReferer.startsWith('http')) {
+    // Determine platform referer (Notice: Instagram/Meta CDN rejects custom/foreign referers, so omit referer for cdninstagram)
+    if (clientReferer && clientReferer.startsWith('http') && !domain.includes('cdninstagram') && !domain.includes('fbcdn')) {
       headers.set('Referer', clientReferer);
     } else if (domain.includes('tiktok') || domain.includes('byteoversea') || domain.includes('ibytedtos')) {
       headers.set('Referer', 'https://www.tiktok.com/');
-    } else if (domain.includes('instagram') || domain.includes('cdninstagram')) {
-      headers.set('Referer', 'https://www.instagram.com/');
     } else if (domain.includes('youtube') || domain.includes('googlevideo')) {
       headers.set('Referer', 'https://www.youtube.com/');
-    } else if (domain.includes('facebook') || domain.includes('fbcdn')) {
-      headers.set('Referer', 'https://www.facebook.com/');
     } else if (domain.includes('twimg') || domain.includes('twitter') || domain.includes('x.com')) {
       headers.set('Referer', 'https://x.com/');
     }
@@ -148,19 +144,10 @@ export default async function handler(request) {
       } catch (fbGrapErr) {}
     }
 
-    // If still failed
+    // If still failed to stream via edge/grapweb, seamlessly redirect the browser directly to the media stream URL
+    // (Prevents Chrome's "File wasn't available on site" error by allowing browser residential connection)
     if (!cdnRes.ok && cdnRes.status !== 206) {
-      return new Response(
-        JSON.stringify({
-          status: 'error',
-          code: cdnRes.status,
-          message: `Source CDN returned HTTP ${cdnRes.status}. The stream URL may be restricted or expired.`,
-        }),
-        {
-          status: cdnRes.status,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      return Response.redirect(finalFetchUrl, 302);
     }
 
     // Determine Content-Type and ensure clean filename extension

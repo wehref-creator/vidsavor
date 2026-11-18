@@ -13,13 +13,16 @@ if ('serviceWorker' in navigator) {
 }
 
 let deferredPrompt = null;
+window.deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
+    window.deferredPrompt = e;
 });
 
 window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
+    window.deferredPrompt = null;
 });
 
 // ==========================================================================
@@ -559,11 +562,14 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
                     url: currentPostUrl
                 })
             });
-            let data = await res.json();
+            let data = null;
+            try {
+                data = await res.json();
+            } catch (je) {}
 
             // If task is pending, poll until complete (up to 30s)
             let pollAttempts = 0;
-            while (data && data.status === 'pending' && data.task_id && pollAttempts < 25) {
+            while (data && (data.status === 'pending' || data.status === 'running') && data.task_id && pollAttempts < 25) {
                 pollAttempts++;
                 if (btnElement) {
                     const prog = data.progress ? `${data.progress}%` : `${Math.min(95, pollAttempts * 5)}%`;
@@ -573,16 +579,31 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
                 try {
                     const pollRes = await fetch(`/api/resolve-youtube?task_id=${encodeURIComponent(data.task_id)}&title=${encodeURIComponent(safeTitle)}&format=${ext}`);
                     data = await pollRes.json();
+                    let candLink = (data && (data.download_url || data.direct_link || data.download_link));
+                    if (candLink && !candLink.startsWith('http')) {
+                        candLink = `https://grapweb.com/youtube/${candLink.replace(/^\//, '')}`;
+                    }
+                    if (candLink && candLink.startsWith('http')) {
+                        data = { status: 'success', download_url: candLink, filename: `${safeTitle}.${ext}` };
+                    }
                 } catch (pe) {
                     // Direct Hostinger Grapweb fallback if Vercel Edge errors
                     try {
                         const gwRes = await fetch(`https://grapweb.com/youtube/api.php?action=check_task&task_id=${encodeURIComponent(data.task_id)}&title=${encodeURIComponent(safeTitle)}&format=${ext}`);
                         const gwData = await gwRes.json();
-                        if (gwData.direct_link || gwData.download_link) {
-                            data = { status: 'success', download_url: gwData.direct_link || gwData.download_link, filename: `${safeTitle}.${ext}` };
+                        let candLink = gwData.direct_link || gwData.download_link;
+                        if (candLink && !candLink.startsWith('http')) {
+                            candLink = `https://grapweb.com/youtube/${candLink.replace(/^\//, '')}`;
+                        }
+                        if (candLink && candLink.startsWith('http')) {
+                            data = { status: 'success', download_url: candLink, filename: `${safeTitle}.${ext}` };
                         }
                     } catch (gwe) {}
                 }
+            }
+
+            if (data && data.download_url && !data.download_url.startsWith('http')) {
+                data.download_url = `https://grapweb.com/youtube/${data.download_url.replace(/^\//, '')}`;
             }
 
             if (data && data.status === 'success' && data.download_url) {
@@ -662,26 +683,152 @@ async function downloadNow() {
     btn.disabled = true;
 
     try {
-        let response = await fetch('/api/fetch', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: urlInput })
-        });
-
-        // Fallback to /fetch if /api/fetch returned 404 or 405
-        if (!response.ok) {
-            response = await fetch('/fetch', {
+        let data = null;
+        try {
+            let response = await fetch('/api/fetch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: urlInput })
             });
+
+            // Fallback to /fetch if /api/fetch returned 404 or 405
+            if (!response.ok) {
+                response = await fetch('/fetch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: urlInput })
+                });
+            }
+
+            if (response.ok) {
+                data = await response.json();
+            }
+        } catch (fetchErr) {}
+
+        const isYouTube = urlInput.includes('youtube.com') || urlInput.includes('youtu.be');
+
+        // Edge & Client Fallback Engine for YouTube (Prevents serverless datacenter IP blocks)
+        if (isYouTube && (!data || data.status !== 'success')) {
+            try {
+                // Tier 1 Fallback: Vercel Edge resolver
+                const edgeRes = await fetch(`/api/resolve-youtube?action=parse&url=${encodeURIComponent(urlInput)}`);
+                if (edgeRes.ok) {
+                    const edgeData = await edgeRes.json();
+                    if (edgeData && edgeData.status === 'success' && edgeData.results?.length) {
+                        data = edgeData;
+                    }
+                }
+            } catch (edgeErr) {}
+
+            // Tier 2 Fallback: Direct client residential fetch to Hostinger Grapweb
+            if (!data || data.status !== 'success') {
+                try {
+                    const gwRes = await fetch(`https://grapweb.com/youtube/api.php?action=parse&url=${encodeURIComponent(urlInput)}`);
+                    if (gwRes.ok) {
+                        const gwData = await gwRes.json();
+                        if (gwData && gwData.status === 'success' && gwData.data) {
+                            const info = gwData.data;
+                            const vidTitle = info.title || 'YouTube Video';
+                            const thumbnail = info.thumbnail || '';
+                            const author = info.author || 'YouTube Creator';
+                            const duration = info.durationFormatted || '';
+
+                            const results = [];
+                            const seenQualities = new Set();
+
+                            for (const v of (info.videos || [])) {
+                                const q = (v.quality || '').toUpperCase();
+                                if (seenQualities.has(q)) continue;
+                                seenQualities.add(q);
+
+                                let label = q;
+                                if (['1080P', '1080P60', 'FHD'].includes(q)) label = '1080p Full HD';
+                                else if (['720P', 'HD'].includes(q)) label = '720p HD';
+                                else if (q === '2160P') label = '2160p (4K Ultra HD)';
+                                else if (q === '1440P') label = '1440p (2K QHD)';
+                                else if (q === '480P') label = '480p SD';
+                                else if (q === '360P') label = '360p';
+
+                                const target = v.resource_content || v.download_url;
+                                if (!target) continue;
+
+                                results.push({
+                                    url: target,
+                                    token: v.resource_content,
+                                    type: 'video',
+                                    quality: label,
+                                    has_audio: true,
+                                    format: 'mp4',
+                                    size: v.sizeFormatted || 'HD Stream',
+                                    thumbnail: thumbnail
+                                });
+                            }
+
+                            for (const a of (info.audios || [])) {
+                                const q = (a.quality || '').toUpperCase();
+                                const target = a.resource_content || a.download_url;
+                                if (!target) continue;
+
+                                results.push({
+                                    url: target,
+                                    token: a.resource_content,
+                                    type: 'audio',
+                                    quality: `${q} Audio (MP3)`,
+                                    has_audio: true,
+                                    format: 'mp3',
+                                    size: a.sizeFormatted || 'High Audio',
+                                    thumbnail: thumbnail
+                                });
+                            }
+
+                            if (thumbnail) {
+                                results.push({
+                                    url: thumbnail,
+                                    type: 'photo',
+                                    quality: 'HD Cover Poster (JPG)',
+                                    format: 'jpg',
+                                    size: 'Original JPG',
+                                    thumbnail: thumbnail
+                                });
+                            }
+
+                            data = {
+                                status: 'success',
+                                title: vidTitle,
+                                thumbnail: thumbnail,
+                                type: 'video',
+                                download: results[0]?.url || '',
+                                author: author,
+                                duration: duration,
+                                platform: 'youtube',
+                                results: results
+                            };
+                        }
+                    }
+                } catch (gwErr) {}
+            }
         }
 
-        const data = await response.json();
-
-        if (data.status === 'success') {
+        if (data && data.status === 'success') {
             currentResults = data.results || [];
             currentTitle = data.title || "Extracted Content";
+
+            // Guarantee an Audio (MP3) download option is always available for any video stream
+            const hasAudio = currentResults.some(r => r.type === 'audio' || r.format === 'mp3');
+            const hasVideo = currentResults.some(r => r.type === 'video');
+            if (!hasAudio && hasVideo) {
+                const mainVid = currentResults.find(r => r.type === 'video');
+                currentResults.push({
+                    url: mainVid.url,
+                    token: mainVid.token,
+                    type: 'audio',
+                    quality: 'Original Audio (MP3)',
+                    format: 'mp3',
+                    has_audio: true,
+                    size: 'Stereo Audio',
+                    thumbnail: data.thumbnail || mainVid.thumbnail || ''
+                });
+            }
 
             // Render Preview Image or Video
             const previewContainer = document.getElementById('previewMediaContainer');

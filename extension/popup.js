@@ -2,7 +2,7 @@
  * VidSavor Extension - Popup Controller
  */
 
-const VID_SAVOR_BASE = "https://vidsavor.vercel.app";
+const VID_SAVOR_BASE = "https://vidsavor.com";
 
 document.addEventListener('DOMContentLoaded', async () => {
     const detectionCard = document.getElementById('detectionCard');
