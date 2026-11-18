@@ -715,22 +715,24 @@ async function downloadNow() {
         } catch (fetchErr) {}
 
         const isYouTube = urlInput.includes('youtube.com') || urlInput.includes('youtu.be');
+        const hasYouTubeVideo = data && data.status === 'success' && (data.results || []).some(r => r.type === 'video' || r.type === 'audio');
 
-        // Edge & Client Fallback Engine for YouTube (Prevents serverless datacenter IP blocks)
-        if (isYouTube && (!data || data.status !== 'success')) {
+        // Edge & Client Fallback Engine for YouTube (Prevents serverless datacenter IP blocks or photo-only fallbacks)
+        if (isYouTube && (!data || data.status !== 'success' || !hasYouTubeVideo)) {
             try {
                 // Tier 1 Fallback: Vercel Edge resolver
                 const edgeRes = await fetch(`/api/resolve-youtube?action=parse&url=${encodeURIComponent(urlInput)}`);
                 if (edgeRes.ok) {
                     const edgeData = await edgeRes.json();
-                    if (edgeData && edgeData.status === 'success' && edgeData.results?.length) {
+                    if (edgeData && edgeData.status === 'success' && edgeData.results?.some(r => r.type === 'video' || r.type === 'audio')) {
                         data = edgeData;
                     }
                 }
             } catch (edgeErr) {}
 
             // Tier 2 Fallback: Direct client residential fetch to Hostinger Grapweb
-            if (!data || data.status !== 'success') {
+            const stillMissingVideo = !data || data.status !== 'success' || !(data.results || []).some(r => r.type === 'video' || r.type === 'audio');
+            if (stillMissingVideo) {
                 try {
                     const gwRes = await fetch(`https://grapweb.com/youtube/api.php?action=parse&url=${encodeURIComponent(urlInput)}`);
                     if (gwRes.ok) {
@@ -758,12 +760,14 @@ async function downloadNow() {
                                 else if (q === '480P') label = '480p SD';
                                 else if (q === '360P') label = '360p';
 
-                                const target = v.resource_content || v.download_url;
+                                const dlVal = v.download_url || '';
+                                const tokenVal = v.resource_content || '';
+                                const target = dlVal || tokenVal;
                                 if (!target) continue;
 
                                 results.push({
                                     url: target,
-                                    token: v.resource_content,
+                                    token: dlVal ? '' : tokenVal,
                                     type: 'video',
                                     quality: label,
                                     has_audio: true,
@@ -775,12 +779,14 @@ async function downloadNow() {
 
                             for (const a of (info.audios || [])) {
                                 const q = (a.quality || '').toUpperCase();
-                                const target = a.resource_content || a.download_url;
+                                const dlVal = a.download_url || '';
+                                const tokenVal = a.resource_content || '';
+                                const target = dlVal || tokenVal;
                                 if (!target) continue;
 
                                 results.push({
                                     url: target,
-                                    token: a.resource_content,
+                                    token: dlVal ? '' : tokenVal,
                                     type: 'audio',
                                     quality: `${q} Audio (MP3)`,
                                     has_audio: true,

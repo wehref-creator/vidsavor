@@ -269,10 +269,11 @@ class MediaExtractor:
         except Exception as e:
             logger.warning(f"Universal yt-dlp fallback error: {e}")
 
-        # Fallback to OpenGraph Scraper
-        og_res = self._extract_opengraph(url, platform)
-        if og_res and og_res.get('status') == 'success' and og_res.get('results'):
-            return sanitize_result(og_res)
+        # Fallback to OpenGraph Scraper (Only for non-YouTube media; never return photo-only for a YouTube video)
+        if platform != 'youtube':
+            og_res = self._extract_opengraph(url, platform)
+            if og_res and og_res.get('status') == 'success' and og_res.get('results'):
+                return sanitize_result(og_res)
 
         # Informative error message based on platform
         error_messages = {
@@ -307,12 +308,12 @@ class MediaExtractor:
                     resp = requests.post(
                         "https://grapweb.com/youtube/api.php",
                         data={"action": "parse", "url": clean_url},
-                        timeout=5,
+                        timeout=10,
                         headers={'User-Agent': USER_AGENT, 'Accept': 'application/json'}
                     )
                 else:
                     parse_url = "https://grapweb.com/youtube/api.php?action=parse&url=" + urllib.parse.quote(clean_url)
-                    resp = requests.get(parse_url, timeout=5, headers={'User-Agent': USER_AGENT, 'Accept': 'application/json'})
+                    resp = requests.get(parse_url, timeout=10, headers={'User-Agent': USER_AGENT, 'Accept': 'application/json'})
 
                 if resp and resp.status_code == 200:
                     data = resp.json()
@@ -352,13 +353,13 @@ class MediaExtractor:
                             else:
                                 label = f"{clean_q.lower()}"
 
-                            target_url = token if token else dl_url
+                            target_url = dl_url if dl_url else token
                             if not target_url:
                                 continue
 
                             results.append({
                                 "url": target_url,
-                                "token": token,
+                                "token": "" if dl_url else token,
                                 "type": "video",
                                 "quality": label,
                                 "has_audio": True,
@@ -372,13 +373,13 @@ class MediaExtractor:
                             token = a.get('resource_content') or ''
                             dl_url = a.get('download_url') or ''
                             size_str = a.get('sizeFormatted') or 'High Audio'
-                            target_url = token if token else dl_url
+                            target_url = dl_url if dl_url else token
                             if not target_url:
                                 continue
 
                             results.append({
                                 "url": target_url,
-                                "token": token,
+                                "token": "" if dl_url else token,
                                 "type": "audio",
                                 "quality": f"{q} Audio (MP3)",
                                 "has_audio": True,
@@ -1222,6 +1223,10 @@ class MediaExtractor:
                 return None
             if video_url and "youtube.com/embed" in video_url:
                 video_url = None
+
+            # Never return photo-only results for YouTube (the user wants a video)
+            if platform == 'youtube' and not video_url:
+                return None
 
             results = []
             if video_url and video_url.startswith('http'):
