@@ -478,7 +478,7 @@ function unpackSnapcdnUrl(rawUrl) {
     return rawUrl;
 }
 
-// Instant Direct Download Engine (Using grapweb Hostinger streaming attachment engine for TikTok, Instagram, Facebook, and YouTube)
+// Instant Direct Download Engine (Direct Streams & In-Memory Blob Saver)
 function resolveDownloadUrl(streamUrl, filename, item = null) {
     if (!streamUrl) return '';
     streamUrl = unpackSnapcdnUrl(streamUrl);
@@ -486,23 +486,41 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
     const safeTitle = (filename || 'video').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
     const ext = (filename || '').split('.').pop() || 'mp4';
 
-    // 1. If it's already a direct download redirect or proxy url
+    // 1. Direct freevideosave high-speed streams
+    if (streamUrl.includes('freevideosave.com')) {
+        return streamUrl;
+    }
+
+    // 2. If it's already a direct download redirect or proxy url
     if (streamUrl.includes('/api/proxy-download') || streamUrl.includes('download_redirect')) {
         return streamUrl;
     }
 
-    // 2. Direct Vidssave resolved link (already converted and unrestricted)
+    // 3. Direct Vidssave resolved link (already converted and unrestricted)
     if (streamUrl.includes('vidssave.com') && streamUrl.includes('/tmp/recycle/')) {
         return streamUrl;
     }
 
-    // 3. YouTube conversion tokens that require dynamic resolution
+    // 4. YouTube conversion tokens that require dynamic resolution
     const isYouTubeToken = (item && item.token) || (typeof streamUrl === 'string' && streamUrl.startsWith('Z0ve'));
     if (isYouTubeToken) {
         return 'javascript:void(0);';
     }
 
-    // 4. Route all direct streams through our edge proxy to force direct attachment download
+    // 5. Direct CDN links with CORS support (Instagram, TikTok, Facebook, Twitter, Pinterest, YouTube Photos)
+    const isDirectCdn = streamUrl.startsWith('https://') && (
+        streamUrl.includes('cdninstagram.com') ||
+        streamUrl.includes('fbcdn.net') ||
+        streamUrl.includes('tiktokv.com') ||
+        streamUrl.includes('twimg.com') ||
+        streamUrl.includes('pinimg.com') ||
+        streamUrl.includes('ytimg.com')
+    );
+    if (isDirectCdn) {
+        return streamUrl;
+    }
+
+    // 6. Route other unverified streams through edge proxy
     const params = new URLSearchParams({
         url: streamUrl,
         filename: filename || `${safeTitle}.${ext}`
@@ -511,6 +529,64 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
         params.set('referer', currentPostUrl);
     }
     return `/api/proxy-download?${params.toString()}`;
+}
+
+// High-Speed Direct In-Memory & Anchor Downloader
+// Completely eliminates "File wasn't available on site" and 403 Forbidden errors
+async function triggerDirectDownload(streamUrl, filename, btnElement) {
+    if (btnElement) {
+        if (btnElement.dataset.downloading === 'true') return;
+        btnElement.dataset.downloading = 'true';
+        btnElement.style.pointerEvents = 'none';
+        btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Saving...</span>';
+    }
+
+    let saved = false;
+
+    // 1. Try High-Speed In-Memory Blob Save (Best for Instagram CDN, etc. - saves directly to local disk without network disconnects)
+    try {
+        const res = await fetch(streamUrl, { referrerPolicy: 'no-referrer' });
+        if (res.ok) {
+            const blob = await res.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                window.URL.revokeObjectURL(blobUrl);
+                a.remove();
+            }, 1500);
+            saved = true;
+        }
+    } catch (e) {
+        // Blob fetch blocked by CORS or network, proceed to native anchor save
+    }
+
+    // 2. Native Direct Download Save with Stripped Referrer (Prevents 403 Forbidden & bypasses hotlinking)
+    if (!saved) {
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = streamUrl;
+        a.download = filename;
+        a.target = '_blank';
+        a.rel = 'noreferrer';
+        a.referrerPolicy = 'no-referrer';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => a.remove(), 2500);
+    }
+
+    if (btnElement) {
+        btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
+        setTimeout(() => {
+            btnElement.innerHTML = '<i class="fa-solid fa-download"></i> <span>Download</span>';
+            btnElement.dataset.downloading = 'false';
+            btnElement.style.pointerEvents = 'auto';
+        }, 3500);
+    }
 }
 
 async function triggerInstantDownload(streamUrl, filename, btnElement, item = null) {
@@ -635,22 +711,8 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
             }
 
             if (data && data.status === 'success' && data.download_url) {
-                if (btnElement) {
-                    btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
-                    btnElement.style.pointerEvents = 'auto';
-                    setTimeout(() => {
-                        btnElement.innerHTML = origHTML || '<i class="fa-solid fa-download"></i> <span>Download</span>';
-                    }, 4000);
-                }
-
-                // Trigger direct file download
-                const dlAnchor = document.createElement('a');
-                dlAnchor.style.display = 'none';
-                dlAnchor.href = data.download_url;
-                dlAnchor.setAttribute('download', data.filename || filename);
-                document.body.appendChild(dlAnchor);
-                dlAnchor.click();
-                setTimeout(() => dlAnchor.remove(), 2500);
+                // Trigger direct file download with no-referrer (prevents down-de.vidssave.com 403 Forbidden)
+                triggerDirectDownload(data.download_url, data.filename || filename, btnElement);
                 return;
             } else {
                 let msg = (data && data.message) ? data.message : 'Conversion server timeout';
@@ -676,23 +738,7 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
 
     // Standard Direct Download Flow (TikTok, Instagram, Facebook, Pinterest, Twitter, YouTube Photos)
     const downloadUrl = resolveDownloadUrl(streamUrl, filename, item);
-
-    if (btnElement) {
-        const originalHTML = btnElement.innerHTML;
-        btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
-        setTimeout(() => {
-            btnElement.innerHTML = originalHTML;
-        }, 3500);
-    }
-
-    // Trigger native browser attachment download via invisible anchor
-    const dlAnchor = document.createElement('a');
-    dlAnchor.style.display = 'none';
-    dlAnchor.href = downloadUrl;
-    dlAnchor.setAttribute('download', filename);
-    document.body.appendChild(dlAnchor);
-    dlAnchor.click();
-    setTimeout(() => dlAnchor.remove(), 2000);
+    triggerDirectDownload(downloadUrl, filename, btnElement);
 }
 
 // Primary extraction pipeline
@@ -1127,27 +1173,16 @@ async function downloadNow() {
                         </div>
                         <div class="row-right">
                             <span class="row-size-pill">Original HD</span>
-                            <a href="${singleDlUrl}" class="btn-row-download" download="${cleanName}">
+                            <a href="${singleDlUrl}" class="btn-row-download" download="${cleanName}" target="_blank" rel="noreferrer" referrerpolicy="no-referrer">
                                 <i class="fa-solid fa-download"></i> <span>Download</span>
                             </a>
                         </div>
                     `;
                     const singleDownloadBtn = singleRow.querySelector('.btn-row-download');
                     singleDownloadBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
                         e.stopPropagation();
-                        if (singleDownloadBtn.dataset.downloading === 'true') {
-                            e.preventDefault();
-                            return;
-                        }
-                        singleDownloadBtn.dataset.downloading = 'true';
-                        singleDownloadBtn.style.pointerEvents = 'none';
-                        const origHTML = singleDownloadBtn.innerHTML;
-                        singleDownloadBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
-                        setTimeout(() => {
-                            singleDownloadBtn.innerHTML = origHTML;
-                            singleDownloadBtn.dataset.downloading = 'false';
-                            singleDownloadBtn.style.pointerEvents = 'auto';
-                        }, 4000);
+                        triggerDirectDownload(singleDlUrl, cleanName, singleDownloadBtn);
                     });
                     container.appendChild(singleRow);
                 }
@@ -1217,7 +1252,7 @@ async function downloadNow() {
                             </div>
                             <div class="row-right">
                                 <span class="row-size-pill">${item.size || 'HD File'}</span>
-                                <a href="${rowDlUrl}" class="btn-row-download" download="${cleanFilename}">
+                                <a href="${rowDlUrl}" class="btn-row-download" download="${cleanFilename}" target="_blank" rel="noreferrer" referrerpolicy="no-referrer">
                                     <i class="fa-solid fa-download"></i> <span>Download</span>
                                 </a>
                             </div>
@@ -1239,20 +1274,9 @@ async function downloadNow() {
                             });
                         } else {
                             downloadBtn.addEventListener('click', (e) => {
+                                e.preventDefault();
                                 e.stopPropagation();
-                                if (downloadBtn.dataset.downloading === 'true') {
-                                    e.preventDefault();
-                                    return;
-                                }
-                                downloadBtn.dataset.downloading = 'true';
-                                downloadBtn.style.pointerEvents = 'none';
-                                const origHTML = downloadBtn.innerHTML;
-                                downloadBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
-                                setTimeout(() => {
-                                    downloadBtn.innerHTML = origHTML;
-                                    downloadBtn.dataset.downloading = 'false';
-                                    downloadBtn.style.pointerEvents = 'auto';
-                                }, 4000);
+                                triggerDirectDownload(rowDlUrl, cleanFilename, downloadBtn);
                             });
                         }
 

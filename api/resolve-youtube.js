@@ -86,6 +86,146 @@ export default async function handler(request) {
         );
       }
 
+      // Tier 0: Instant Direct Stream Engine (Zero Conversion Wait, 200 OK Direct Video/Audio Streams)
+      try {
+        const fvResp = await fetch('https://freevideosave.com/fetch', {
+          method: 'POST',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Origin': 'https://freevideosave.com',
+            'Referer': 'https://freevideosave.com/',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ url: targetUrl })
+        });
+
+        if (fvResp.ok) {
+          const fvData = await fvResp.json();
+          if (fvData && fvData.status === 'success' && fvData.results && fvData.results.length > 0) {
+            const vidTitle = fvData.title || 'YouTube Video';
+            const thumbnail = fvData.thumbnail || '';
+            const results = [];
+            const seenQualities = new Set();
+
+            function formatBytes(bytes) {
+              if (!bytes || bytes <= 0) return 'HD Stream';
+              const units = ['B', 'KB', 'MB', 'GB'];
+              let i = 0;
+              let s = bytes;
+              while (s >= 1024 && i < units.length - 1) {
+                s /= 1024;
+                i++;
+              }
+              return `${s.toFixed(1)} ${units[i]}`;
+            }
+
+            for (const item of fvData.results) {
+              if (item.type !== 'video' || !item.url) continue;
+              const fullUrl = item.url.startsWith('/') ? `https://freevideosave.com${item.url}` : item.url;
+              let sizeStr = 'HD Stream';
+              try {
+                const unquoted = decodeURIComponent(fullUrl);
+                const clenMatch = unquoted.match(/[?&]clen=(\d+)/);
+                if (clenMatch) {
+                  sizeStr = formatBytes(parseInt(clenMatch[1], 10));
+                }
+              } catch (e) {}
+
+              const qLower = (item.quality || '').toLowerCase();
+              let label = item.quality || 'HD Video';
+              if (qLower.includes('2160p')) label = '2160p (4K Ultra HD)';
+              else if (qLower.includes('1440p')) label = '1440p (2K QHD)';
+              else if (qLower.includes('1080p')) label = '1080p Full HD';
+              else if (qLower.includes('720p')) label = '720p HD';
+              else if (qLower.includes('480p')) label = '480p SD';
+              else if (qLower.includes('360p')) label = '360p Medium';
+              else if (qLower.includes('240p')) label = '240p';
+              else if (qLower.includes('144p')) label = '144p';
+
+              if (seenQualities.has(label)) continue;
+              seenQualities.add(label);
+
+              results.push({
+                url: fullUrl,
+                type: 'video',
+                quality: label,
+                has_audio: true,
+                format: 'mp4',
+                size: sizeStr,
+                thumbnail: thumbnail
+              });
+            }
+
+            // Audio streams
+            for (const item of fvData.results) {
+              if (item.type !== 'audio' || !item.url) continue;
+              const fullUrl = item.url.startsWith('/') ? `https://freevideosave.com${item.url}` : item.url;
+              let sizeStr = 'High Audio';
+              try {
+                const unquoted = decodeURIComponent(fullUrl);
+                const clenMatch = unquoted.match(/[?&]clen=(\d+)/);
+                if (clenMatch) {
+                  sizeStr = formatBytes(parseInt(clenMatch[1], 10));
+                }
+              } catch (e) {}
+
+              let cleanAudioQ = item.quality || 'Audio';
+              if (cleanAudioQ.includes('129kb') || cleanAudioQ.toLowerCase().includes('aac')) {
+                cleanAudioQ = '320kbps High Quality';
+              } else if (cleanAudioQ.toLowerCase().includes('opus') || cleanAudioQ.includes('124kb')) {
+                cleanAudioQ = 'Stereo Audio';
+              }
+
+              results.push({
+                url: fullUrl,
+                type: 'audio',
+                quality: `${cleanAudioQ} Audio (MP3)`,
+                has_audio: true,
+                format: 'mp3',
+                size: sizeStr,
+                thumbnail: thumbnail
+              });
+            }
+
+            if (thumbnail) {
+              results.push({
+                url: thumbnail,
+                type: 'photo',
+                quality: 'Original Cover Poster (JPG)',
+                format: 'jpg',
+                size: 'Original JPG',
+                thumbnail: thumbnail
+              });
+            }
+
+            if (results.length > 0) {
+              return new Response(
+                JSON.stringify({
+                  status: 'success',
+                  title: vidTitle,
+                  thumbnail: thumbnail,
+                  type: 'video',
+                  download: results[0].url,
+                  author: 'YouTube Creator',
+                  platform: 'youtube',
+                  results: results,
+                  data: {
+                    title: vidTitle,
+                    thumbnail: thumbnail,
+                    author: 'YouTube Creator',
+                    results: results
+                  }
+                }),
+                { status: 200, headers: corsHeaders }
+              );
+            }
+          }
+        }
+      } catch (tier0Err) {
+        // Fall through to Tier 1 Grapweb
+      }
+
+      // Tier 1: Hostinger Grapweb Parse API
       try {
         const grapResp = await fetch(
           `https://grapweb.com/youtube/api.php?action=parse&url=${encodeURIComponent(targetUrl)}`,
@@ -261,6 +401,10 @@ export default async function handler(request) {
     // =========================================================================
     // 2. Direct media stream fast paths
     // =========================================================================
+    if (token.includes('freevideosave.com')) {
+      return new Response(JSON.stringify({ status: 'success', download_url: token, filename }), { status: 200, headers: corsHeaders });
+    }
+
     if (token.includes('download_redirect')) {
       return new Response(JSON.stringify({ status: 'success', download_url: token, filename }), { status: 200, headers: corsHeaders });
     }

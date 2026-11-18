@@ -51,6 +51,12 @@ export default async function handler(request) {
     }
 
     const domain = resolvedTargetUrl.toLowerCase();
+
+    // Fast-path direct redirect for media providers with their own CDN streaming
+    if (domain.includes('freevideosave.com') || targetUrl.includes('download_redirect')) {
+      return Response.redirect(targetUrl, 302);
+    }
+
     const headers = new Headers();
     headers.set(
       'User-Agent',
@@ -58,9 +64,6 @@ export default async function handler(request) {
     );
     headers.set('Accept', '*/*');
     headers.set('Accept-Encoding', 'identity');
-    headers.set('Sec-Fetch-Dest', 'video');
-    headers.set('Sec-Fetch-Mode', 'no-cors');
-    headers.set('Sec-Fetch-Site', 'cross-site');
 
     // Forward range header ONLY if client requested range (enables download resume)
     const clientRange = request.headers.get('range');
@@ -80,12 +83,6 @@ export default async function handler(request) {
       headers.set('Referer', 'https://www.youtube.com/');
     } else if (domain.includes('twimg') || domain.includes('twitter') || domain.includes('x.com')) {
       headers.set('Referer', 'https://x.com/');
-    }
-
-    // If fileUrl is a vidssave download_redirect, seamlessly redirect the client browser directly
-    // so the cryptographic token signature is signed against the client's residential IP (prevents 403 Forbidden)
-    if (targetUrl.includes('download_redirect')) {
-      return Response.redirect(targetUrl, 302);
     }
 
     let finalFetchUrl = resolvedTargetUrl;
