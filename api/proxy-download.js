@@ -53,7 +53,7 @@ export default async function handler(request) {
     const domain = resolvedTargetUrl.toLowerCase();
 
     // Fast-path direct redirect for media providers with their own CDN streaming
-    if (domain.includes('freevideosave.com') || targetUrl.includes('download_redirect')) {
+    if (domain.includes('freevideosave.com') || domain.includes('googlevideo.com') || targetUrl.includes('download_redirect')) {
       return Response.redirect(targetUrl, 302);
     }
 

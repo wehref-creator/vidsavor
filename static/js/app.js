@@ -486,8 +486,8 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
     const safeTitle = (filename || 'video').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
     const ext = (filename || '').split('.').pop() || 'mp4';
 
-    // 1. Direct freevideosave high-speed streams
-    if (streamUrl.includes('freevideosave.com')) {
+    // 1. Direct freevideosave or googlevideo high-speed streams
+    if (streamUrl.includes('freevideosave.com') || streamUrl.includes('googlevideo.com')) {
         return streamUrl;
     }
 
@@ -532,8 +532,10 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
 }
 
 // High-Speed Direct In-Memory & Anchor Downloader
-// Completely eliminates "File wasn't available on site" and 403 Forbidden errors
+// Completely eliminates "File wasn't available on site", 74KB HTML files, and 403 Forbidden errors
 async function triggerDirectDownload(streamUrl, filename, btnElement) {
+    if (!streamUrl || streamUrl === 'javascript:void(0);' || streamUrl === '#') return;
+
     if (btnElement) {
         if (btnElement.dataset.downloading === 'true') return;
         btnElement.dataset.downloading = 'true';
@@ -543,40 +545,86 @@ async function triggerDirectDownload(streamUrl, filename, btnElement) {
 
     let saved = false;
 
-    // 1. Try High-Speed In-Memory Blob Save (Best for Instagram CDN, etc. - saves directly to local disk without network disconnects)
-    try {
-        const res = await fetch(streamUrl, { referrerPolicy: 'no-referrer' });
-        if (res.ok) {
-            const blob = await res.blob();
-            const blobUrl = window.URL.createObjectURL(blob);
+    // Check if this is a YouTube / Google Video / FreeVideoSave stream
+    const isYouTubeStream = (
+        streamUrl.includes('freevideosave.com') ||
+        streamUrl.includes('googlevideo.com') ||
+        streamUrl.includes('youtube.com')
+    );
+
+    if (isYouTubeStream) {
+        // YouTube / Google Video streams are delivered directly from residential Google Video CDN.
+        // Google Video does NOT permit in-memory fetch() (no CORS).
+        // Opening via window.open / anchor download initiates high-speed multi-megabyte direct download.
+        try {
+            const win = window.open(streamUrl, '_blank', 'noopener,noreferrer');
+            if (win) {
+                win.opener = null;
+                saved = true;
+            }
+        } catch (we) {}
+
+        if (!saved) {
             const a = document.createElement('a');
             a.style.display = 'none';
-            a.href = blobUrl;
+            a.href = streamUrl;
             a.download = filename;
+            a.target = '_blank';
+            a.rel = 'noreferrer';
+            a.referrerPolicy = 'no-referrer';
             document.body.appendChild(a);
             a.click();
-            setTimeout(() => {
-                window.URL.revokeObjectURL(blobUrl);
-                a.remove();
-            }, 1500);
+            setTimeout(() => a.remove(), 2500);
             saved = true;
         }
-    } catch (e) {
-        // Blob fetch blocked by CORS or network, proceed to native anchor save
-    }
+    } else {
+        // 1. Try High-Speed In-Memory Blob Save (For Instagram, TikTok, Facebook, Twitter, Pinterest CDNs)
+        try {
+            const res = await fetch(streamUrl, { referrerPolicy: 'no-referrer' });
+            if (res.ok) {
+                const ctype = (res.headers.get('content-type') || '').toLowerCase();
+                // STRICT SECURITY CHECK: Reject text/html and application/json error responses
+                if (ctype.includes('text/html') || ctype.includes('application/json') || ctype.includes('text/plain')) {
+                    throw new Error('Server returned non-media response: ' + ctype);
+                }
 
-    // 2. Native Direct Download Save with Stripped Referrer (Prevents 403 Forbidden & bypasses hotlinking)
-    if (!saved) {
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = streamUrl;
-        a.download = filename;
-        a.target = '_blank';
-        a.rel = 'noreferrer';
-        a.referrerPolicy = 'no-referrer';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => a.remove(), 2500);
+                const blob = await res.blob();
+                const isImage = ctype.includes('image') || (filename && filename.match(/\.(jpg|jpeg|png|webp)$/i));
+                // Reject corrupt/truncated blobs (HTML error fallbacks are < 100KB)
+                if (!isImage && blob.size < 100000) {
+                    throw new Error('Downloaded blob size too small: ' + blob.size + ' bytes');
+                }
+
+                const blobUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = blobUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(blobUrl);
+                    a.remove();
+                }, 1500);
+                saved = true;
+            }
+        } catch (e) {
+            console.warn('In-memory blob save bypassed or failed:', e.message);
+        }
+
+        // 2. Fallback: Native Direct Download Save with Stripped Referrer (Prevents 403 Forbidden & bypasses hotlinking)
+        if (!saved) {
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = streamUrl;
+            a.download = filename;
+            a.target = '_blank';
+            a.rel = 'noreferrer';
+            a.referrerPolicy = 'no-referrer';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => a.remove(), 2500);
+        }
     }
 
     if (btnElement) {

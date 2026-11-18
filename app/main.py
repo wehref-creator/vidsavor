@@ -357,6 +357,11 @@ async def proxy_download(
         parsed = urllib.parse.urlparse(target_url)
         domain = (parsed.netloc or "").lower()
 
+        # Fast-path direct redirect for media providers with their own CDN streaming
+        if any(k in domain for k in ["freevideosave.com", "googlevideo.com"]) or "download_redirect" in target_url:
+            from fastapi.responses import RedirectResponse
+            return RedirectResponse(url=target_url, status_code=302)
+
         client_range = request.headers.get("range")
         base_headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
