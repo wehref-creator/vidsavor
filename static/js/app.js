@@ -568,15 +568,42 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
                 data = await res.json();
             } catch (je) {}
 
-            // If task is pending, poll until complete (up to 30s)
+            // Tier 1 Backup: If Vercel Edge did not return a task_id or download_url, initiate task directly via Hostinger Grapweb
+            if (!data || (!data.task_id && !data.download_url)) {
+                try {
+                    const startForm = new URLSearchParams();
+                    startForm.append('action', 'start_task');
+                    startForm.append('content', token);
+                    startForm.append('title', safeTitle);
+                    startForm.append('format', ext);
+                    const directSt = await fetch('https://grapweb.com/youtube/api.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: startForm.toString()
+                    });
+                    const directData = await directSt.json();
+                    if (directData && directData.task_id) {
+                        data = { status: 'pending', task_id: directData.task_id, title: safeTitle, format: ext };
+                    } else if (directData && (directData.direct_link || directData.download_link)) {
+                        let candLink = directData.direct_link || directData.download_link;
+                        if (candLink && !candLink.startsWith('http')) candLink = `https://grapweb.com/youtube/${candLink.replace(/^\//, '')}`;
+                        data = { status: 'success', download_url: candLink, filename: `${safeTitle}.${ext}` };
+                    } else if (directData && directData.message) {
+                        data = { status: 'error', message: directData.message };
+                    }
+                } catch (stErr) {}
+            }
+
+            // If task is pending, poll until complete (up to 75s for long 1080p videos)
             let pollAttempts = 0;
-            while (data && (data.status === 'pending' || data.status === 'running') && data.task_id && pollAttempts < 25) {
+            while (data && (data.status === 'pending' || data.status === 'running') && data.task_id && pollAttempts < 50) {
                 pollAttempts++;
                 if (btnElement) {
-                    const prog = data.progress ? `${data.progress}%` : `${Math.min(95, pollAttempts * 5)}%`;
+                    const calcProg = Math.min(96, Math.max(8, Math.round(pollAttempts * 2.5)));
+                    const prog = data.progress ? `${data.progress}%` : `${calcProg}%`;
                     btnElement.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Converting (${prog})...</span>`;
                 }
-                await new Promise(r => setTimeout(r, 1200));
+                await new Promise(r => setTimeout(r, 1400));
                 try {
                     const pollRes = await fetch(`/api/resolve-youtube?task_id=${encodeURIComponent(data.task_id)}&title=${encodeURIComponent(safeTitle)}&format=${ext}`);
                     data = await pollRes.json();

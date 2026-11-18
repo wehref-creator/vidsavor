@@ -305,29 +305,8 @@ export default async function handler(request) {
       return new Response(JSON.stringify({ status: 'error', message: errMsg }), { status: 200, headers: corsHeaders });
     }
 
-    // =========================================================================
-    // 4. Poll task up to 6 iterations (~5 seconds) on the edge
-    // =========================================================================
-    for (let i = 0; i < 6; i++) {
-      await new Promise(res => setTimeout(res, 800));
-      try {
-        const chkResp = await fetch(
-          `https://grapweb.com/youtube/api.php?action=check_task&task_id=${encodeURIComponent(createdTaskId)}&title=${encodeURIComponent(cleanTitle)}&format=${cleanFormat}`,
-          { headers: { 'User-Agent': 'Mozilla/5.0' } }
-        );
-        const chkData = await chkResp.json();
-        const candRaw = chkData.direct_link || chkData.download_link;
-        const candLink = resolveGrapwebLink(candRaw);
-
-        if (candLink && candLink.startsWith('http')) {
-          return new Response(JSON.stringify({ status: 'success', download_url: candLink, filename }), { status: 200, headers: corsHeaders });
-        }
-      } catch (e) {}
-    }
-
-    // =========================================================================
-    // 5. If conversion requires more time, return pending status with task_id
-    // =========================================================================
+    // Return pending status immediately to client browser so the client drives
+    // polling with real-time UI progress and zero Vercel serverless gateway timeouts (<1.5s total time)
     return new Response(JSON.stringify({
       status: 'pending',
       task_id: createdTaskId,
