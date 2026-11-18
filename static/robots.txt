@@ -1,5 +1,28 @@
+# robots.txt for VidSavor.com
 User-agent: *
+Allow: /
+Allow: /static/
+Disallow: /api/
+Disallow: /fetch
+Disallow: /resolve-youtube
+Disallow: /proxy-download
+
+# Search Engine Specific
+User-agent: Googlebot
 Allow: /
 Disallow: /api/
 
+User-agent: Googlebot-Image
+Allow: /static/assets/
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.svg$
+Allow: /*.webp$
+
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+
+# Sitemap location
 Sitemap: https://vidsavor.com/sitemap.xml
+Host: https://vidsavor.com
