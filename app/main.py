@@ -28,10 +28,13 @@ app.add_middleware(
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
+PUBLIC_DIR = os.path.join(BASE_DIR, "public")
 
 # Mount static files if static folder exists
 if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+if os.path.exists(PUBLIC_DIR):
+    app.mount("/public", StaticFiles(directory=PUBLIC_DIR), name="public")
 
 class FetchRequest(BaseModel):
     url: Optional[str] = None
@@ -635,6 +638,37 @@ async def serve_audio():
 async def serve_photo():
     return serve_html_file("photo.html")
 
+@app.get("/robots.txt")
+def serve_robots():
+    for f in [os.path.join(PUBLIC_DIR, "robots.txt"), os.path.join(STATIC_DIR, "robots.txt"), os.path.join(BASE_DIR, "robots.txt")]:
+        if os.path.exists(f):
+            with open(f, "r", encoding="utf-8") as fp:
+                return Response(content=fp.read(), media_type="text/plain; charset=utf-8")
+    return Response(content="User-agent: *\nAllow: /\nSitemap: https://www.vidsavor.com/sitemap.xml", media_type="text/plain; charset=utf-8")
+
+@app.get("/sitemap.xml")
+def serve_sitemap():
+    for f in [os.path.join(PUBLIC_DIR, "sitemap.xml"), os.path.join(STATIC_DIR, "sitemap.xml"), os.path.join(BASE_DIR, "sitemap.xml")]:
+        if os.path.exists(f):
+            with open(f, "r", encoding="utf-8") as fp:
+                return Response(content=fp.read(), media_type="application/xml; charset=utf-8")
+    return Response(content='<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>', media_type="application/xml; charset=utf-8")
+
+@app.get("/manifest.json")
+def serve_manifest():
+    for f in [os.path.join(PUBLIC_DIR, "manifest.json"), os.path.join(STATIC_DIR, "manifest.json"), os.path.join(BASE_DIR, "manifest.json")]:
+        if os.path.exists(f):
+            with open(f, "r", encoding="utf-8") as fp:
+                return Response(content=fp.read(), media_type="application/manifest+json; charset=utf-8")
+    return Response(content="{}", media_type="application/manifest+json; charset=utf-8")
+
+@app.get("/favicon.ico")
+def serve_favicon():
+    for f in [os.path.join(PUBLIC_DIR, "favicon.ico"), os.path.join(STATIC_DIR, "assets", "favicon.ico"), os.path.join(BASE_DIR, "favicon.ico")]:
+        if os.path.exists(f):
+            return FileResponse(f, media_type="image/x-icon")
+    raise HTTPException(status_code=404)
+
 # UNIVERSAL CATCH-ALL ROUTE FOR GET AND POST (Zero 405 Method Not Allowed)
 @app.api_route("/{catch_all:path}", methods=["GET", "POST", "HEAD"])
 async def universal_catch_all(catch_all: str, request: Request):
@@ -655,8 +689,25 @@ async def universal_catch_all(catch_all: str, request: Request):
             pass
         return JSONResponse(status_code=200, content={"status": "error", "message": "Please provide a valid media link."})
 
-    # If GET request: check if matches static page FIRST (HTML files should always render in browser)
-    clean = catch_all.strip("/").replace(".html", "")
+    # Direct static file check FIRST (e.g. robots.txt, sitemap.xml, favicon.png, sw.js, images)
+    clean_path = catch_all.strip("/")
+    if any(clean_path.endswith(ext) for ext in [".txt", ".xml", ".json", ".ico", ".png", ".svg", ".js", ".jpg", ".jpeg", ".webp", ".zip"]):
+        for folder in [PUBLIC_DIR, STATIC_DIR, os.path.join(STATIC_DIR, "assets"), BASE_DIR]:
+            candidate = os.path.join(folder, clean_path)
+            if os.path.exists(candidate) and os.path.isfile(candidate):
+                media_type = "text/plain"
+                if clean_path.endswith(".xml"): media_type = "application/xml"
+                elif clean_path.endswith(".json"): media_type = "application/json"
+                elif clean_path.endswith(".png"): media_type = "image/png"
+                elif clean_path.endswith(".jpg") or clean_path.endswith(".jpeg"): media_type = "image/jpeg"
+                elif clean_path.endswith(".svg"): media_type = "image/svg+xml"
+                elif clean_path.endswith(".ico"): media_type = "image/x-icon"
+                elif clean_path.endswith(".js"): media_type = "application/javascript"
+                elif clean_path.endswith(".zip"): media_type = "application/zip"
+                return FileResponse(candidate, media_type=media_type)
+
+    # If GET request: check if matches static page (HTML files should always render in browser)
+    clean = clean_path.replace(".html", "")
     target = f"{clean}.html"
     for folder in [BASE_DIR, STATIC_DIR]:
         candidate = os.path.join(folder, target)

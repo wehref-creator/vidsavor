@@ -68,8 +68,11 @@ export default async function handler(request) {
       headers.set('Range', clientRange);
     }
 
-    // Determine platform referer (Notice: Instagram/Meta CDN rejects custom/foreign referers, so omit referer for cdninstagram)
-    if (clientReferer && clientReferer.startsWith('http') && !domain.includes('cdninstagram') && !domain.includes('fbcdn')) {
+    // Determine platform referer
+    if (domain.includes('vidssave.com')) {
+      headers.set('Referer', 'https://vidssave.com/');
+      headers.set('Origin', 'https://vidssave.com');
+    } else if (clientReferer && clientReferer.startsWith('http') && !domain.includes('cdninstagram') && !domain.includes('fbcdn')) {
       headers.set('Referer', clientReferer);
     } else if (domain.includes('tiktok') || domain.includes('byteoversea') || domain.includes('ibytedtos')) {
       headers.set('Referer', 'https://www.tiktok.com/');
@@ -79,21 +82,13 @@ export default async function handler(request) {
       headers.set('Referer', 'https://x.com/');
     }
 
-    // If fileUrl is a vidssave download_redirect, resolve 302 first
-    let finalFetchUrl = resolvedTargetUrl;
+    // If fileUrl is a vidssave download_redirect, seamlessly redirect the client browser directly
+    // so the cryptographic token signature is signed against the client's residential IP (prevents 403 Forbidden)
     if (targetUrl.includes('download_redirect')) {
-      try {
-        const redirRes = await fetch(targetUrl, {
-          method: 'GET',
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-          redirect: 'manual',
-        });
-        const loc = redirRes.headers.get('location');
-        if (loc) {
-          finalFetchUrl = loc;
-        }
-      } catch (rErr) {}
+      return Response.redirect(targetUrl, 302);
     }
+
+    let finalFetchUrl = resolvedTargetUrl;
 
     // Fetch stream from origin CDN
     let cdnRes = await fetch(finalFetchUrl, {

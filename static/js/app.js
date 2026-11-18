@@ -536,8 +536,9 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
     const ext = (filename || '').split('.').pop() || 'mp4';
 
     // Check if this is a YouTube stream requiring cloud task conversion
+    const hasDirectDl = (typeof streamUrl === 'string' && streamUrl.includes('download_redirect'));
     const isPhoto = (item && item.type === 'photo') || (streamUrl && (streamUrl.includes('ytimg.com') || streamUrl.endsWith('.jpg') || streamUrl.endsWith('.png')));
-    const isYouTubeToken = !isPhoto && (
+    const isYouTubeToken = !isPhoto && !hasDirectDl && (
         (item && item.token) ||
         (typeof streamUrl === 'string' && streamUrl.startsWith('Z0ve')) ||
         (typeof streamUrl === 'string' && !streamUrl.startsWith('http') && (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be')))
@@ -625,7 +626,11 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
                 setTimeout(() => dlAnchor.remove(), 2500);
                 return;
             } else {
-                throw new Error((data && data.message) ? data.message : 'Conversion server timeout');
+                let msg = (data && data.message) ? data.message : 'Conversion server timeout';
+                if (msg.includes('Could not initialize download task')) {
+                    msg = 'Ultra HD 4K streams (>2 GB) exceed online cloud conversion limits for long videos. Please select 1080p Full HD (554 MB) or 720p HD for instant download!';
+                }
+                throw new Error(msg);
             }
         } catch (err) {
             console.error('YouTube resolution error:', err);
@@ -633,7 +638,11 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
                 btnElement.innerHTML = origHTML || '<i class="fa-solid fa-download"></i> <span>Download</span>';
                 btnElement.style.pointerEvents = 'auto';
             }
-            alert('Could not prepare YouTube stream: ' + (err.message || 'Server timeout. Please retry.'));
+            let msg = err.message || 'Server timeout. Please retry.';
+            if (msg.includes('Could not initialize download task')) {
+                msg = 'Ultra HD 4K streams (>2 GB) exceed online cloud conversion limits for long videos. Please select 1080p Full HD (554 MB) or 720p HD for instant download!';
+            }
+            alert(msg.startsWith('Ultra HD') ? msg : ('Could not prepare YouTube stream: ' + msg));
             return;
         }
     }
@@ -1098,11 +1107,13 @@ async function downloadNow() {
                             return;
                         }
                         singleDownloadBtn.dataset.downloading = 'true';
+                        singleDownloadBtn.style.pointerEvents = 'none';
                         const origHTML = singleDownloadBtn.innerHTML;
                         singleDownloadBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
                         setTimeout(() => {
                             singleDownloadBtn.innerHTML = origHTML;
                             singleDownloadBtn.dataset.downloading = 'false';
+                            singleDownloadBtn.style.pointerEvents = 'auto';
                         }, 4000);
                     });
                     container.appendChild(singleRow);
@@ -1180,7 +1191,8 @@ async function downloadNow() {
                         `;
 
                         const downloadBtn = rowEl.querySelector('.btn-row-download');
-                        const isRowYouTubeToken = !isPhoto && (
+                        const hasRowDirectDl = (typeof item.url === 'string' && item.url.includes('download_redirect'));
+                        const isRowYouTubeToken = !isPhoto && !hasRowDirectDl && (
                             (item && item.token) ||
                             (typeof item.url === 'string' && item.url.startsWith('Z0ve')) ||
                             (typeof item.url === 'string' && !item.url.startsWith('http') && (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be')))
@@ -1200,11 +1212,13 @@ async function downloadNow() {
                                     return;
                                 }
                                 downloadBtn.dataset.downloading = 'true';
+                                downloadBtn.style.pointerEvents = 'none';
                                 const origHTML = downloadBtn.innerHTML;
                                 downloadBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
                                 setTimeout(() => {
                                     downloadBtn.innerHTML = origHTML;
                                     downloadBtn.dataset.downloading = 'false';
+                                    downloadBtn.style.pointerEvents = 'auto';
                                 }, 4000);
                             });
                         }

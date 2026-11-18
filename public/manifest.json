@@ -1,0 +1,56 @@
+{
+  "name": "VidSavor - Fast & HD Online Video Downloader",
+  "short_name": "VidSavor",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#121317",
+  "orientation": "portrait-primary",
+  "description": "Download online videos, reels, photos and audio in HD across multiple platforms with VidSavor.",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "64x64",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Video & Reels",
+      "url": "/reels",
+      "description": "Download HD videos and reels"
+    },
+    {
+      "name": "Audio Extractor",
+      "url": "/audio",
+      "description": "Extract MP3 audio tracks"
+    },
+    {
+      "name": "Photo Saver",
+      "url": "/photo",
+      "description": "Download HD photos and carousels"
+    }
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}

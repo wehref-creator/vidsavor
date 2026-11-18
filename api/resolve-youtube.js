@@ -136,12 +136,12 @@ export default async function handler(request) {
 
           const tokenVal = v.resource_content || '';
           const dlVal = v.download_url || '';
-          const target = tokenVal || dlVal;
+          const target = dlVal || tokenVal;
           if (!target) continue;
 
           results.push({
             url: target,
-            token: tokenVal,
+            token: dlVal ? '' : tokenVal,
             type: 'video',
             quality: label,
             has_audio: true,
@@ -155,12 +155,12 @@ export default async function handler(request) {
           const q = (a.quality || '').toUpperCase();
           const tokenVal = a.resource_content || '';
           const dlVal = a.download_url || '';
-          const target = tokenVal || dlVal;
+          const target = dlVal || tokenVal;
           if (!target) continue;
 
           results.push({
             url: target,
-            token: tokenVal,
+            token: dlVal ? '' : tokenVal,
             type: 'audio',
             quality: `${q} Audio (MP3)`,
             has_audio: true,
@@ -219,17 +219,7 @@ export default async function handler(request) {
         const candLink = resolveGrapwebLink(rawLink);
 
         if (candLink && candLink.startsWith('http')) {
-          try {
-            const headResp = await fetch(candLink, {
-              method: 'GET',
-              headers: { 'User-Agent': 'Mozilla/5.0' },
-              redirect: 'manual'
-            });
-            const loc = headResp.headers.get('location');
-            if (loc && loc.startsWith('http')) {
-              return new Response(JSON.stringify({ status: 'success', download_url: loc, filename }), { status: 200, headers: corsHeaders });
-            }
-          } catch (e) {}
+          // Return download link directly to client browser so IP is validated against client
           return new Response(JSON.stringify({ status: 'success', download_url: candLink, filename }), { status: 200, headers: corsHeaders });
         }
 
@@ -244,7 +234,11 @@ export default async function handler(request) {
         }
 
         if (chkData.status === 'error') {
-          return new Response(JSON.stringify({ status: 'error', message: chkData.message || 'Task failed on conversion server' }), { status: 200, headers: corsHeaders });
+          let errMsg = chkData.message || 'Task failed on conversion server';
+          if (errMsg.includes('Could not initialize download task')) {
+            errMsg = 'Ultra HD 4K streams (>2 GB) exceed online cloud conversion limits for long videos. Please select 1080p Full HD (554 MB) or 720p HD for instant download!';
+          }
+          return new Response(JSON.stringify({ status: 'error', message: errMsg }), { status: 200, headers: corsHeaders });
         }
 
         // Default to pending if still within processing
@@ -267,19 +261,13 @@ export default async function handler(request) {
     // =========================================================================
     // 2. Direct media stream fast paths
     // =========================================================================
+    if (token.includes('download_redirect')) {
+      return new Response(JSON.stringify({ status: 'success', download_url: token, filename }), { status: 200, headers: corsHeaders });
+    }
+
     if (token.includes('googlevideo.com') || token.includes('rapidcdn') || token.includes('snapcdn') || token.includes('/tmp/recycle/') || token.includes('down-de.vidssave.com')) {
       const proxyDl = `/api/proxy-download?url=${encodeURIComponent(token)}&filename=${encodeURIComponent(filename)}`;
       return new Response(JSON.stringify({ status: 'success', download_url: proxyDl, filename }), { status: 200, headers: corsHeaders });
-    }
-
-    if (token.includes('download_redirect')) {
-      try {
-        const r = await fetch(token, { headers: { 'User-Agent': 'Mozilla/5.0' }, redirect: 'manual' });
-        const loc = r.headers.get('location');
-        if (loc && loc.startsWith('http')) {
-          return new Response(JSON.stringify({ status: 'success', download_url: loc, filename }), { status: 200, headers: corsHeaders });
-        }
-      } catch (e) {}
     }
 
     // =========================================================================
@@ -305,19 +293,16 @@ export default async function handler(request) {
     const immediateLink = resolveGrapwebLink(immediateRaw);
 
     if (immediateLink && immediateLink.startsWith('http')) {
-      try {
-        const headResp = await fetch(immediateLink, { headers: { 'User-Agent': 'Mozilla/5.0' }, redirect: 'manual' });
-        const loc = headResp.headers.get('location');
-        if (loc && loc.startsWith('http')) {
-          return new Response(JSON.stringify({ status: 'success', download_url: loc, filename }), { status: 200, headers: corsHeaders });
-        }
-      } catch (e) {}
       return new Response(JSON.stringify({ status: 'success', download_url: immediateLink, filename }), { status: 200, headers: corsHeaders });
     }
 
     const createdTaskId = stData.task_id;
     if (!createdTaskId) {
-      return new Response(JSON.stringify({ status: 'error', message: stData.message || 'Could not initiate YouTube download task' }), { status: 200, headers: corsHeaders });
+      let errMsg = stData.message || 'Could not initiate YouTube download task';
+      if (errMsg.includes('Could not initialize download task')) {
+        errMsg = 'Ultra HD 4K streams (>2 GB) exceed online cloud conversion limits for long videos. Please select 1080p Full HD (554 MB) or 720p HD for instant download!';
+      }
+      return new Response(JSON.stringify({ status: 'error', message: errMsg }), { status: 200, headers: corsHeaders });
     }
 
     // =========================================================================
@@ -335,13 +320,6 @@ export default async function handler(request) {
         const candLink = resolveGrapwebLink(candRaw);
 
         if (candLink && candLink.startsWith('http')) {
-          try {
-            const headResp = await fetch(candLink, { headers: { 'User-Agent': 'Mozilla/5.0' }, redirect: 'manual' });
-            const loc = headResp.headers.get('location');
-            if (loc && loc.startsWith('http')) {
-              return new Response(JSON.stringify({ status: 'success', download_url: loc, filename }), { status: 200, headers: corsHeaders });
-            }
-          } catch (e) {}
           return new Response(JSON.stringify({ status: 'success', download_url: candLink, filename }), { status: 200, headers: corsHeaders });
         }
       } catch (e) {}

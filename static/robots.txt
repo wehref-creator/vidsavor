@@ -24,5 +24,6 @@ Allow: /
 Disallow: /api/
 
 # Sitemap location
+Sitemap: https://www.vidsavor.com/sitemap.xml
 Sitemap: https://vidsavor.com/sitemap.xml
-Host: https://vidsavor.com
+Host: https://www.vidsavor.com
