@@ -16,13 +16,10 @@ function sanitizeFilename(title, format) {
   return { cleanTitle, cleanFormat, filename: `${cleanTitle}.${cleanFormat}` };
 }
 
-function resolveGrapwebLink(link) {
-  if (!link || typeof link !== 'string') return null;
-  const trimmed = link.trim();
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    return trimmed;
-  }
-  return `https://grapweb.com/youtube/${trimmed.replace(/^\//, '')}`;
+function extractYouTubeId(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== 'string') return null;
+  const m = rawUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/i);
+  return m ? m[1] : null;
 }
 
 export default async function handler(request) {
@@ -74,8 +71,69 @@ export default async function handler(request) {
     url = url || reqUrl.searchParams.get('url') || '';
     taskId = taskId || reqUrl.searchParams.get('task_id') || '';
 
+    const { cleanTitle, cleanFormat, filename } = sanitizeFilename(title, format);
+
     // =========================================================================
-    // ACTION: PARSE (High-Speed Edge Parser for YouTube)
+    // 1. Polling mode: check status of an existing task_id
+    // =========================================================================
+    if (taskId) {
+      try {
+        // Check SaveNow API primary
+        let chkResp = await fetch(`https://p.savenow.to/api/progress?id=${encodeURIComponent(taskId)}`, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Origin': 'https://loader.to',
+            'Referer': 'https://loader.to/'
+          }
+        });
+        
+        // Fallback to secondary if primary fails
+        if (!chkResp.ok) {
+          chkResp = await fetch(`https://p.lbserver.xyz/api/progress?id=${encodeURIComponent(taskId)}`, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+              'Origin': 'https://loader.to',
+              'Referer': 'https://loader.to/'
+            }
+          });
+        }
+
+        if (chkResp.ok) {
+          const chkData = await chkResp.json();
+          if (chkData.success === 1 && chkData.download_url) {
+            return new Response(JSON.stringify({
+              status: 'success',
+              download_url: chkData.download_url,
+              filename: filename
+            }), { status: 200, headers: corsHeaders });
+          }
+
+          if (chkData.progress >= 1000 && !chkData.download_url) {
+            return new Response(JSON.stringify({
+              status: 'error',
+              message: chkData.text || 'Conversion server could not complete this format. Please select 720p HD or 360p.'
+            }), { status: 200, headers: corsHeaders });
+          }
+
+          const rawProg = chkData.progress ? Math.round(chkData.progress / 10) : 50;
+          return new Response(JSON.stringify({
+            status: 'pending',
+            task_id: taskId,
+            progress: Math.min(99, Math.max(10, rawProg)),
+            title: cleanTitle,
+            format: cleanFormat
+          }), { status: 200, headers: corsHeaders });
+        }
+      } catch (pollErr) {
+        return new Response(JSON.stringify({
+          status: 'error',
+          message: pollErr.message || 'Error checking task status'
+        }), { status: 200, headers: corsHeaders });
+      }
+    }
+
+    // =========================================================================
+    // 2. ACTION: PARSE (High-Speed YouTube Parser)
     // =========================================================================
     if (action === 'parse') {
       const targetUrl = url || token || reqUrl.searchParams.get('url') || '';
@@ -86,408 +144,175 @@ export default async function handler(request) {
         );
       }
 
-      // Tier 0: Instant Direct Stream Engine (Zero Conversion Wait, 200 OK Direct Video/Audio Streams)
+      const vidId = extractYouTubeId(targetUrl);
+      const canonicalUrl = vidId ? `https://www.youtube.com/watch?v=${vidId}` : targetUrl;
+
+      let vidTitle = 'YouTube Video';
+      let author = 'YouTube Creator';
+      let thumbnail = vidId ? `https://i.ytimg.com/vi/${vidId}/maxresdefault.jpg` : '';
+
       try {
-        const fvResp = await fetch('https://freevideosave.com/fetch', {
-          method: 'POST',
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-            'Origin': 'https://freevideosave.com',
-            'Referer': 'https://freevideosave.com/',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ url: targetUrl })
+        const oeResp = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(canonicalUrl)}&format=json`, {
+          headers: { 'User-Agent': 'Mozilla/5.0' }
         });
-
-        if (fvResp.ok) {
-          const fvData = await fvResp.json();
-          if (fvData && fvData.status === 'success' && fvData.results && fvData.results.length > 0) {
-            const vidTitle = fvData.title || 'YouTube Video';
-            const thumbnail = fvData.thumbnail || '';
-            const results = [];
-            const seenQualities = new Set();
-
-            function formatBytes(bytes) {
-              if (!bytes || bytes <= 0) return 'HD Stream';
-              const units = ['B', 'KB', 'MB', 'GB'];
-              let i = 0;
-              let s = bytes;
-              while (s >= 1024 && i < units.length - 1) {
-                s /= 1024;
-                i++;
-              }
-              return `${s.toFixed(1)} ${units[i]}`;
-            }
-
-            for (const item of fvData.results) {
-              if (item.type !== 'video' || !item.url) continue;
-              let directMediaUrl = item.url;
-              if (directMediaUrl.includes('url=')) {
-                try {
-                  const match = directMediaUrl.match(/[?&]url=([^&]+)/);
-                  if (match) {
-                    let decoded = match[1];
-                    while (decoded.includes('%25') || decoded.includes('%3A') || decoded.includes('%3a')) {
-                      decoded = decodeURIComponent(decoded);
-                    }
-                    directMediaUrl = decoded;
-                  }
-                } catch (e) {}
-              }
-              if (!directMediaUrl.startsWith('http')) {
-                directMediaUrl = `https://freevideosave.com${directMediaUrl}`;
-              }
-              if (directMediaUrl.includes('googlevideo.com') && !directMediaUrl.includes('title=')) {
-                const safeName = (vidTitle || 'vidsavor_video').slice(0, 45).replace(/[^a-zA-Z0-9_-]/g, '_');
-                directMediaUrl += (directMediaUrl.includes('?') ? '&' : '?') + `title=${encodeURIComponent(safeName)}`;
-              }
-              const fullUrl = directMediaUrl;
-              let sizeStr = 'HD Stream';
-              try {
-                const unquoted = decodeURIComponent(fullUrl);
-                const clenMatch = unquoted.match(/[?&]clen=(\d+)/);
-                if (clenMatch) {
-                  sizeStr = formatBytes(parseInt(clenMatch[1], 10));
-                }
-              } catch (e) {}
-
-              const qLower = (item.quality || '').toLowerCase();
-              let label = item.quality || 'HD Video';
-              if (qLower.includes('2160p')) label = '2160p (4K Ultra HD)';
-              else if (qLower.includes('1440p')) label = '1440p (2K QHD)';
-              else if (qLower.includes('1080p')) label = '1080p Full HD';
-              else if (qLower.includes('720p')) label = '720p HD';
-              else if (qLower.includes('480p')) label = '480p SD';
-              else if (qLower.includes('360p')) label = '360p Medium';
-              else if (qLower.includes('240p')) label = '240p';
-              else if (qLower.includes('144p')) label = '144p';
-
-              if (seenQualities.has(label)) continue;
-              seenQualities.add(label);
-
-              results.push({
-                url: fullUrl,
-                type: 'video',
-                quality: label,
-                has_audio: true,
-                format: 'mp4',
-                size: sizeStr,
-                thumbnail: thumbnail
-              });
-            }
-
-            // Audio streams
-            for (const item of fvData.results) {
-              if (item.type !== 'audio' || !item.url) continue;
-              let directMediaUrl = item.url;
-              if (directMediaUrl.includes('url=')) {
-                try {
-                  const match = directMediaUrl.match(/[?&]url=([^&]+)/);
-                  if (match) {
-                    let decoded = match[1];
-                    while (decoded.includes('%25') || decoded.includes('%3A') || decoded.includes('%3a')) {
-                      decoded = decodeURIComponent(decoded);
-                    }
-                    directMediaUrl = decoded;
-                  }
-                } catch (e) {}
-              }
-              if (!directMediaUrl.startsWith('http')) {
-                directMediaUrl = `https://freevideosave.com${directMediaUrl}`;
-              }
-              if (directMediaUrl.includes('googlevideo.com') && !directMediaUrl.includes('title=')) {
-                const safeName = (vidTitle || 'vidsavor_audio').slice(0, 45).replace(/[^a-zA-Z0-9_-]/g, '_');
-                directMediaUrl += (directMediaUrl.includes('?') ? '&' : '?') + `title=${encodeURIComponent(safeName)}`;
-              }
-              const fullUrl = directMediaUrl;
-              let sizeStr = 'High Audio';
-              try {
-                const unquoted = decodeURIComponent(fullUrl);
-                const clenMatch = unquoted.match(/[?&]clen=(\d+)/);
-                if (clenMatch) {
-                  sizeStr = formatBytes(parseInt(clenMatch[1], 10));
-                }
-              } catch (e) {}
-
-              let cleanAudioQ = item.quality || 'Audio';
-              if (cleanAudioQ.includes('129kb') || cleanAudioQ.toLowerCase().includes('aac')) {
-                cleanAudioQ = '320kbps High Quality';
-              } else if (cleanAudioQ.toLowerCase().includes('opus') || cleanAudioQ.includes('124kb')) {
-                cleanAudioQ = 'Stereo Audio';
-              }
-
-              results.push({
-                url: fullUrl,
-                type: 'audio',
-                quality: `${cleanAudioQ} Audio (MP3)`,
-                has_audio: true,
-                format: 'mp3',
-                size: sizeStr,
-                thumbnail: thumbnail
-              });
-            }
-
-            if (thumbnail) {
-              results.push({
-                url: thumbnail,
-                type: 'photo',
-                quality: 'Original Cover Poster (JPG)',
-                format: 'jpg',
-                size: 'Original JPG',
-                thumbnail: thumbnail
-              });
-            }
-
-            if (results.length > 0) {
-              return new Response(
-                JSON.stringify({
-                  status: 'success',
-                  title: vidTitle,
-                  thumbnail: thumbnail,
-                  type: 'video',
-                  download: results[0].url,
-                  author: 'YouTube Creator',
-                  platform: 'youtube',
-                  results: results,
-                  data: {
-                    title: vidTitle,
-                    thumbnail: thumbnail,
-                    author: 'YouTube Creator',
-                    results: results
-                  }
-                }),
-                { status: 200, headers: corsHeaders }
-              );
-            }
-          }
+        if (oeResp.ok) {
+          const oeData = await oeResp.json();
+          if (oeData.title) vidTitle = oeData.title;
+          if (oeData.author_name) author = oeData.author_name;
+          if (oeData.thumbnail_url) thumbnail = oeData.thumbnail_url;
         }
-      } catch (tier0Err) {
-        // Fall through to Tier 1 Grapweb
+      } catch (oeErr) {}
+
+      const results = [
+        {
+          url: canonicalUrl,
+          token: 'savenow:1080',
+          type: 'video',
+          quality: '1080p Full HD',
+          has_audio: true,
+          format: 'mp4',
+          size: 'Full HD',
+          thumbnail: thumbnail
+        },
+        {
+          url: canonicalUrl,
+          token: 'savenow:720',
+          type: 'video',
+          quality: '720p HD',
+          has_audio: true,
+          format: 'mp4',
+          size: 'HD 720p',
+          thumbnail: thumbnail
+        },
+        {
+          url: canonicalUrl,
+          token: 'savenow:480',
+          type: 'video',
+          quality: '480p SD',
+          has_audio: true,
+          format: 'mp4',
+          size: 'Standard 480p',
+          thumbnail: thumbnail
+        },
+        {
+          url: canonicalUrl,
+          token: 'savenow:360',
+          type: 'video',
+          quality: '360p Medium',
+          has_audio: true,
+          format: 'mp4',
+          size: 'Medium 360p',
+          thumbnail: thumbnail
+        },
+        {
+          url: canonicalUrl,
+          token: 'savenow:mp3',
+          type: 'audio',
+          quality: '320kbps High Quality Audio (MP3)',
+          has_audio: true,
+          format: 'mp3',
+          size: '320kbps MP3',
+          thumbnail: thumbnail
+        },
+        {
+          url: canonicalUrl,
+          token: 'savenow:m4a',
+          type: 'audio',
+          quality: 'Original Stereo Audio (M4A)',
+          has_audio: true,
+          format: 'm4a',
+          size: 'Fast M4A',
+          thumbnail: thumbnail
+        }
+      ];
+
+      if (thumbnail) {
+        results.push({
+          url: thumbnail,
+          type: 'photo',
+          quality: 'Original Cover Poster (JPG)',
+          format: 'jpg',
+          size: 'Original JPG',
+          thumbnail: thumbnail
+        });
       }
 
-      // Tier 1: Hostinger Grapweb Parse API
-      try {
-        const grapResp = await fetch(
-          `https://grapweb.com/youtube/api.php?action=parse&url=${encodeURIComponent(targetUrl)}`,
-          {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-              'Accept': 'application/json'
-            }
-          }
-        );
-
-        if (!grapResp.ok) {
-          return new Response(
-            JSON.stringify({ status: 'error', message: `Hostinger parser returned HTTP ${grapResp.status}` }),
-            { status: grapResp.status, headers: corsHeaders }
-          );
-        }
-
-        const grapData = await grapResp.json();
-        if (!grapData || grapData.status !== 'success' || !grapData.data) {
-          return new Response(
-            JSON.stringify({ status: 'error', message: grapData?.message || 'Could not parse YouTube video details' }),
-            { status: 404, headers: corsHeaders }
-          );
-        }
-
-        const info = grapData.data;
-        const vidTitle = info.title || 'YouTube Video';
-        const thumbnail = info.thumbnail || '';
-        const author = info.author || 'YouTube Creator';
-        const duration = info.durationFormatted || '';
-
-        const results = [];
-        const seenQualities = new Set();
-
-        for (const v of (info.videos || [])) {
-          const q = (v.quality || '').toUpperCase();
-          if (seenQualities.has(q)) continue;
-          seenQualities.add(q);
-
-          let label = q;
-          if (['1080P', '1080P60', 'FHD'].includes(q)) label = '1080p Full HD';
-          else if (['720P', 'HD'].includes(q)) label = '720p HD';
-          else if (q === '2160P') label = '2160p (4K Ultra HD)';
-          else if (q === '1440P') label = '1440p (2K QHD)';
-          else if (q === '480P') label = '480p SD';
-          else if (q === '360P') label = '360p';
-
-          const tokenVal = v.resource_content || '';
-          const dlVal = v.download_url || '';
-          const target = dlVal || tokenVal;
-          if (!target) continue;
-
-          results.push({
-            url: target,
-            token: dlVal ? '' : tokenVal,
-            type: 'video',
-            quality: label,
-            has_audio: true,
-            format: 'mp4',
-            size: v.sizeFormatted || 'HD Stream',
-            thumbnail: thumbnail
-          });
-        }
-
-        for (const a of (info.audios || [])) {
-          const q = (a.quality || '').toUpperCase();
-          const tokenVal = a.resource_content || '';
-          const dlVal = a.download_url || '';
-          const target = dlVal || tokenVal;
-          if (!target) continue;
-
-          results.push({
-            url: target,
-            token: dlVal ? '' : tokenVal,
-            type: 'audio',
-            quality: `${q} Audio (MP3)`,
-            has_audio: true,
-            format: 'mp3',
-            size: a.sizeFormatted || 'High Audio',
-            thumbnail: thumbnail
-          });
-        }
-
-        if (thumbnail) {
-          results.push({
-            url: thumbnail,
-            type: 'photo',
-            quality: 'HD Cover Poster (JPG)',
-            format: 'jpg',
-            size: 'Original JPG',
-            thumbnail: thumbnail
-          });
-        }
-
-        return new Response(
-          JSON.stringify({
-            status: 'success',
-            title: vidTitle,
-            thumbnail: thumbnail,
-            type: 'video',
-            download: results[0]?.url || '',
-            author: author,
-            duration: duration,
-            platform: 'youtube',
-            results: results
-          }),
-          { status: 200, headers: corsHeaders }
-        );
-      } catch (parseErr) {
-        return new Response(
-          JSON.stringify({ status: 'error', message: `YouTube parser error: ${parseErr.message}` }),
-          { status: 500, headers: corsHeaders }
-        );
-      }
-    }
-
-    const { cleanTitle, cleanFormat, filename } = sanitizeFilename(title, format);
-
-    // =========================================================================
-    // 1. Polling mode: check status of an existing task_id
-    // =========================================================================
-    if (taskId) {
-      try {
-        const chkResp = await fetch(
-          `https://grapweb.com/youtube/api.php?action=check_task&task_id=${encodeURIComponent(taskId)}&title=${encodeURIComponent(cleanTitle)}&format=${cleanFormat}`,
-          { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } }
-        );
-        const chkData = await chkResp.json();
-        const rawLink = chkData.direct_link || chkData.download_link;
-        const candLink = resolveGrapwebLink(rawLink);
-
-        if (candLink && candLink.startsWith('http')) {
-          // Route all completed task links through edge proxy with Content-Disposition: attachment
-          const proxyDl = candLink.startsWith('/api/proxy-download') ? candLink : `/api/proxy-download?url=${encodeURIComponent(candLink)}&filename=${encodeURIComponent(filename)}`;
-          return new Response(JSON.stringify({ status: 'success', download_url: proxyDl, filename }), { status: 200, headers: corsHeaders });
-        }
-
-        if (chkData.status === 'running' || chkData.status === 'pending') {
-          return new Response(JSON.stringify({
-            status: 'pending',
-            task_id: taskId,
-            progress: chkData.progress,
-            title: cleanTitle,
-            format: cleanFormat
-          }), { status: 200, headers: corsHeaders });
-        }
-
-        if (chkData.status === 'error') {
-          let errMsg = chkData.message || 'Task failed on conversion server';
-          if (errMsg.includes('Could not initialize download task')) {
-            errMsg = 'Ultra HD 4K streams (>2 GB) exceed online cloud conversion limits for long videos. Please select 1080p Full HD (554 MB) or 720p HD for instant download!';
-          }
-          return new Response(JSON.stringify({ status: 'error', message: errMsg }), { status: 200, headers: corsHeaders });
-        }
-
-        // Default to pending if still within processing
-        return new Response(JSON.stringify({
-          status: 'pending',
-          task_id: taskId,
-          progress: chkData.progress || 50,
-          title: cleanTitle,
-          format: cleanFormat
-        }), { status: 200, headers: corsHeaders });
-      } catch (e) {
-        return new Response(JSON.stringify({ status: 'error', message: e.message || 'Error checking task status' }), { status: 200, headers: corsHeaders });
-      }
-    }
-
-    if (!token && !url) {
-      return new Response(JSON.stringify({ status: 'error', message: 'Missing conversion token or URL' }), { status: 200, headers: corsHeaders });
+      return new Response(JSON.stringify({
+        status: 'success',
+        title: vidTitle,
+        thumbnail: thumbnail,
+        type: 'video',
+        download: results[0].url,
+        author: author,
+        duration: '',
+        platform: 'youtube',
+        results: results
+      }), { status: 200, headers: corsHeaders });
     }
 
     // =========================================================================
-    // 2. Direct media stream fast paths (Stream via Edge Proxy with Content-Disposition: attachment)
+    // 3. START CONVERSION TASK (SaveNow High-Speed Engine)
     // =========================================================================
-    if (token.includes('freevideosave.com') || token.includes('download_redirect') || token.includes('googlevideo.com') || token.includes('rapidcdn') || token.includes('snapcdn') || token.includes('/tmp/recycle/') || token.includes('vidssave.com')) {
-      const proxyDl = token.startsWith('/api/proxy-download') ? token : `/api/proxy-download?url=${encodeURIComponent(token)}&filename=${encodeURIComponent(filename)}`;
-      return new Response(JSON.stringify({ status: 'success', download_url: proxyDl, filename }), { status: 200, headers: corsHeaders });
+    const targetVideoUrl = url || (token.startsWith('http') && (token.includes('youtube.com') || token.includes('youtu.be')) ? token : '');
+    if (!targetVideoUrl) {
+      return new Response(JSON.stringify({ status: 'error', message: 'Missing valid YouTube video URL' }), { status: 400, headers: corsHeaders });
     }
 
-    // =========================================================================
-    // 3. Start conversion task on Hostinger Grapweb Engine
-    // =========================================================================
-    const startForm = new URLSearchParams();
-    startForm.append('action', 'start_task');
-    startForm.append('content', token);
-    startForm.append('title', cleanTitle);
-    startForm.append('format', cleanFormat);
+    let savenowFmt = '720';
+    if (token && token.startsWith('savenow:')) {
+      savenowFmt = token.replace('savenow:', '').trim();
+    } else if (format && ['1080', '720', '480', '360', 'mp3', 'm4a', '1440', '4k'].includes(format.toLowerCase())) {
+      savenowFmt = format.toLowerCase();
+    } else if (cleanFormat === 'mp3') {
+      savenowFmt = 'mp3';
+    } else if (cleanFormat === 'm4a') {
+      savenowFmt = 'm4a';
+    }
 
-    const stResp = await fetch('https://grapweb.com/youtube/api.php', {
-      method: 'POST',
+    let startResp = await fetch(`https://p.savenow.to/api/v2/download?format=${savenowFmt}&url=${encodeURIComponent(targetVideoUrl)}`, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: startForm.toString()
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Origin': 'https://loader.to',
+        'Referer': 'https://loader.to/'
+      }
     });
 
-    const stData = await stResp.json();
-    const immediateRaw = stData.direct_link || stData.download_link;
-    const immediateLink = resolveGrapwebLink(immediateRaw);
-
-    if (immediateLink && immediateLink.startsWith('http')) {
-      const proxyDl = immediateLink.startsWith('/api/proxy-download') ? immediateLink : `/api/proxy-download?url=${encodeURIComponent(immediateLink)}&filename=${encodeURIComponent(filename)}`;
-      return new Response(JSON.stringify({ status: 'success', download_url: proxyDl, filename }), { status: 200, headers: corsHeaders });
+    if (!startResp.ok) {
+      startResp = await fetch(`https://p.lbserver.xyz/api/v2/download?format=${savenowFmt}&url=${encodeURIComponent(targetVideoUrl)}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Origin': 'https://loader.to',
+          'Referer': 'https://loader.to/'
+        }
+      });
     }
 
-    const createdTaskId = stData.task_id;
-    if (!createdTaskId) {
-      let errMsg = stData.message || 'Could not initiate YouTube download task';
-      if (errMsg.includes('Could not initialize download task')) {
-        errMsg = 'Ultra HD 4K streams (>2 GB) exceed online cloud conversion limits for long videos. Please select 1080p Full HD (554 MB) or 720p HD for instant download!';
-      }
-      return new Response(JSON.stringify({ status: 'error', message: errMsg }), { status: 200, headers: corsHeaders });
+    if (!startResp.ok) {
+      return new Response(JSON.stringify({
+        status: 'error',
+        message: `Conversion server returned HTTP ${startResp.status}. Please try 720p or 360p.`
+      }), { status: 502, headers: corsHeaders });
     }
 
-    // Return pending status immediately to client browser so the client drives
-    // polling with real-time UI progress and zero Vercel serverless gateway timeouts (<1.5s total time)
+    const startData = await startResp.json();
+    if (startData.download_url) {
+      return new Response(JSON.stringify({
+        status: 'success',
+        download_url: startData.download_url,
+        filename: filename
+      }), { status: 200, headers: corsHeaders });
+    }
+
+    if (!startData.id) {
+      return new Response(JSON.stringify({
+        status: 'error',
+        message: startData.message || 'Could not start YouTube download task'
+      }), { status: 400, headers: corsHeaders });
+    }
+
     return new Response(JSON.stringify({
       status: 'pending',
-      task_id: createdTaskId,
+      task_id: startData.id,
       title: cleanTitle,
       format: cleanFormat
     }), { status: 200, headers: corsHeaders });

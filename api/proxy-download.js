@@ -91,8 +91,12 @@ export default async function handler(request) {
     if (domain.includes('vidssave.com') || finalFetchUrl.includes('vidssave.com')) {
       headers.set('Referer', 'https://vidssave.com/');
       headers.set('Origin', 'https://vidssave.com');
-    } else if (domain.includes('youtube') || domain.includes('googlevideo') || finalFetchUrl.includes('googlevideo')) {
-      headers.set('Referer', 'https://www.youtube.com/');
+    } else if (domain.includes('savenow.to') || domain.includes('lbserver.xyz') || finalFetchUrl.includes('savenow.to') || finalFetchUrl.includes('lbserver.xyz')) {
+      headers.set('Referer', 'https://loader.to/');
+      headers.set('Origin', 'https://loader.to');
+    } else if (domain.includes('googlevideo') || finalFetchUrl.includes('googlevideo')) {
+      // Do not send platform referer for googlevideo CDN streams (avoids 403 hotlink blocks)
+      headers.delete('Referer');
     } else if (clientReferer && clientReferer.startsWith('http') && !domain.includes('cdninstagram') && !domain.includes('fbcdn')) {
       headers.set('Referer', clientReferer);
     } else if (domain.includes('tiktok') || domain.includes('byteoversea') || domain.includes('ibytedtos')) {

@@ -301,173 +301,113 @@ class MediaExtractor:
         video_id = m.group(1) if m else None
         clean_url = f"https://www.youtube.com/watch?v={video_id}" if video_id else url
 
-        # Tier 0: High-Speed Direct Stream Engine (Instant 0s Conversion, Direct 200 OK Streams for 4K/1080p/720p/MP3)
+        # Tier 0: High-Speed Instant Cloud Parser (YouTube oEmbed & SaveNow Engine)
         try:
-            fv_headers = {
-                'User-Agent': USER_AGENT,
-                'Origin': 'https://freevideosave.com',
-                'Referer': 'https://freevideosave.com/',
-                'Content-Type': 'application/json'
-            }
-            fv_resp = requests.post(
-                "https://freevideosave.com/fetch",
-                headers=fv_headers,
-                json={"url": clean_url},
-                timeout=9
-            )
-            if fv_resp and fv_resp.status_code == 200:
-                fv_data = fv_resp.json()
-                if fv_data and fv_data.get('status') == 'success' and fv_data.get('results'):
-                    title = fv_data.get('title') or "YouTube Video"
-                    thumbnail = fv_data.get('thumbnail') or (f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg" if video_id else "")
-                    raw_results = fv_data.get('results', [])
-                    results = []
-                    seen_qualities = set()
+            oembed_url = f"https://www.youtube.com/oembed?url={urllib.parse.quote(clean_url)}&format=json"
+            oe_resp = requests.get(oembed_url, headers={'User-Agent': USER_AGENT}, timeout=5)
+            if oe_resp.status_code == 200:
+                oe_data = oe_resp.json()
+                title = oe_data.get('title') or "YouTube Video"
+                author = oe_data.get('author_name') or "YouTube Creator"
+                thumbnail = oe_data.get('thumbnail_url') or (f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg" if video_id else "")
 
-                    # Process video streams first
-                    for item in raw_results:
-                        itype = item.get('type')
-                        iquality = item.get('quality', '')
-                        iurl = item.get('url', '')
-                        if not iurl or itype != 'video':
-                            continue
-                        clean_stream_url = iurl
-                        if "url=" in clean_stream_url:
-                            try:
-                                u_match = re.search(r'[?&]url=([^&]+)', clean_stream_url)
-                                if u_match:
-                                    inner_url = u_match.group(1)
-                                    while '%25' in inner_url or '%3A' in inner_url or '%3a' in inner_url:
-                                        inner_url = urllib.parse.unquote(inner_url)
-                                    clean_stream_url = inner_url
-                            except Exception:
-                                pass
-                        if not clean_stream_url.startswith('http'):
-                            clean_stream_url = f"https://freevideosave.com{clean_stream_url}"
-                        if "googlevideo.com" in clean_stream_url and "title=" not in clean_stream_url:
-                            safe_name = re.sub(r'[^a-zA-Z0-9_-]', '_', (title or "vidsavor_video")[:45])
-                            clean_stream_url += ("&" if "?" in clean_stream_url else "?") + f"title={urllib.parse.quote(safe_name)}"
-                        full_stream_url = clean_stream_url
+                results = [
+                    {
+                        "url": clean_url,
+                        "token": "savenow:1080",
+                        "type": "video",
+                        "quality": "1080p Full HD",
+                        "has_audio": True,
+                        "format": "mp4",
+                        "size": "Full HD",
+                        "thumbnail": thumbnail
+                    },
+                    {
+                        "url": clean_url,
+                        "token": "savenow:720",
+                        "type": "video",
+                        "quality": "720p HD",
+                        "has_audio": True,
+                        "format": "mp4",
+                        "size": "HD 720p",
+                        "thumbnail": thumbnail
+                    },
+                    {
+                        "url": clean_url,
+                        "token": "savenow:480",
+                        "type": "video",
+                        "quality": "480p SD",
+                        "has_audio": True,
+                        "format": "mp4",
+                        "size": "Standard 480p",
+                        "thumbnail": thumbnail
+                    },
+                    {
+                        "url": clean_url,
+                        "token": "savenow:360",
+                        "type": "video",
+                        "quality": "360p Medium",
+                        "has_audio": True,
+                        "format": "mp4",
+                        "size": "Medium 360p",
+                        "thumbnail": thumbnail
+                    },
+                    {
+                        "url": clean_url,
+                        "token": "savenow:mp3",
+                        "type": "audio",
+                        "quality": "320kbps High Quality Audio (MP3)",
+                        "has_audio": True,
+                        "format": "mp3",
+                        "size": "320kbps MP3",
+                        "thumbnail": thumbnail
+                    },
+                    {
+                        "url": clean_url,
+                        "token": "savenow:m4a",
+                        "type": "audio",
+                        "quality": "Original Stereo Audio (M4A)",
+                        "has_audio": True,
+                        "format": "m4a",
+                        "size": "Fast M4A",
+                        "thumbnail": thumbnail
+                    }
+                ]
+                if thumbnail:
+                    results.append({
+                        "url": thumbnail,
+                        "type": "photo",
+                        "quality": "Original Cover Poster (JPG)",
+                        "format": "jpg",
+                        "size": "Original JPG",
+                        "thumbnail": thumbnail
+                    })
 
-                        # Accurate file size extraction from URL parameter clen
-                        size_str = "HD Stream"
-                        try:
-                            unquoted_url = urllib.parse.unquote(full_stream_url)
-                            clen_m = re.search(r'[?&]clen=(\d+)', unquoted_url)
-                            if clen_m:
-                                size_str = human_filesize(int(clen_m.group(1)))
-                        except Exception:
-                            pass
-
-                        q_lower = iquality.lower()
-                        if '2160p' in q_lower:
-                            label = "2160p (4K Ultra HD)"
-                        elif '1440p' in q_lower:
-                            label = "1440p (2K QHD)"
-                        elif '1080p' in q_lower:
-                            label = "1080p Full HD"
-                        elif '720p' in q_lower:
-                            label = "720p HD"
-                        elif '480p' in q_lower:
-                            label = "480p SD"
-                        elif '360p' in q_lower:
-                            label = "360p Medium"
-                        elif '240p' in q_lower:
-                            label = "240p"
-                        elif '144p' in q_lower:
-                            label = "144p"
-                        else:
-                            label = iquality
-
-                        if label in seen_qualities:
-                            continue
-                        seen_qualities.add(label)
-
-                        results.append({
-                            "url": full_stream_url,
-                            "type": "video",
-                            "quality": label,
-                            "has_audio": True,
-                            "format": "mp4",
-                            "size": size_str,
-                            "thumbnail": thumbnail
-                        })
-
-                    # Process audio streams
-                    for item in raw_results:
-                        itype = item.get('type')
-                        iquality = item.get('quality', '')
-                        iurl = item.get('url', '')
-                        if not iurl or itype != 'audio':
-                            continue
-                        clean_stream_url = iurl
-                        if "url=" in clean_stream_url:
-                            try:
-                                u_match = re.search(r'[?&]url=([^&]+)', clean_stream_url)
-                                if u_match:
-                                    inner_url = u_match.group(1)
-                                    while '%25' in inner_url or '%3A' in inner_url or '%3a' in inner_url:
-                                        inner_url = urllib.parse.unquote(inner_url)
-                                    clean_stream_url = inner_url
-                            except Exception:
-                                pass
-                        if not clean_stream_url.startswith('http'):
-                            clean_stream_url = f"https://freevideosave.com{clean_stream_url}"
-                        if "googlevideo.com" in clean_stream_url and "title=" not in clean_stream_url:
-                            safe_name = re.sub(r'[^a-zA-Z0-9_-]', '_', (title or "vidsavor_video")[:45])
-                            clean_stream_url += ("&" if "?" in clean_stream_url else "?") + f"title={urllib.parse.quote(safe_name)}"
-                        full_stream_url = clean_stream_url
-
-                        size_str = "High Audio"
-                        try:
-                            unquoted_url = urllib.parse.unquote(full_stream_url)
-                            clen_m = re.search(r'[?&]clen=(\d+)', unquoted_url)
-                            if clen_m:
-                                size_str = human_filesize(int(clen_m.group(1)))
-                        except Exception:
-                            pass
-
-                        clean_audio_q = iquality
-                        if '129kb' in clean_audio_q or 'aac' in clean_audio_q.lower():
-                            clean_audio_q = "320kbps High Quality"
-                        elif 'opus' in clean_audio_q.lower() or '124kb' in clean_audio_q:
-                            clean_audio_q = "Stereo Audio"
-
-                        results.append({
-                            "url": full_stream_url,
-                            "type": "audio",
-                            "quality": f"{clean_audio_q} Audio (MP3)",
-                            "has_audio": True,
-                            "format": "mp3",
-                            "size": size_str,
-                            "thumbnail": thumbnail
-                        })
-
-                    # Add cover thumbnail photo
-                    if thumbnail:
-                        results.append({
-                            "url": thumbnail,
-                            "type": "photo",
-                            "quality": "Original Cover Poster (JPG)",
-                            "format": "jpg",
-                            "size": "Original JPG",
-                            "thumbnail": thumbnail
-                        })
-
-                    if results:
-                        return {
-                            "status": "success",
-                            "title": title,
-                            "thumbnail": thumbnail,
-                            "type": "video",
-                            "download": results[0]['url'],
-                            "author": "YouTube Creator",
-                            "duration": "",
-                            "platform": "youtube",
-                            "results": results
-                        }
+                return {
+                    "status": "success",
+                    "title": title,
+                    "thumbnail": thumbnail,
+                    "type": "video",
+                    "download": results[0]['url'],
+                    "author": author,
+                    "duration": "",
+                    "platform": "youtube",
+                    "results": results
+                }
         except Exception as e:
-            logger.warning(f"YouTube Direct Stream Engine error: {e}")
+            logger.warning(f"YouTube oEmbed primary error: {e}")
+
+        # Tier 1: Direct yt-dlp Extractor
+        try:
+            ydl_opts = dict(self.ydl_opts_base)
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(clean_url, download=False)
+                if info:
+                    parsed = self._parse_info(info, 'youtube', clean_url)
+                    if parsed and parsed.get('results'):
+                        return parsed
+        except Exception as e:
+            logger.warning(f"YouTube yt-dlp primary error: {e}")
 
         # Tier 1: Hostinger Grapweb Parse API (Try POST first to avoid ModSecurity query string filtering, then GET fallback)
         for method in ['POST', 'GET']:

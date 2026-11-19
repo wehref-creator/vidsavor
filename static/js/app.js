@@ -518,14 +518,16 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
     }
 
     // 3. Direct CDN links with CORS support that allow direct browser in-memory blob saving:
-    // (Instagram images/videos, TikTok videos, Twitter, Pinterest)
+    // (Instagram images/videos, TikTok videos, Twitter, Pinterest, SaveNow Cloud CDN)
     const isDirectCdn = streamUrl.startsWith('https://') && (
         streamUrl.includes('cdninstagram.com') ||
         streamUrl.includes('fbcdn.net') ||
         streamUrl.includes('tiktokv.com') ||
         streamUrl.includes('twimg.com') ||
         streamUrl.includes('pinimg.com') ||
-        streamUrl.includes('ytimg.com')
+        streamUrl.includes('ytimg.com') ||
+        streamUrl.includes('savenow.to') ||
+        streamUrl.includes('lbserver.xyz')
     );
     if (isDirectCdn) {
         return streamUrl;
@@ -557,7 +559,7 @@ async function triggerDirectDownload(streamUrl, filename, btnElement) {
     }
 
     let finalDownloadUrl = streamUrl;
-    if (!finalDownloadUrl.startsWith('/api/proxy-download') && !finalDownloadUrl.startsWith('blob:') && !finalDownloadUrl.includes('cdninstagram') && !finalDownloadUrl.includes('fbcdn') && !finalDownloadUrl.includes('tiktokv') && !finalDownloadUrl.includes('twimg') && !finalDownloadUrl.includes('pinimg')) {
+    if (!finalDownloadUrl.startsWith('/api/proxy-download') && !finalDownloadUrl.startsWith('blob:') && !finalDownloadUrl.includes('cdninstagram') && !finalDownloadUrl.includes('fbcdn') && !finalDownloadUrl.includes('tiktokv') && !finalDownloadUrl.includes('twimg') && !finalDownloadUrl.includes('pinimg') && !finalDownloadUrl.includes('savenow.to') && !finalDownloadUrl.includes('lbserver.xyz')) {
         finalDownloadUrl = resolveDownloadUrl(finalDownloadUrl, filename);
     }
 
@@ -670,19 +672,35 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
     // Check if this is a YouTube stream requiring cloud task conversion
     const hasDirectDl = (typeof streamUrl === 'string' && streamUrl.includes('download_redirect'));
     const isPhoto = (item && item.type === 'photo') || (streamUrl && (streamUrl.includes('ytimg.com') || streamUrl.endsWith('.jpg') || streamUrl.endsWith('.png')));
-    const isYouTubeToken = !isPhoto && !hasDirectDl && (
+    const isYouTubeStream = !isPhoto && !hasDirectDl && (
         (item && item.token) ||
         (typeof streamUrl === 'string' && streamUrl.startsWith('Z0ve')) ||
-        (typeof streamUrl === 'string' && !streamUrl.startsWith('http') && (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be')))
+        (typeof streamUrl === 'string' && !streamUrl.startsWith('http') && (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be'))) ||
+        (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be'))
     );
 
-    if (isYouTubeToken) {
+    if (isYouTubeStream) {
         const token = (item && item.token) ? item.token : streamUrl;
         const origHTML = btnElement ? btnElement.innerHTML : '';
         if (btnElement) {
             btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Preparing...</span>';
             btnElement.style.pointerEvents = 'none';
         }
+
+        let formatCode = ext;
+        if (token && typeof token === 'string' && token.startsWith('savenow:')) {
+            formatCode = token.replace('savenow:', '').trim();
+        } else if (item && item.quality) {
+            const q = (item.quality || '').toLowerCase();
+            if (q.includes('1080')) formatCode = '1080';
+            else if (q.includes('720')) formatCode = '720';
+            else if (q.includes('480')) formatCode = '480';
+            else if (q.includes('360')) formatCode = '360';
+            else if (q.includes('mp3')) formatCode = 'mp3';
+            else if (q.includes('m4a')) formatCode = 'm4a';
+        }
+
+        const targetExt = (formatCode === 'mp3' || formatCode === 'm4a') ? formatCode : 'mp4';
 
         try {
             let res = await fetch('/api/resolve-youtube', {
@@ -691,7 +709,7 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
                 body: JSON.stringify({
                     token: token,
                     title: safeTitle,
-                    format: ext,
+                    format: formatCode,
                     url: currentPostUrl
                 })
             });
@@ -700,75 +718,31 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
                 data = await res.json();
             } catch (je) {}
 
-            // Tier 1 Backup: If Vercel Edge did not return a task_id or download_url, initiate task directly via Hostinger Grapweb
-            if (!data || (!data.task_id && !data.download_url)) {
-                try {
-                    const startForm = new URLSearchParams();
-                    startForm.append('action', 'start_task');
-                    startForm.append('content', token);
-                    startForm.append('title', safeTitle);
-                    startForm.append('format', ext);
-                    const directSt = await fetch('https://grapweb.com/youtube/api.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: startForm.toString()
-                    });
-                    const directData = await directSt.json();
-                    if (directData && directData.task_id) {
-                        data = { status: 'pending', task_id: directData.task_id, title: safeTitle, format: ext };
-                    } else if (directData && (directData.direct_link || directData.download_link)) {
-                        let candLink = directData.direct_link || directData.download_link;
-                        if (candLink && !candLink.startsWith('http')) candLink = `https://grapweb.com/youtube/${candLink.replace(/^\//, '')}`;
-                        data = { status: 'success', download_url: candLink, filename: `${safeTitle}.${ext}` };
-                    } else if (directData && directData.message) {
-                        data = { status: 'error', message: directData.message };
-                    }
-                } catch (stErr) {}
-            }
-
-            // If task is pending, poll until complete (up to 75s for long 1080p videos)
+            // If task is pending, poll until complete (usually 1.5 - 4 seconds)
             let pollAttempts = 0;
-            while (data && (data.status === 'pending' || data.status === 'running') && data.task_id && pollAttempts < 50) {
+            while (data && (data.status === 'pending' || data.status === 'running') && data.task_id && pollAttempts < 45) {
                 pollAttempts++;
                 if (btnElement) {
-                    const calcProg = Math.min(96, Math.max(8, Math.round(pollAttempts * 2.5)));
+                    const calcProg = Math.min(96, Math.max(10, Math.round(pollAttempts * 8)));
                     const prog = data.progress ? `${data.progress}%` : `${calcProg}%`;
                     btnElement.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Converting (${prog})...</span>`;
                 }
-                await new Promise(r => setTimeout(r, 1400));
+                await new Promise(r => setTimeout(r, 1200));
                 try {
-                    const pollRes = await fetch(`/api/resolve-youtube?task_id=${encodeURIComponent(data.task_id)}&title=${encodeURIComponent(safeTitle)}&format=${ext}`);
-                    data = await pollRes.json();
-                    let candLink = (data && (data.download_url || data.direct_link || data.download_link));
-                    if (candLink && !candLink.startsWith('http')) {
-                        candLink = `https://grapweb.com/youtube/${candLink.replace(/^\//, '')}`;
-                    }
-                    if (candLink && candLink.startsWith('http')) {
-                        data = { status: 'success', download_url: candLink, filename: `${safeTitle}.${ext}` };
-                    }
-                } catch (pe) {
-                    // Direct Hostinger Grapweb fallback if Vercel Edge errors
-                    try {
-                        const gwRes = await fetch(`https://grapweb.com/youtube/api.php?action=check_task&task_id=${encodeURIComponent(data.task_id)}&title=${encodeURIComponent(safeTitle)}&format=${ext}`);
-                        const gwData = await gwRes.json();
-                        let candLink = gwData.direct_link || gwData.download_link;
-                        if (candLink && !candLink.startsWith('http')) {
-                            candLink = `https://grapweb.com/youtube/${candLink.replace(/^\//, '')}`;
-                        }
+                    const pollRes = await fetch(`/api/resolve-youtube?task_id=${encodeURIComponent(data.task_id)}&title=${encodeURIComponent(safeTitle)}&format=${formatCode}`);
+                    if (pollRes.ok) {
+                        data = await pollRes.json();
+                        let candLink = (data && (data.download_url || data.direct_link || data.download_link));
                         if (candLink && candLink.startsWith('http')) {
-                            data = { status: 'success', download_url: candLink, filename: `${safeTitle}.${ext}` };
+                            data = { status: 'success', download_url: candLink, filename: `${safeTitle}.${targetExt}` };
+                            break;
                         }
-                    } catch (gwe) {}
-                }
-            }
-
-            if (data && data.download_url && !data.download_url.startsWith('http')) {
-                data.download_url = `https://grapweb.com/youtube/${data.download_url.replace(/^\//, '')}`;
+                    }
+                } catch (pe) {}
             }
 
             if (data && data.status === 'success' && data.download_url) {
-                // Trigger direct file download with no-referrer (prevents down-de.vidssave.com 403 Forbidden)
-                triggerDirectDownload(data.download_url, data.filename || filename, btnElement);
+                triggerDirectDownload(data.download_url, data.filename || `${safeTitle}.${targetExt}`, btnElement);
                 return;
             } else {
                 let msg = (data && data.message) ? data.message : 'Conversion server timeout';
@@ -784,9 +758,6 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
                 btnElement.style.pointerEvents = 'auto';
             }
             let msg = err.message || 'Server timeout. Please retry.';
-            if (msg.includes('Could not initialize download task')) {
-                msg = 'Ultra HD 4K streams (>2 GB) exceed online cloud conversion limits for long videos. Please select 1080p Full HD (554 MB) or 720p HD for instant download!';
-            }
             alert(msg.startsWith('Ultra HD') ? msg : ('Could not prepare YouTube stream: ' + msg));
             return;
         }
