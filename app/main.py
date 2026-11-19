@@ -358,24 +358,26 @@ async def proxy_download(
     client_ref = referer or request.query_params.get("referer") or ""
 
     try:
-        parsed = urllib.parse.urlparse(target_url)
-        domain = (parsed.netloc or "").lower()
+        # Clean and unquote nested target_url
+        while '%25' in target_url or '%3A' in target_url or '%3a' in target_url:
+            target_url = urllib.parse.unquote(target_url)
 
-        # Fast-path direct redirect ONLY for cryptographic single-use redirect tokens
-        if "download_redirect" in target_url:
-            from fastapi.responses import RedirectResponse
-            return RedirectResponse(url=target_url, status_code=302)
-
-        # Direct Google Video stream extraction from freevideosave wrapper
-        if "freevideosave.com" in domain and "url=" in target_url:
+        if "url=" in target_url:
             try:
-                qs = urllib.parse.parse_qs(parsed.query)
-                if "url" in qs and qs["url"][0].startswith("http"):
-                    target_url = qs["url"][0]
-                    parsed = urllib.parse.urlparse(target_url)
-                    domain = (parsed.netloc or "").lower()
+                u_m = re.search(r'[?&]url=([^&]+)', target_url)
+                if u_m:
+                    inner_u = u_m.group(1)
+                    while '%25' in inner_u or '%3A' in inner_u or '%3a' in inner_u:
+                        inner_u = urllib.parse.unquote(inner_u)
+                    target_url = inner_u
             except Exception:
                 pass
+
+        if "googlevideo.com" in target_url and "title=" not in target_url:
+            target_url += ("&" if "?" in target_url else "?") + f"title={urllib.parse.quote(clean_filename)}"
+
+        parsed = urllib.parse.urlparse(target_url)
+        domain = (parsed.netloc or "").lower()
 
         client_range = request.headers.get("range")
         base_headers = {

@@ -482,9 +482,29 @@ function unpackSnapcdnUrl(rawUrl) {
 function resolveDownloadUrl(streamUrl, filename, item = null) {
     if (!streamUrl) return '';
     streamUrl = unpackSnapcdnUrl(streamUrl);
+
+    // Clean any nested/wrapped freevideosave redirect URLs
+    if (streamUrl.includes('freevideosave.com') && streamUrl.includes('url=')) {
+        try {
+            const m = streamUrl.match(/[?&]url=([^&]+)/);
+            if (m) {
+                let inner = m[1];
+                while (inner.includes('%25') || inner.includes('%3A') || inner.includes('%3a')) {
+                    inner = decodeURIComponent(inner);
+                }
+                streamUrl = inner;
+            }
+        } catch (e) {}
+    }
+
     const currentPostUrl = document.getElementById('videoUrl')?.value?.trim() || '';
     const safeTitle = (filename || 'video').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
     const ext = (filename || '').split('.').pop() || 'mp4';
+
+    // Ensure googlevideo streams have &title= parameter so native fallback also downloads as file
+    if (streamUrl.includes('googlevideo.com') && !streamUrl.includes('title=')) {
+        streamUrl += (streamUrl.includes('?') ? '&' : '?') + `title=${encodeURIComponent(safeTitle + '.' + ext)}`;
+    }
 
     // 1. YouTube conversion tokens that require dynamic resolution
     const isYouTubeToken = (item && item.token) || (typeof streamUrl === 'string' && streamUrl.startsWith('Z0ve'));
@@ -577,20 +597,21 @@ async function triggerDirectDownload(streamUrl, filename, btnElement) {
         console.warn('In-memory blob save bypassed or failed, falling back to direct attachment download:', e.message);
     }
 
-    // 2. Direct Browser Attachment Save:
-    // Uses invisible anchor in current page (NO target="_blank"!). Since /api/proxy-download
-    // returns Content-Disposition: attachment, the browser starts downloading directly
-    // RIGHT ON THE PAGE without opening a new tab or leaving the site!
+    // 2. Direct Browser Attachment Save via Hidden Iframe:
+    // Guarantees the browser triggers a native file download RIGHT ON THE PAGE
+    // without ever navigating the tab away, redirecting to a player, or opening a black screen!
     if (!saved) {
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = finalDownloadUrl;
-        a.download = filename;
-        a.rel = 'noreferrer';
-        a.referrerPolicy = 'no-referrer';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => a.remove(), 2500);
+        let iframe = document.getElementById('vidsavor-download-frame');
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = 'vidsavor-download-frame';
+            iframe.style.display = 'none';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = 'none';
+            document.body.appendChild(iframe);
+        }
+        iframe.src = finalDownloadUrl;
         saved = true;
     }
 

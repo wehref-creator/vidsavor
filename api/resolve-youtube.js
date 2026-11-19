@@ -121,7 +121,27 @@ export default async function handler(request) {
 
             for (const item of fvData.results) {
               if (item.type !== 'video' || !item.url) continue;
-              const fullUrl = item.url.startsWith('/') ? `https://freevideosave.com${item.url}` : item.url;
+              let directMediaUrl = item.url;
+              if (directMediaUrl.includes('url=')) {
+                try {
+                  const match = directMediaUrl.match(/[?&]url=([^&]+)/);
+                  if (match) {
+                    let decoded = match[1];
+                    while (decoded.includes('%25') || decoded.includes('%3A') || decoded.includes('%3a')) {
+                      decoded = decodeURIComponent(decoded);
+                    }
+                    directMediaUrl = decoded;
+                  }
+                } catch (e) {}
+              }
+              if (!directMediaUrl.startsWith('http')) {
+                directMediaUrl = `https://freevideosave.com${directMediaUrl}`;
+              }
+              if (directMediaUrl.includes('googlevideo.com') && !directMediaUrl.includes('title=')) {
+                const safeName = (vidTitle || 'vidsavor_video').slice(0, 45).replace(/[^a-zA-Z0-9_-]/g, '_');
+                directMediaUrl += (directMediaUrl.includes('?') ? '&' : '?') + `title=${encodeURIComponent(safeName)}`;
+              }
+              const fullUrl = directMediaUrl;
               let sizeStr = 'HD Stream';
               try {
                 const unquoted = decodeURIComponent(fullUrl);
@@ -159,7 +179,27 @@ export default async function handler(request) {
             // Audio streams
             for (const item of fvData.results) {
               if (item.type !== 'audio' || !item.url) continue;
-              const fullUrl = item.url.startsWith('/') ? `https://freevideosave.com${item.url}` : item.url;
+              let directMediaUrl = item.url;
+              if (directMediaUrl.includes('url=')) {
+                try {
+                  const match = directMediaUrl.match(/[?&]url=([^&]+)/);
+                  if (match) {
+                    let decoded = match[1];
+                    while (decoded.includes('%25') || decoded.includes('%3A') || decoded.includes('%3a')) {
+                      decoded = decodeURIComponent(decoded);
+                    }
+                    directMediaUrl = decoded;
+                  }
+                } catch (e) {}
+              }
+              if (!directMediaUrl.startsWith('http')) {
+                directMediaUrl = `https://freevideosave.com${directMediaUrl}`;
+              }
+              if (directMediaUrl.includes('googlevideo.com') && !directMediaUrl.includes('title=')) {
+                const safeName = (vidTitle || 'vidsavor_audio').slice(0, 45).replace(/[^a-zA-Z0-9_-]/g, '_');
+                directMediaUrl += (directMediaUrl.includes('?') ? '&' : '?') + `title=${encodeURIComponent(safeName)}`;
+              }
+              const fullUrl = directMediaUrl;
               let sizeStr = 'High Audio';
               try {
                 const unquoted = decodeURIComponent(fullUrl);

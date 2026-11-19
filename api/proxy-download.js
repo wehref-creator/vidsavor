@@ -66,28 +66,39 @@ export default async function handler(request) {
       headers.set('Range', clientRange);
     }
 
+    let finalFetchUrl = resolvedTargetUrl;
+    while (finalFetchUrl.includes('%25') || finalFetchUrl.includes('%3A') || finalFetchUrl.includes('%3a')) {
+      try {
+        finalFetchUrl = decodeURIComponent(finalFetchUrl);
+      } catch (e) {
+        break;
+      }
+    }
+    if (finalFetchUrl.includes('url=')) {
+      try {
+        const uMatch = finalFetchUrl.match(/[?&]url=([^&]+)/);
+        if (uMatch) {
+          let inner = uMatch[1];
+          while (inner.includes('%25') || inner.includes('%3A') || inner.includes('%3a')) {
+            inner = decodeURIComponent(inner);
+          }
+          finalFetchUrl = inner;
+        }
+      } catch (e) {}
+    }
+
     // Determine platform referer
-    if (domain.includes('vidssave.com')) {
+    if (domain.includes('vidssave.com') || finalFetchUrl.includes('vidssave.com')) {
       headers.set('Referer', 'https://vidssave.com/');
       headers.set('Origin', 'https://vidssave.com');
+    } else if (domain.includes('youtube') || domain.includes('googlevideo') || finalFetchUrl.includes('googlevideo')) {
+      headers.set('Referer', 'https://www.youtube.com/');
     } else if (clientReferer && clientReferer.startsWith('http') && !domain.includes('cdninstagram') && !domain.includes('fbcdn')) {
       headers.set('Referer', clientReferer);
     } else if (domain.includes('tiktok') || domain.includes('byteoversea') || domain.includes('ibytedtos')) {
       headers.set('Referer', 'https://www.tiktok.com/');
-    } else if (domain.includes('youtube') || domain.includes('googlevideo')) {
-      headers.set('Referer', 'https://www.youtube.com/');
     } else if (domain.includes('twimg') || domain.includes('twitter') || domain.includes('x.com')) {
       headers.set('Referer', 'https://x.com/');
-    }
-
-    let finalFetchUrl = resolvedTargetUrl;
-    if (resolvedTargetUrl.includes('freevideosave.com') && resolvedTargetUrl.includes('url=')) {
-      try {
-        const uMatch = resolvedTargetUrl.match(/[?&]url=([^&]+)/);
-        if (uMatch) {
-          finalFetchUrl = decodeURIComponent(uMatch[1]);
-        }
-      } catch (e) {}
     }
 
     // Fetch stream from origin CDN
@@ -139,10 +150,14 @@ export default async function handler(request) {
       } catch (fbGrapErr) {}
     }
 
-    // If still failed to stream via edge/grapweb, seamlessly redirect the browser directly to the media stream URL
-    // (Prevents Chrome's "File wasn't available on site" error by allowing browser residential connection)
+    // If still failed to stream via edge/grapweb, seamlessly redirect the browser directly to the media stream URL with &title= parameter
+    // (This forces Google Video to return Content-Disposition: attachment so the browser downloads instead of playing in a tab)
     if (!cdnRes.ok && cdnRes.status !== 206) {
-      return Response.redirect(finalFetchUrl, 302);
+      let redirectUrl = finalFetchUrl;
+      if (redirectUrl.includes('googlevideo.com') && !redirectUrl.includes('title=')) {
+        redirectUrl += (redirectUrl.includes('?') ? '&' : '?') + `title=${encodeURIComponent(cleanFilename)}`;
+      }
+      return Response.redirect(redirectUrl, 302);
     }
 
     // Determine Content-Type and ensure clean filename extension

@@ -331,7 +331,23 @@ class MediaExtractor:
                         iurl = item.get('url', '')
                         if not iurl or itype != 'video':
                             continue
-                        full_stream_url = f"https://freevideosave.com{iurl}" if iurl.startswith('/') else iurl
+                        clean_stream_url = iurl
+                        if "url=" in clean_stream_url:
+                            try:
+                                u_match = re.search(r'[?&]url=([^&]+)', clean_stream_url)
+                                if u_match:
+                                    inner_url = u_match.group(1)
+                                    while '%25' in inner_url or '%3A' in inner_url or '%3a' in inner_url:
+                                        inner_url = urllib.parse.unquote(inner_url)
+                                    clean_stream_url = inner_url
+                            except Exception:
+                                pass
+                        if not clean_stream_url.startswith('http'):
+                            clean_stream_url = f"https://freevideosave.com{clean_stream_url}"
+                        if "googlevideo.com" in clean_stream_url and "title=" not in clean_stream_url:
+                            safe_name = re.sub(r'[^a-zA-Z0-9_-]', '_', (title or "vidsavor_video")[:45])
+                            clean_stream_url += ("&" if "?" in clean_stream_url else "?") + f"title={urllib.parse.quote(safe_name)}"
+                        full_stream_url = clean_stream_url
 
                         # Accurate file size extraction from URL parameter clen
                         size_str = "HD Stream"
@@ -384,7 +400,23 @@ class MediaExtractor:
                         iurl = item.get('url', '')
                         if not iurl or itype != 'audio':
                             continue
-                        full_stream_url = f"https://freevideosave.com{iurl}" if iurl.startswith('/') else iurl
+                        clean_stream_url = iurl
+                        if "url=" in clean_stream_url:
+                            try:
+                                u_match = re.search(r'[?&]url=([^&]+)', clean_stream_url)
+                                if u_match:
+                                    inner_url = u_match.group(1)
+                                    while '%25' in inner_url or '%3A' in inner_url or '%3a' in inner_url:
+                                        inner_url = urllib.parse.unquote(inner_url)
+                                    clean_stream_url = inner_url
+                            except Exception:
+                                pass
+                        if not clean_stream_url.startswith('http'):
+                            clean_stream_url = f"https://freevideosave.com{clean_stream_url}"
+                        if "googlevideo.com" in clean_stream_url and "title=" not in clean_stream_url:
+                            safe_name = re.sub(r'[^a-zA-Z0-9_-]', '_', (title or "vidsavor_video")[:45])
+                            clean_stream_url += ("&" if "?" in clean_stream_url else "?") + f"title={urllib.parse.quote(safe_name)}"
+                        full_stream_url = clean_stream_url
 
                         size_str = "High Audio"
                         try:
