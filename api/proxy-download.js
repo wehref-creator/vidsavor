@@ -150,14 +150,22 @@ export default async function handler(request) {
       } catch (fbGrapErr) {}
     }
 
-    // If still failed to stream via edge/grapweb, seamlessly redirect the browser directly to the media stream URL with &title= parameter
-    // (This forces Google Video to return Content-Disposition: attachment so the browser downloads instead of playing in a tab)
+    // If failed to stream from origin or fallbacks, return clean error response with CORS
+    // (Never 302 redirect to raw googlevideo / media streams, which forces the browser to open a black-screen player or fail with CORS)
     if (!cdnRes.ok && cdnRes.status !== 206) {
-      let redirectUrl = finalFetchUrl;
-      if (redirectUrl.includes('googlevideo.com') && !redirectUrl.includes('title=')) {
-        redirectUrl += (redirectUrl.includes('?') ? '&' : '?') + `title=${encodeURIComponent(cleanFilename)}`;
-      }
-      return Response.redirect(redirectUrl, 302);
+      return new Response(
+        JSON.stringify({
+          status: 'error',
+          message: 'Origin media server temporarily restricted direct streaming for this stream. Please choose another resolution (such as 720p HD or 360p) or MP3 Audio.'
+        }),
+        {
+          status: 403,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        }
+      );
     }
 
     // Determine Content-Type and ensure clean filename extension

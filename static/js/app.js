@@ -548,6 +548,7 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
 async function triggerDirectDownload(streamUrl, filename, btnElement) {
     if (!streamUrl || streamUrl === 'javascript:void(0);' || streamUrl === '#') return;
 
+    const origHTML = btnElement ? btnElement.innerHTML : '<i class="fa-solid fa-download"></i> <span>Download</span>';
     if (btnElement) {
         if (btnElement.dataset.downloading === 'true') return;
         btnElement.dataset.downloading = 'true';
@@ -555,29 +556,34 @@ async function triggerDirectDownload(streamUrl, filename, btnElement) {
         btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Saving...</span>';
     }
 
-    let saved = false;
-
-    // Ensure external video streams are routed through the proxy
     let finalDownloadUrl = streamUrl;
     if (!finalDownloadUrl.startsWith('/api/proxy-download') && !finalDownloadUrl.startsWith('blob:') && !finalDownloadUrl.includes('cdninstagram') && !finalDownloadUrl.includes('fbcdn') && !finalDownloadUrl.includes('tiktokv') && !finalDownloadUrl.includes('twimg') && !finalDownloadUrl.includes('pinimg')) {
         finalDownloadUrl = resolveDownloadUrl(finalDownloadUrl, filename);
     }
 
-    // 1. Try High-Speed In-Memory Blob Save (For CORS-enabled media & proxy streams)
+    let saved = false;
+    let failureReason = '';
+
+    // 1. High-Speed In-Memory Blob Save (Guarantees zero navigation, genuine file save directly to disk)
     try {
         const res = await fetch(finalDownloadUrl, { referrerPolicy: 'no-referrer' });
         if (res.ok) {
             const ctype = (res.headers.get('content-type') || '').toLowerCase();
-            // STRICT SECURITY CHECK: Reject text/html and application/json error responses
+            // STRICT SECURITY CHECK: Reject text/html, application/json, and text/plain error responses
             if (ctype.includes('text/html') || ctype.includes('application/json') || ctype.includes('text/plain')) {
-                throw new Error('Server returned non-media response: ' + ctype);
+                let errText = '';
+                try {
+                    const errJson = await res.json();
+                    errText = errJson.message || '';
+                } catch (_) {}
+                throw new Error(errText || 'Server returned non-media response: ' + ctype);
             }
 
             const blob = await res.blob();
             const isImage = ctype.includes('image') || (filename && filename.match(/\.(jpg|jpeg|png|webp)$/i));
-            // Reject corrupt/truncated blobs (HTML error fallbacks are < 100KB)
+            // Reject corrupt/truncated blobs (HTML error fallbacks are < 50KB)
             if (!isImage && blob.size < 50000) {
-                throw new Error('Downloaded blob size too small: ' + blob.size + ' bytes');
+                throw new Error('Downloaded stream size too small (' + blob.size + ' bytes). Origin may have restricted this stream.');
             }
 
             const blobUrl = window.URL.createObjectURL(blob);
@@ -590,38 +596,52 @@ async function triggerDirectDownload(streamUrl, filename, btnElement) {
             setTimeout(() => {
                 window.URL.revokeObjectURL(blobUrl);
                 a.remove();
-            }, 1500);
+            }, 2000);
             saved = true;
+        } else {
+            let errText = '';
+            try {
+                const errJson = await res.json();
+                errText = errJson.message || '';
+            } catch (_) {}
+            failureReason = errText || `Server returned HTTP ${res.status}`;
         }
     } catch (e) {
-        console.warn('In-memory blob save bypassed or failed, falling back to direct attachment download:', e.message);
+        failureReason = e.message || 'Stream download connection failed';
     }
 
-    // 2. Direct Browser Attachment Save via Hidden Iframe:
-    // Guarantees the browser triggers a native file download RIGHT ON THE PAGE
-    // without ever navigating the tab away, redirecting to a player, or opening a black screen!
-    if (!saved) {
-        let iframe = document.getElementById('vidsavor-download-frame');
-        if (!iframe) {
-            iframe = document.createElement('iframe');
-            iframe.id = 'vidsavor-download-frame';
-            iframe.style.display = 'none';
-            iframe.style.width = '0';
-            iframe.style.height = '0';
-            iframe.style.border = 'none';
-            document.body.appendChild(iframe);
+    // 2. Direct Anchor trigger ONLY for allowed direct media CDN links (Instagram, TikTok, Twitter, Pinterest)
+    // NEVER for googlevideo or proxy streams which open black-screen players
+    if (!saved && !finalDownloadUrl.startsWith('/api/proxy-download') && !finalDownloadUrl.includes('googlevideo')) {
+        try {
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = finalDownloadUrl;
+            a.download = filename;
+            a.rel = 'noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => a.remove(), 1000);
+            saved = true;
+        } catch (_) {}
+    }
+
+    if (saved) {
+        if (btnElement) {
+            btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Downloaded!</span>';
+            setTimeout(() => {
+                btnElement.innerHTML = origHTML;
+                btnElement.dataset.downloading = 'false';
+                btnElement.style.pointerEvents = 'auto';
+            }, 3000);
         }
-        iframe.src = finalDownloadUrl;
-        saved = true;
-    }
-
-    if (btnElement) {
-        btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Started!</span>';
-        setTimeout(() => {
-            btnElement.innerHTML = '<i class="fa-solid fa-download"></i> <span>Download</span>';
+    } else {
+        if (btnElement) {
+            btnElement.innerHTML = origHTML;
             btnElement.dataset.downloading = 'false';
             btnElement.style.pointerEvents = 'auto';
-        }, 3500);
+        }
+        alert(failureReason ? `Could not download: ${failureReason}\n\nPlease try another quality option (e.g. 720p HD, 360p) or Audio (MP3).` : 'Could not download this stream. Please try another quality option.');
     }
 }
 
