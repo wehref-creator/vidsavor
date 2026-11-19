@@ -149,8 +149,8 @@ async def resolve_youtube(
     if not req_token and not original_url and not req_task_id:
         return JSONResponse({"status": "error", "message": "Missing conversion token or URL"}, status_code=200)
 
-    # Fast Path 1: If req_token is already a direct googlevideo / cdn stream, stream via proxy immediately
-    if "googlevideo.com" in req_token or "rapidcdn" in req_token or "snapcdn" in req_token or "/tmp/recycle/" in req_token:
+    # Fast Path 1: If req_token is already a direct googlevideo / freevideosave / cdn stream, stream via proxy immediately
+    if "googlevideo.com" in req_token or "freevideosave.com" in req_token or "rapidcdn" in req_token or "snapcdn" in req_token or "/tmp/recycle/" in req_token:
         proxy_dl = f"/api/proxy-download?url={urllib.parse.quote(req_token)}&filename={urllib.parse.quote(clean_title + '.' + clean_format)}"
         return JSONResponse({
             "status": "success",
@@ -158,19 +158,22 @@ async def resolve_youtube(
             "filename": f"{clean_title}.{clean_format}"
         })
 
-    # Fast Path 2: If download_redirect link provided, check 302 location
+    # Fast Path 2: If download_redirect link provided, route through proxy with Content-Disposition
     if "download_redirect" in req_token:
+        target_stream = req_token
         try:
-            r = requests.get(req_token, headers={'User-Agent': 'Mozilla/5.0'}, allow_redirects=False, timeout=4)
+            r = requests.get(req_token, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
             loc = r.headers.get("Location")
             if loc:
-                return JSONResponse({
-                    "status": "success",
-                    "download_url": loc,
-                    "filename": f"{clean_title}.{clean_format}"
-                })
+                target_stream = loc
         except Exception:
             pass
+        proxy_dl = f"/api/proxy-download?url={urllib.parse.quote(target_stream)}&filename={urllib.parse.quote(clean_title + '.' + clean_format)}"
+        return JSONResponse({
+            "status": "success",
+            "download_url": proxy_dl,
+            "filename": f"{clean_title}.{clean_format}"
+        })
 
     # Determine conversion token (if user passed full page URL or short video ID instead of token)
     conversion_token = req_token
@@ -215,17 +218,20 @@ async def resolve_youtube(
 
         dl_link = st_data.get("direct_link") or st_data.get("download_link")
         if dl_link and dl_link.startswith("http"):
+            target_link = dl_link
             try:
-                r = requests.get(dl_link, headers={'User-Agent': 'Mozilla/5.0'}, allow_redirects=False, timeout=3)
+                r = requests.get(dl_link, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=3)
                 loc = r.headers.get("Location")
                 if loc:
-                    return JSONResponse({
-                        "status": "success",
-                        "download_url": loc,
-                        "filename": f"{clean_title}.{clean_format}"
-                    })
+                    target_link = loc
             except Exception:
                 pass
+            proxy_dl = target_link if target_link.startswith("/api/proxy-download") else f"/api/proxy-download?url={urllib.parse.quote(target_link)}&filename={urllib.parse.quote(clean_title + '.' + clean_format)}"
+            return JSONResponse({
+                "status": "success",
+                "download_url": proxy_dl,
+                "filename": f"{clean_title}.{clean_format}"
+            })
 
         task_id = st_data.get("task_id")
         if task_id:
@@ -243,20 +249,18 @@ async def resolve_youtube(
                     cand_link = chk_data["download_link"]
 
                 if cand_link:
+                    target_stream = cand_link
                     try:
-                        r = requests.get(cand_link, headers={'User-Agent': 'Mozilla/5.0'}, allow_redirects=False, timeout=3)
+                        r = requests.get(cand_link, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=3)
                         loc = r.headers.get("Location")
                         if loc:
-                            return JSONResponse({
-                                "status": "success",
-                                "download_url": loc,
-                                "filename": f"{clean_title}.{clean_format}"
-                            })
+                            target_stream = loc
                     except Exception:
                         pass
+                    proxy_dl = target_stream if target_stream.startswith("/api/proxy-download") else f"/api/proxy-download?url={urllib.parse.quote(target_stream)}&filename={urllib.parse.quote(clean_title + '.' + clean_format)}"
                     return JSONResponse({
                         "status": "success",
-                        "download_url": cand_link,
+                        "download_url": proxy_dl,
                         "filename": f"{clean_title}.{clean_format}"
                     })
 
@@ -357,10 +361,21 @@ async def proxy_download(
         parsed = urllib.parse.urlparse(target_url)
         domain = (parsed.netloc or "").lower()
 
-        # Fast-path direct redirect for media providers with their own CDN streaming
-        if any(k in domain for k in ["freevideosave.com", "googlevideo.com"]) or "download_redirect" in target_url:
+        # Fast-path direct redirect ONLY for cryptographic single-use redirect tokens
+        if "download_redirect" in target_url:
             from fastapi.responses import RedirectResponse
             return RedirectResponse(url=target_url, status_code=302)
+
+        # Direct Google Video stream extraction from freevideosave wrapper
+        if "freevideosave.com" in domain and "url=" in target_url:
+            try:
+                qs = urllib.parse.parse_qs(parsed.query)
+                if "url" in qs and qs["url"][0].startswith("http"):
+                    target_url = qs["url"][0]
+                    parsed = urllib.parse.urlparse(target_url)
+                    domain = (parsed.netloc or "").lower()
+            except Exception:
+                pass
 
         client_range = request.headers.get("range")
         base_headers = {

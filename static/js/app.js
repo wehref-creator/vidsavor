@@ -486,28 +486,19 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
     const safeTitle = (filename || 'video').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
     const ext = (filename || '').split('.').pop() || 'mp4';
 
-    // 1. Direct freevideosave or googlevideo high-speed streams
-    if (streamUrl.includes('freevideosave.com') || streamUrl.includes('googlevideo.com')) {
-        return streamUrl;
-    }
-
-    // 2. If it's already a direct download redirect or proxy url
-    if (streamUrl.includes('/api/proxy-download') || streamUrl.includes('download_redirect')) {
-        return streamUrl;
-    }
-
-    // 3. Direct Vidssave resolved link (already converted and unrestricted)
-    if (streamUrl.includes('vidssave.com') && streamUrl.includes('/tmp/recycle/')) {
-        return streamUrl;
-    }
-
-    // 4. YouTube conversion tokens that require dynamic resolution
+    // 1. YouTube conversion tokens that require dynamic resolution
     const isYouTubeToken = (item && item.token) || (typeof streamUrl === 'string' && streamUrl.startsWith('Z0ve'));
     if (isYouTubeToken) {
         return 'javascript:void(0);';
     }
 
-    // 5. Direct CDN links with CORS support (Instagram, TikTok, Facebook, Twitter, Pinterest, YouTube Photos)
+    // 2. If it's already a direct proxy-download URL, return as is
+    if (streamUrl.startsWith('/api/proxy-download') || streamUrl.includes('/api/proxy-download?')) {
+        return streamUrl;
+    }
+
+    // 3. Direct CDN links with CORS support that allow direct browser in-memory blob saving:
+    // (Instagram images/videos, TikTok videos, Twitter, Pinterest)
     const isDirectCdn = streamUrl.startsWith('https://') && (
         streamUrl.includes('cdninstagram.com') ||
         streamUrl.includes('fbcdn.net') ||
@@ -520,7 +511,8 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
         return streamUrl;
     }
 
-    // 6. Route other unverified streams through edge proxy
+    // 4. Route ALL external streams (Google Video, YouTube, freevideosave, vidssave, etc.) through edge proxy
+    // This guarantees Content-Disposition: attachment so the browser downloads right on the page without redirecting
     const params = new URLSearchParams({
         url: streamUrl,
         filename: filename || `${safeTitle}.${ext}`
@@ -532,7 +524,7 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
 }
 
 // High-Speed Direct In-Memory & Anchor Downloader
-// Completely eliminates "File wasn't available on site", 74KB HTML files, and 403 Forbidden errors
+// Completely eliminates new-tab redirects, black-screen video playback, 74KB HTML files, and 403 Forbidden errors
 async function triggerDirectDownload(streamUrl, filename, btnElement) {
     if (!streamUrl || streamUrl === 'javascript:void(0);' || streamUrl === '#') return;
 
@@ -545,86 +537,61 @@ async function triggerDirectDownload(streamUrl, filename, btnElement) {
 
     let saved = false;
 
-    // Check if this is a YouTube / Google Video / FreeVideoSave stream
-    const isYouTubeStream = (
-        streamUrl.includes('freevideosave.com') ||
-        streamUrl.includes('googlevideo.com') ||
-        streamUrl.includes('youtube.com')
-    );
+    // Ensure external video streams are routed through the proxy
+    let finalDownloadUrl = streamUrl;
+    if (!finalDownloadUrl.startsWith('/api/proxy-download') && !finalDownloadUrl.startsWith('blob:') && !finalDownloadUrl.includes('cdninstagram') && !finalDownloadUrl.includes('fbcdn') && !finalDownloadUrl.includes('tiktokv') && !finalDownloadUrl.includes('twimg') && !finalDownloadUrl.includes('pinimg')) {
+        finalDownloadUrl = resolveDownloadUrl(finalDownloadUrl, filename);
+    }
 
-    if (isYouTubeStream) {
-        // YouTube / Google Video streams are delivered directly from residential Google Video CDN.
-        // Google Video does NOT permit in-memory fetch() (no CORS).
-        // Opening via window.open / anchor download initiates high-speed multi-megabyte direct download.
-        try {
-            const win = window.open(streamUrl, '_blank', 'noopener,noreferrer');
-            if (win) {
-                win.opener = null;
-                saved = true;
+    // 1. Try High-Speed In-Memory Blob Save (For CORS-enabled media & proxy streams)
+    try {
+        const res = await fetch(finalDownloadUrl, { referrerPolicy: 'no-referrer' });
+        if (res.ok) {
+            const ctype = (res.headers.get('content-type') || '').toLowerCase();
+            // STRICT SECURITY CHECK: Reject text/html and application/json error responses
+            if (ctype.includes('text/html') || ctype.includes('application/json') || ctype.includes('text/plain')) {
+                throw new Error('Server returned non-media response: ' + ctype);
             }
-        } catch (we) {}
 
-        if (!saved) {
+            const blob = await res.blob();
+            const isImage = ctype.includes('image') || (filename && filename.match(/\.(jpg|jpeg|png|webp)$/i));
+            // Reject corrupt/truncated blobs (HTML error fallbacks are < 100KB)
+            if (!isImage && blob.size < 50000) {
+                throw new Error('Downloaded blob size too small: ' + blob.size + ' bytes');
+            }
+
+            const blobUrl = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.style.display = 'none';
-            a.href = streamUrl;
+            a.href = blobUrl;
             a.download = filename;
-            a.target = '_blank';
-            a.rel = 'noreferrer';
-            a.referrerPolicy = 'no-referrer';
             document.body.appendChild(a);
             a.click();
-            setTimeout(() => a.remove(), 2500);
+            setTimeout(() => {
+                window.URL.revokeObjectURL(blobUrl);
+                a.remove();
+            }, 1500);
             saved = true;
         }
-    } else {
-        // 1. Try High-Speed In-Memory Blob Save (For Instagram, TikTok, Facebook, Twitter, Pinterest CDNs)
-        try {
-            const res = await fetch(streamUrl, { referrerPolicy: 'no-referrer' });
-            if (res.ok) {
-                const ctype = (res.headers.get('content-type') || '').toLowerCase();
-                // STRICT SECURITY CHECK: Reject text/html and application/json error responses
-                if (ctype.includes('text/html') || ctype.includes('application/json') || ctype.includes('text/plain')) {
-                    throw new Error('Server returned non-media response: ' + ctype);
-                }
+    } catch (e) {
+        console.warn('In-memory blob save bypassed or failed, falling back to direct attachment download:', e.message);
+    }
 
-                const blob = await res.blob();
-                const isImage = ctype.includes('image') || (filename && filename.match(/\.(jpg|jpeg|png|webp)$/i));
-                // Reject corrupt/truncated blobs (HTML error fallbacks are < 100KB)
-                if (!isImage && blob.size < 100000) {
-                    throw new Error('Downloaded blob size too small: ' + blob.size + ' bytes');
-                }
-
-                const blobUrl = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = blobUrl;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(() => {
-                    window.URL.revokeObjectURL(blobUrl);
-                    a.remove();
-                }, 1500);
-                saved = true;
-            }
-        } catch (e) {
-            console.warn('In-memory blob save bypassed or failed:', e.message);
-        }
-
-        // 2. Fallback: Native Direct Download Save with Stripped Referrer (Prevents 403 Forbidden & bypasses hotlinking)
-        if (!saved) {
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = streamUrl;
-            a.download = filename;
-            a.target = '_blank';
-            a.rel = 'noreferrer';
-            a.referrerPolicy = 'no-referrer';
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => a.remove(), 2500);
-        }
+    // 2. Direct Browser Attachment Save:
+    // Uses invisible anchor in current page (NO target="_blank"!). Since /api/proxy-download
+    // returns Content-Disposition: attachment, the browser starts downloading directly
+    // RIGHT ON THE PAGE without opening a new tab or leaving the site!
+    if (!saved) {
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = finalDownloadUrl;
+        a.download = filename;
+        a.rel = 'noreferrer';
+        a.referrerPolicy = 'no-referrer';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => a.remove(), 2500);
+        saved = true;
     }
 
     if (btnElement) {
@@ -1221,7 +1188,7 @@ async function downloadNow() {
                         </div>
                         <div class="row-right">
                             <span class="row-size-pill">Original HD</span>
-                            <a href="${singleDlUrl}" class="btn-row-download" download="${cleanName}" target="_blank" rel="noreferrer" referrerpolicy="no-referrer">
+                            <a href="${singleDlUrl}" class="btn-row-download" download="${cleanName}" rel="noreferrer" referrerpolicy="no-referrer">
                                 <i class="fa-solid fa-download"></i> <span>Download</span>
                             </a>
                         </div>
@@ -1300,7 +1267,7 @@ async function downloadNow() {
                             </div>
                             <div class="row-right">
                                 <span class="row-size-pill">${item.size || 'HD File'}</span>
-                                <a href="${rowDlUrl}" class="btn-row-download" download="${cleanFilename}" target="_blank" rel="noreferrer" referrerpolicy="no-referrer">
+                                <a href="${rowDlUrl}" class="btn-row-download" download="${cleanFilename}" rel="noreferrer" referrerpolicy="no-referrer">
                                     <i class="fa-solid fa-download"></i> <span>Download</span>
                                 </a>
                             </div>

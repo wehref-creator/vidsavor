@@ -359,8 +359,9 @@ export default async function handler(request) {
         const candLink = resolveGrapwebLink(rawLink);
 
         if (candLink && candLink.startsWith('http')) {
-          // Return download link directly to client browser so IP is validated against client
-          return new Response(JSON.stringify({ status: 'success', download_url: candLink, filename }), { status: 200, headers: corsHeaders });
+          // Route all completed task links through edge proxy with Content-Disposition: attachment
+          const proxyDl = candLink.startsWith('/api/proxy-download') ? candLink : `/api/proxy-download?url=${encodeURIComponent(candLink)}&filename=${encodeURIComponent(filename)}`;
+          return new Response(JSON.stringify({ status: 'success', download_url: proxyDl, filename }), { status: 200, headers: corsHeaders });
         }
 
         if (chkData.status === 'running' || chkData.status === 'pending') {
@@ -399,18 +400,10 @@ export default async function handler(request) {
     }
 
     // =========================================================================
-    // 2. Direct media stream fast paths
+    // 2. Direct media stream fast paths (Stream via Edge Proxy with Content-Disposition: attachment)
     // =========================================================================
-    if (token.includes('freevideosave.com')) {
-      return new Response(JSON.stringify({ status: 'success', download_url: token, filename }), { status: 200, headers: corsHeaders });
-    }
-
-    if (token.includes('download_redirect')) {
-      return new Response(JSON.stringify({ status: 'success', download_url: token, filename }), { status: 200, headers: corsHeaders });
-    }
-
-    if (token.includes('googlevideo.com') || token.includes('rapidcdn') || token.includes('snapcdn') || token.includes('/tmp/recycle/') || token.includes('down-de.vidssave.com')) {
-      const proxyDl = `/api/proxy-download?url=${encodeURIComponent(token)}&filename=${encodeURIComponent(filename)}`;
+    if (token.includes('freevideosave.com') || token.includes('download_redirect') || token.includes('googlevideo.com') || token.includes('rapidcdn') || token.includes('snapcdn') || token.includes('/tmp/recycle/') || token.includes('vidssave.com')) {
+      const proxyDl = token.startsWith('/api/proxy-download') ? token : `/api/proxy-download?url=${encodeURIComponent(token)}&filename=${encodeURIComponent(filename)}`;
       return new Response(JSON.stringify({ status: 'success', download_url: proxyDl, filename }), { status: 200, headers: corsHeaders });
     }
 
@@ -437,7 +430,8 @@ export default async function handler(request) {
     const immediateLink = resolveGrapwebLink(immediateRaw);
 
     if (immediateLink && immediateLink.startsWith('http')) {
-      return new Response(JSON.stringify({ status: 'success', download_url: immediateLink, filename }), { status: 200, headers: corsHeaders });
+      const proxyDl = immediateLink.startsWith('/api/proxy-download') ? immediateLink : `/api/proxy-download?url=${encodeURIComponent(immediateLink)}&filename=${encodeURIComponent(filename)}`;
+      return new Response(JSON.stringify({ status: 'success', download_url: proxyDl, filename }), { status: 200, headers: corsHeaders });
     }
 
     const createdTaskId = stData.task_id;

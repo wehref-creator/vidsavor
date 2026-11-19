@@ -52,11 +52,6 @@ export default async function handler(request) {
 
     const domain = resolvedTargetUrl.toLowerCase();
 
-    // Fast-path direct redirect for media providers with their own CDN streaming
-    if (domain.includes('freevideosave.com') || domain.includes('googlevideo.com') || targetUrl.includes('download_redirect')) {
-      return Response.redirect(targetUrl, 302);
-    }
-
     const headers = new Headers();
     headers.set(
       'User-Agent',
@@ -86,6 +81,14 @@ export default async function handler(request) {
     }
 
     let finalFetchUrl = resolvedTargetUrl;
+    if (resolvedTargetUrl.includes('freevideosave.com') && resolvedTargetUrl.includes('url=')) {
+      try {
+        const uMatch = resolvedTargetUrl.match(/[?&]url=([^&]+)/);
+        if (uMatch) {
+          finalFetchUrl = decodeURIComponent(uMatch[1]);
+        }
+      } catch (e) {}
+    }
 
     // Fetch stream from origin CDN
     let cdnRes = await fetch(finalFetchUrl, {
