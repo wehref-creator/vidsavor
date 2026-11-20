@@ -517,24 +517,12 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
         return streamUrl;
     }
 
-    // 3. Direct CDN links with CORS support that allow direct browser in-memory blob saving:
-    // (Instagram images/videos, TikTok videos, Twitter, Pinterest, SaveNow Cloud CDN)
-    const isDirectCdn = streamUrl.startsWith('https://') && (
-        streamUrl.includes('cdninstagram.com') ||
-        streamUrl.includes('fbcdn.net') ||
-        streamUrl.includes('tiktokv.com') ||
-        streamUrl.includes('twimg.com') ||
-        streamUrl.includes('pinimg.com') ||
-        streamUrl.includes('ytimg.com') ||
-        streamUrl.includes('savenow.to') ||
-        streamUrl.includes('lbserver.xyz')
-    );
-    if (isDirectCdn) {
-        return streamUrl;
-    }
-
-    // 4. Route ALL external streams (Google Video, YouTube, freevideosave, vidssave, etc.) through edge proxy
-    // This guarantees Content-Disposition: attachment so the browser downloads right on the page without redirecting
+    // 3. Route ALL external streams through edge proxy.
+    // This guarantees Content-Disposition: attachment so the browser downloads right on the page without redirecting.
+    // NEVER return raw CDN URLs (Instagram/TikTok/Twitter/etc.) directly to the browser:
+    //   - Cross-origin fetch() fails with CORS error
+    //   - <a download> on cross-origin URLs is IGNORED by Chrome → opens new tab/media player
+    // SaveNow CDN URLs are same-origin-readable; still proxy for uniform Content-Disposition header.
     const params = new URLSearchParams({
         url: streamUrl,
         filename: filename || `${safeTitle}.${ext}`
@@ -558,15 +546,15 @@ async function triggerDirectDownload(streamUrl, filename, btnElement) {
         btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Saving...</span>';
     }
 
-    let finalDownloadUrl = streamUrl;
-    if (!finalDownloadUrl.startsWith('/api/proxy-download') && !finalDownloadUrl.startsWith('blob:') && !finalDownloadUrl.includes('cdninstagram') && !finalDownloadUrl.includes('fbcdn') && !finalDownloadUrl.includes('tiktokv') && !finalDownloadUrl.includes('twimg') && !finalDownloadUrl.includes('pinimg') && !finalDownloadUrl.includes('savenow.to') && !finalDownloadUrl.includes('lbserver.xyz')) {
-        finalDownloadUrl = resolveDownloadUrl(finalDownloadUrl, filename);
-    }
+    // Always route through proxy to get Content-Disposition: attachment.
+    // Never pass raw CDN URLs to the browser — Chrome ignores <a download> for cross-origin URLs and opens a new tab.
+    let finalDownloadUrl = resolveDownloadUrl(streamUrl, filename);
 
     let saved = false;
     let failureReason = '';
 
-    // 1. High-Speed In-Memory Blob Save (Guarantees zero navigation, genuine file save directly to disk)
+    // High-Speed In-Memory Blob Save (Guarantees zero navigation, genuine file save directly to disk)
+    // Since finalDownloadUrl is always a same-origin /api/proxy-download URL, fetch will succeed without CORS issues.
     try {
         const res = await fetch(finalDownloadUrl, { referrerPolicy: 'no-referrer' });
         if (res.ok) {
@@ -610,22 +598,6 @@ async function triggerDirectDownload(streamUrl, filename, btnElement) {
         }
     } catch (e) {
         failureReason = e.message || 'Stream download connection failed';
-    }
-
-    // 2. Direct Anchor trigger ONLY for allowed direct media CDN links (Instagram, TikTok, Twitter, Pinterest)
-    // NEVER for googlevideo or proxy streams which open black-screen players
-    if (!saved && !finalDownloadUrl.startsWith('/api/proxy-download') && !finalDownloadUrl.includes('googlevideo')) {
-        try {
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = finalDownloadUrl;
-            a.download = filename;
-            a.rel = 'noreferrer';
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => a.remove(), 1000);
-            saved = true;
-        } catch (_) {}
     }
 
     if (saved) {
