@@ -580,18 +580,10 @@ async def index_py_dispatcher(
     req_task_id = task_id or body_dict.get("task_id")
     req_url = url or body_dict.get("url")
 
-    if request.query_params.get("debug") == "savenow":
+    if request.query_params.get("debug") == "grapweb":
         try:
-            test_r = requests.get(
-                "https://p.savenow.to/api/v2/download?format=1080&url=" + urllib.parse.quote("https://www.youtube.com/watch?v=aDmhFUcp__c"),
-                headers={
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-                    'Origin': 'https://loader.to',
-                    'Referer': 'https://loader.to/'
-                },
-                timeout=8
-            )
-            return JSONResponse({"debug_status": test_r.status_code, "debug_body": test_r.text})
+            gw_r = requests.get("https://grapweb.com/youtube/api.php?url=" + urllib.parse.quote("https://www.youtube.com/watch?v=aDmhFUcp__c"), headers={'User-Agent': 'Mozilla/5.0'}, timeout=8)
+            return JSONResponse({"debug_status": gw_r.status_code, "debug_body": gw_r.text[:500]})
         except Exception as de:
             return JSONResponse({"debug_error": str(de)})
 
