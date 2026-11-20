@@ -74,7 +74,7 @@ export default async function handler(request) {
         break;
       }
     }
-    if (finalFetchUrl.includes('/download-file?url=') || finalFetchUrl.includes('/proxy-download?url=')) {
+    if (finalFetchUrl.includes('/proxy-download?url=')) {
       try {
         const uMatch = finalFetchUrl.match(/[?&]url=([^&]+)/);
         if (uMatch) {
@@ -85,6 +85,10 @@ export default async function handler(request) {
           finalFetchUrl = inner;
         }
       } catch (e) {}
+    }
+
+    if (finalFetchUrl.startsWith('/download-file')) {
+      finalFetchUrl = 'https://freevideosave.com' + finalFetchUrl;
     }
 
     // Determine platform referer

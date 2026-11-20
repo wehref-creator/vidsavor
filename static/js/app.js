@@ -499,12 +499,18 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
 
     // 1. YouTube conversion tokens that require dynamic resolution
     const isYouTubeToken = (item && item.token) || (typeof streamUrl === 'string' && streamUrl.startsWith('Z0ve'));
-    if (isYouTubeToken) {
+    if (isYouTubeToken && !streamUrl.includes('download-file') && !streamUrl.includes('freevideosave.com')) {
         return 'javascript:void(0);';
     }
 
     // 2. If it's already a direct proxy-download URL, return as is
     if (streamUrl.startsWith('/api/proxy-download') || streamUrl.includes('/api/proxy-download?')) {
+        return streamUrl;
+    }
+
+    // 3. For Grapweb download endpoints (tiktok, facebook, pinterest) that already provide Content-Disposition: attachment,
+    // they can be downloaded directly
+    if (streamUrl.includes('grapweb.com') && streamUrl.includes('download.php')) {
         return streamUrl;
     }
 
@@ -563,45 +569,30 @@ async function triggerDirectDownload(streamUrl, filename, btnElement) {
 
     // High-Speed Direct Save
     try {
-        const res = await fetch(finalDownloadUrl, { referrerPolicy: 'no-referrer' });
-        if (res.ok) {
-            const ctype = (res.headers.get('content-type') || '').toLowerCase();
-            // Reject text/html error pages
-            if (ctype.includes('text/html') || ctype.includes('application/json') || ctype.includes('text/plain')) {
-                let errText = '';
-                try {
-                    const errJson = await res.json();
-                    errText = errJson.message || '';
-                } catch (_) {}
-                throw new Error(errText || 'Server returned non-media response: ' + ctype);
-            }
+        triggerBrowserFileDownload(finalDownloadUrl, filename);
+        saved = true;
+    } catch (_) {
+        saved = false;
+    }
 
-            const blob = await res.blob();
-            const isImage = ctype.includes('image') || (filename && filename.match(/\.(jpg|jpeg|png|webp)$/i));
-            if (!isImage && blob.size < 50000) {
-                throw new Error('Downloaded stream size too small (' + blob.size + ' bytes).');
-            }
-
-            const blobUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = blobUrl;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-                window.URL.revokeObjectURL(blobUrl);
-                a.remove();
-            }, 2000);
-            saved = true;
-        } else {
-            throw new Error(`Server returned HTTP ${res.status}`);
-        }
-    } catch (e) {
-        // Fallback: Trigger native browser stream download via invisible iframe / anchor
+    if (!saved) {
         try {
-            triggerBrowserFileDownload(finalDownloadUrl, filename);
-            saved = true;
+            const res = await fetch(finalDownloadUrl, { referrerPolicy: 'no-referrer' });
+            if (res.ok) {
+                const blob = await res.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = blobUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(blobUrl);
+                    a.remove();
+                }, 2000);
+                saved = true;
+            }
         } catch (_) {}
     }
 
@@ -647,13 +638,17 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
     const ext = (filename || '').split('.').pop() || 'mp4';
 
     // Check if this is a YouTube stream requiring cloud task conversion
-    const hasDirectDl = (typeof streamUrl === 'string' && streamUrl.includes('download_redirect'));
+    const hasDirectDl = (typeof streamUrl === 'string' && (
+        streamUrl.includes('download_redirect') ||
+        streamUrl.includes('download-file') ||
+        streamUrl.includes('freevideosave.com') ||
+        streamUrl.includes('googlevideo.com')
+    ));
     const isPhoto = (item && item.type === 'photo') || (streamUrl && (streamUrl.includes('ytimg.com') || streamUrl.endsWith('.jpg') || streamUrl.endsWith('.png')));
     const isYouTubeStream = !isPhoto && !hasDirectDl && (
         (item && item.token) ||
         (typeof streamUrl === 'string' && streamUrl.startsWith('Z0ve')) ||
-        (typeof streamUrl === 'string' && !streamUrl.startsWith('http') && (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be'))) ||
-        (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be'))
+        (typeof streamUrl === 'string' && !streamUrl.startsWith('http') && (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be')))
     );
 
     if (isYouTubeStream) {
@@ -719,8 +714,8 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
             }
 
             if (data && data.status === 'success' && data.download_url) {
-                // Direct download immediately to disk (SaveNow provides Content-Disposition: attachment)
-                triggerBrowserFileDownload(data.download_url, data.filename || `${safeTitle}.${targetExt}`);
+                const finalDl = resolveDownloadUrl(data.download_url, data.filename || `${safeTitle}.${targetExt}`);
+                triggerBrowserFileDownload(finalDl, data.filename || `${safeTitle}.${targetExt}`);
                 if (btnElement) {
                     btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Downloaded!</span>';
                     setTimeout(() => {

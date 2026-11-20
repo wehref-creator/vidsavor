@@ -84,8 +84,8 @@ def canonicalize_url(raw_url: str) -> str:
     # Follow short-links for known redirect domains
     if any(short in url.lower() for short in ['pin.it', 'fb.watch', 't.co', 'bit.ly', 'vm.tiktok.com', 'vt.tiktok.com']):
         try:
-            resp = requests.head(url, allow_redirects=True, timeout=4, headers={'User-Agent': USER_AGENT})
-            if resp.url:
+            resp = requests.get(url, allow_redirects=True, stream=True, timeout=5, headers={'User-Agent': USER_AGENT})
+            if resp.url and resp.url.startswith("http"):
                 url = resp.url
         except Exception:
             pass
@@ -148,6 +148,10 @@ def unpack_token_url(url: Optional[str]) -> str:
         return "" if url is None else url
 
     url = url.strip()
+    # Preserve signed download gateways (rapidcdn, grapweb, snapcdn) without unpacking
+    if any(k in url for k in ['rapidcdn.app', 'grapweb.com', 'download.php']):
+        return url
+
     if "token=" in url:
         try:
             match = re.search(r'[?&]token=([^&#\s]+)', url)
@@ -301,7 +305,113 @@ class MediaExtractor:
         video_id = m.group(1) if m else None
         clean_url = f"https://www.youtube.com/watch?v={video_id}" if video_id else url
 
-        # Tier 0: High-Speed Direct Stream Extractor (Grapweb & Vidssave Cloud Engine)
+        # Tier 0: Direct Stream Engine (freevideosave direct media streams)
+        try:
+            fvs_r = requests.post("https://freevideosave.com/fetch", json={"url": clean_url}, headers={'User-Agent': USER_AGENT}, timeout=7)
+            if fvs_r.status_code == 200:
+                fvs_d = fvs_r.json()
+                if fvs_d.get("status") == "success" and fvs_d.get("results"):
+                    title = fvs_d.get("title") or "YouTube Video"
+                    thumbnail = fvs_d.get("thumbnail") or (f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg" if video_id else "")
+                    raw = fvs_d.get("results", [])
+
+                    clean_results = []
+                    seen = set()
+
+                    targets = [
+                        ('1080', '1080p Full HD (MP4)', 'mp4', ['mp4 (1080p) avc1', 'mp4 (1080p) av01', 'webm (1080p) vp9', '1080p']),
+                        ('720', '720p HD (MP4)', 'mp4', ['mp4 (720p) avc1', 'mp4 (720p) av01', 'webm (720p) vp9', '720p']),
+                        ('480', '480p SD (MP4)', 'mp4', ['mp4 (480p) avc1', 'mp4 (480p) av01', 'webm (480p) vp9', '480p']),
+                        ('360', '360p Medium (MP4)', 'mp4', ['360p', 'mp4 (360p) avc1', 'mp4 (360p) av01', 'webm (360p) vp9']),
+                    ]
+
+                    for q_key, label, ext, preferred_names in targets:
+                        match = None
+                        for pname in preferred_names:
+                            for item in raw:
+                                q = (item.get('quality') or '').lower()
+                                if q == pname.lower():
+                                    match = item
+                                    break
+                            if match:
+                                break
+                        if not match:
+                            for item in raw:
+                                q = (item.get('quality') or '').lower()
+                                if q_key in q and 'mp4' in q:
+                                    match = item
+                                    break
+                        if not match:
+                            for item in raw:
+                                q = (item.get('quality') or '').lower()
+                                if q_key in q:
+                                    match = item
+                                    break
+
+                        if match and label not in seen:
+                            seen.add(label)
+                            u = match.get('url', '')
+                            if u.startswith('/'):
+                                u = 'https://freevideosave.com' + u
+                            clean_results.append({
+                                "url": u,
+                                "type": "video",
+                                "quality": label,
+                                "format": ext,
+                                "has_audio": True,
+                                "size": "Original HD Stream",
+                                "thumbnail": thumbnail
+                            })
+
+                    # Audio stream
+                    audio_match = None
+                    for item in raw:
+                        q = (item.get('quality') or '').lower()
+                        t = (item.get('type') or '').lower()
+                        if '130kb/s' in q or 'audio' in t or 'm4a' in q or 'mp3' in q:
+                            audio_match = item
+                            break
+                    if audio_match:
+                        u = audio_match.get('url', '')
+                        if u.startswith('/'):
+                            u = 'https://freevideosave.com' + u
+                        clean_results.append({
+                            "url": u,
+                            "type": "audio",
+                            "quality": "High Quality Audio (MP3)",
+                            "format": "mp3",
+                            "has_audio": True,
+                            "size": "Original Audio",
+                            "thumbnail": thumbnail
+                        })
+
+                    if thumbnail:
+                        clean_results.append({
+                            "url": thumbnail,
+                            "type": "photo",
+                            "quality": "HD Cover Poster (JPG)",
+                            "format": "jpg",
+                            "has_audio": False,
+                            "size": "Original JPG",
+                            "thumbnail": thumbnail
+                        })
+
+                    if clean_results:
+                        return {
+                            "status": "success",
+                            "title": title,
+                            "thumbnail": thumbnail,
+                            "type": "video",
+                            "download": clean_results[0]["url"],
+                            "author": "YouTube Creator",
+                            "duration": "",
+                            "platform": "youtube",
+                            "results": clean_results
+                        }
+        except Exception as fvs_err:
+            logger.warning(f"FreeVideoSave extractor error: {fvs_err}")
+
+        # Tier 1: Grapweb Direct Stream Extractor
         try:
             gw_headers = {
                 'User-Agent': USER_AGENT,
@@ -414,104 +524,7 @@ class MediaExtractor:
         except Exception as gw_err:
             logger.warning(f"Grapweb YouTube extractor error: {gw_err}")
 
-        # Tier 1: High-Speed Direct Stream Extractor (freevideosave Fallback)
-        try:
-            fv_resp = requests.post("https://freevideosave.com/fetch", json={"url": clean_url}, timeout=6)
-            if fv_resp.status_code == 200:
-                fv_data = fv_resp.json()
-                if fv_data.get("status") == "success" and fv_data.get("results"):
-                    title = fv_data.get("title") or "YouTube Video"
-                    thumbnail = fv_data.get("thumbnail") or (f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg" if video_id else "")
-                    
-                    raw_results = fv_data.get("results", [])
-                    clean_results = []
-                    seen_qualities = set()
-
-                    quality_targets = [
-                        ('1080', '1080p Full HD', 'mp4', 'Full HD Video'),
-                        ('720', '720p HD', 'mp4', 'HD Video'),
-                        ('480', '480p SD', 'mp4', 'SD Video'),
-                        ('360', '360p Medium', 'mp4', 'Medium Video')
-                    ]
-
-                    for q_key, q_label, ext, size_label in quality_targets:
-                        match = None
-                        for res in raw_results:
-                            q = (res.get('quality') or '').lower()
-                            if q_key in q and 'mp4' in q:
-                                match = res
-                                break
-                        if not match:
-                            for res in raw_results:
-                                q = (res.get('quality') or '').lower()
-                                if q_key in q:
-                                    match = res
-                                    break
-                        if match and q_label not in seen_qualities:
-                            seen_qualities.add(q_label)
-                            u = match.get('url', '')
-                            if u.startswith('/'):
-                                u = 'https://freevideosave.com' + u
-                            clean_results.append({
-                                "url": u,
-                                "type": "video",
-                                "quality": q_label,
-                                "has_audio": True,
-                                "format": ext,
-                                "size": size_label,
-                                "thumbnail": thumbnail
-                            })
-
-                    # High Quality Audio Option
-                    audio_match = None
-                    for res in raw_results:
-                        t = (res.get('type') or '').lower()
-                        q = (res.get('quality') or '').lower()
-                        if t == 'audio' or 'm4a' in q or 'audio' in q:
-                            audio_match = res
-                            break
-                    if audio_match:
-                        u = audio_match.get('url', '')
-                        if u.startswith('/'):
-                            u = 'https://freevideosave.com' + u
-                        clean_results.append({
-                            "url": u,
-                            "type": "audio",
-                            "quality": "High Quality Audio (MP3)",
-                            "has_audio": True,
-                            "format": "mp3",
-                            "size": "Original Audio",
-                            "thumbnail": thumbnail
-                        })
-
-                    # Cover Photo
-                    if thumbnail:
-                        clean_results.append({
-                            "url": thumbnail,
-                            "type": "photo",
-                            "quality": "Original Cover Poster (JPG)",
-                            "has_audio": False,
-                            "format": "jpg",
-                            "size": "Original JPG",
-                            "thumbnail": thumbnail
-                        })
-
-                    if clean_results:
-                        return {
-                            "status": "success",
-                            "title": title,
-                            "thumbnail": thumbnail,
-                            "type": "video",
-                            "download": clean_results[0]["url"],
-                            "author": "YouTube Creator",
-                            "duration": "",
-                            "platform": "youtube",
-                            "results": clean_results
-                        }
-        except Exception as fv_err:
-            logger.warning(f"FreeVideoSave extractor error: {fv_err}")
-
-        # Tier 1: YouTube oEmbed & SaveNow Fallback
+        # Tier 1: YouTube oEmbed & SaveNow Cloud Conversion Fallback
         try:
             oembed_url = f"https://www.youtube.com/oembed?url={urllib.parse.quote(clean_url)}&format=json"
             oe_resp = requests.get(oembed_url, headers={'User-Agent': USER_AGENT}, timeout=5)
@@ -771,8 +784,9 @@ class MediaExtractor:
                         q = m.get("quality") or "HD No Watermark"
                         fmt = (m.get("format") or "mp4").lower()
                         is_aud = (fmt == "mp3" or "audio" in q.lower())
+                        dl_endpoint = f"https://grapweb.com/tiktok/download.php?url={urllib.parse.quote(m_url)}&title={urllib.parse.quote(title)}&ext={fmt}"
                         results.append({
-                            "url": m_url,
+                            "url": dl_endpoint,
                             "type": "audio" if is_aud else "video",
                             "quality": q,
                             "format": fmt,
@@ -806,6 +820,59 @@ class MediaExtractor:
                         }
         except Exception as gw_err:
             logger.warning(f"TikTok Grapweb error: {gw_err}")
+
+        # Tier 1: FreeVideoSave High-Speed Direct Stream Extractor
+        try:
+            fvs_r = requests.post("https://freevideosave.com/fetch", json={"url": url}, headers={'User-Agent': USER_AGENT}, timeout=6)
+            if fvs_r.status_code == 200:
+                fvs_d = fvs_r.json()
+                if fvs_d.get("status") == "success" and fvs_d.get("results"):
+                    title = fvs_d.get("title") or "TikTok Video Without Watermark"
+                    thumb = fvs_d.get("thumbnail") or ""
+                    results = []
+                    seen_urls = set()
+                    for item in fvs_d.get("results", []):
+                        u = item.get("url") or ""
+                        if not u or u in seen_urls:
+                            continue
+                        seen_urls.add(u)
+                        if u.startswith("/"):
+                            u = "https://freevideosave.com" + u
+                        t = item.get("type") or "video"
+                        q = item.get("quality") or ("HD Video (No Watermark)" if t == "video" else "Original Audio")
+                        results.append({
+                            "url": u,
+                            "type": t,
+                            "quality": "Without Watermark (HD)" if "hd" in str(q).lower() else q,
+                            "format": "mp3" if t == "audio" else "mp4",
+                            "has_audio": True,
+                            "size": "Original HD Stream",
+                            "thumbnail": thumb
+                        })
+                    if thumb and thumb not in seen_urls:
+                        results.append({
+                            "url": thumb,
+                            "type": "photo",
+                            "quality": "Cover Photo (JPG)",
+                            "format": "jpg",
+                            "has_audio": False,
+                            "size": "Original JPG",
+                            "thumbnail": thumb
+                        })
+                    if results:
+                        return {
+                            "status": "success",
+                            "title": title[:100],
+                            "thumbnail": thumb,
+                            "type": results[0]["type"],
+                            "download": results[0]["url"],
+                            "author": "TikTok Creator",
+                            "duration": "",
+                            "platform": "tiktok",
+                            "results": results
+                        }
+        except Exception as fvs_err:
+            logger.warning(f"TikTok FreeVideoSave error: {fvs_err}")
 
         # Tier 1: SSSTik High-Speed Unwatermarked Extractor
         try:
@@ -1347,7 +1414,15 @@ class MediaExtractor:
 
                     raw_medias = gw_d.get("medias") or gw_d.get("results") or []
                     for m in raw_medias:
-                        m_url = m.get("url") if isinstance(m, dict) else str(m)
+                        if isinstance(m, dict):
+                            m_url = m.get("direct_url") or m.get("url") or m.get("download_url")
+                            if m.get("download_url") and not str(m.get("download_url")).startswith("http"):
+                                m_url = "https://grapweb.com/pinterest/" + str(m.get("download_url")).lstrip('/')
+                            elif m.get("direct_url"):
+                                m_url = m.get("direct_url")
+                        else:
+                            m_url = str(m)
+
                         if not m_url or m_url in seen_urls:
                             continue
                         seen_urls.add(m_url)
@@ -1367,6 +1442,8 @@ class MediaExtractor:
                     # If direct download_url given
                     direct_dl = gw_d.get("download_url") or gw_d.get("video_url") or gw_d.get("url")
                     if direct_dl and direct_dl not in seen_urls:
+                        if not direct_dl.startswith("http"):
+                            direct_dl = "https://grapweb.com/pinterest/" + direct_dl.lstrip('/')
                         seen_urls.add(direct_dl)
                         results.insert(0, {
                             "url": direct_dl,
@@ -1390,10 +1467,14 @@ class MediaExtractor:
                         })
 
                     if results:
+                        final_thumb = thumb or results[0].get("thumbnail") or results[0].get("url") or ""
+                        for r_item in results:
+                            if not r_item.get("thumbnail"):
+                                r_item["thumbnail"] = final_thumb
                         return {
                             "status": "success",
                             "title": title,
-                            "thumbnail": thumb or results[0].get("thumbnail") or "",
+                            "thumbnail": final_thumb,
                             "type": results[0]["type"],
                             "download": results[0]["url"],
                             "author": "Pinterest Creator",

@@ -153,16 +153,9 @@ async def resolve_youtube(
                             pass
 
                     if dl_link and dl_link.startswith("http"):
-                        loc = dl_link
-                        try:
-                            r_loc = requests.get(dl_link, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
-                            if r_loc.headers.get("Location"):
-                                loc = r_loc.headers.get("Location")
-                        except Exception:
-                            pass
                         return JSONResponse({
                             "status": "success",
-                            "download_url": loc,
+                            "download_url": dl_link,
                             "filename": f"{clean_title}.{target_ext}"
                         })
 
@@ -219,17 +212,9 @@ async def resolve_youtube(
 
     # Fast Path 1: If req_token is a download_redirect link (Vidssave direct stream)
     if req_token and "download_redirect" in req_token:
-        target_stream = req_token
-        try:
-            r = requests.get(req_token, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
-            loc = r.headers.get("Location")
-            if loc:
-                target_stream = loc
-        except Exception:
-            pass
         return JSONResponse({
             "status": "success",
-            "download_url": target_stream,
+            "download_url": req_token,
             "filename": f"{clean_title}.{target_ext}"
         })
 
@@ -259,16 +244,9 @@ async def resolve_youtube(
                         except Exception:
                             pass
             if dl_link and dl_link.startswith("http"):
-                loc = dl_link
-                try:
-                    r_loc = requests.get(dl_link, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
-                    if r_loc.headers.get("Location"):
-                        loc = r_loc.headers.get("Location")
-                except Exception:
-                    pass
                 return JSONResponse({
                     "status": "success",
-                    "download_url": loc,
+                    "download_url": dl_link,
                     "filename": f"{clean_title}.{target_ext}"
                 })
         except Exception as z_err:
@@ -293,18 +271,21 @@ async def resolve_youtube(
             if st_resp.ok:
                 st_data = st_resp.json()
                 dl_link = st_data.get("direct_link") or st_data.get("download_link")
+                if dl_link and "api.php?action=stream" in dl_link:
+                    u_m = re.search(r'[?&]url=([^&]+)', dl_link)
+                    if u_m:
+                        try:
+                            import base64
+                            dec = base64.b64decode(urllib.parse.unquote(u_m.group(1))).decode('utf-8', errors='ignore')
+                            if dec.startswith("http"):
+                                dl_link = dec
+                        except Exception:
+                            pass
+
                 if dl_link and dl_link.startswith("http"):
-                    target_stream = dl_link
-                    try:
-                        r = requests.get(dl_link, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
-                        loc = r.headers.get("Location")
-                        if loc:
-                            target_stream = loc
-                    except Exception:
-                        pass
                     return JSONResponse({
                         "status": "success",
-                        "download_url": target_stream,
+                        "download_url": dl_link,
                         "filename": f"{clean_title}.{target_ext}"
                     })
 
@@ -327,17 +308,9 @@ async def resolve_youtube(
                                     except Exception:
                                         pass
                         if cand and cand.startswith("http"):
-                            target_stream = cand
-                            try:
-                                r = requests.get(cand, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
-                                loc = r.headers.get("Location")
-                                if loc:
-                                    target_stream = loc
-                            except Exception:
-                                pass
                             return JSONResponse({
                                 "status": "success",
-                                "download_url": target_stream,
+                                "download_url": cand,
                                 "filename": f"{clean_title}.{target_ext}"
                             })
 
@@ -360,6 +333,51 @@ async def resolve_youtube(
         yt_url = f"https://www.youtube.com/watch?v={m_yt.group(1)}"
     elif not yt_url.startswith("http"):
         yt_url = f"https://www.youtube.com/watch?v={req_token}"
+
+    # Tier 0: FreeVideoSave Instant Direct Stream Engine
+    try:
+        fvs_r = requests.post("https://freevideosave.com/fetch", json={"url": yt_url}, timeout=6)
+        if fvs_r.ok:
+            fvs_d = fvs_r.json()
+            if fvs_d.get("status") == "success" and fvs_d.get("results"):
+                raw_fvs = fvs_d["results"]
+                cand_match = None
+                is_audio = target_ext in ["mp3", "m4a"]
+                if is_audio:
+                    for it in raw_fvs:
+                        q = (it.get("quality") or "").lower()
+                        t = (it.get("type") or "").lower()
+                        if "130kb/s" in q or "audio" in t or "m4a" in q or "mp3" in q:
+                            cand_match = it
+                            break
+                else:
+                    target_q = clean_format.lower()
+                    for it in raw_fvs:
+                        q = (it.get("quality") or "").lower()
+                        if target_q in q and "mp4" in q:
+                            cand_match = it
+                            break
+                    if not cand_match:
+                        for it in raw_fvs:
+                            q = (it.get("quality") or "").lower()
+                            if target_q in q:
+                                cand_match = it
+                                break
+                    if not cand_match and raw_fvs:
+                        cand_match = raw_fvs[0]
+
+                if cand_match and cand_match.get("url"):
+                    cand_u = cand_match["url"]
+                    if cand_u.startswith("/"):
+                        cand_u = "https://freevideosave.com" + cand_u
+                    proxy_link = f"/api/proxy-download?url={urllib.parse.quote(cand_u)}&filename={urllib.parse.quote(clean_title + '.' + target_ext)}"
+                    return JSONResponse({
+                        "status": "success",
+                        "download_url": proxy_link,
+                        "filename": f"{clean_title}.{target_ext}"
+                    })
+    except Exception as fvs_err:
+        logger.warning(f"Resolve YouTube FVS error: {fvs_err}")
 
     # Tier 1: Grapweb Direct Extractor & Task Engine
     try:
@@ -395,17 +413,9 @@ async def resolve_youtube(
                     rc = match.get("resource_content") or ""
 
                     if dl and "download_redirect" in dl:
-                        target_stream = dl
-                        try:
-                            r = requests.get(dl, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
-                            loc = r.headers.get("Location")
-                            if loc:
-                                target_stream = loc
-                        except Exception:
-                            pass
                         return JSONResponse({
                             "status": "success",
-                            "download_url": target_stream,
+                            "download_url": dl,
                             "filename": f"{clean_title}.{target_ext}"
                         })
 
@@ -414,18 +424,21 @@ async def resolve_youtube(
                         if st_r.ok:
                             st_d = st_r.json()
                             cand_dl = st_d.get("direct_link") or st_d.get("download_link")
+                            if cand_dl and "api.php?action=stream" in cand_dl:
+                                u_m = re.search(r'[?&]url=([^&]+)', cand_dl)
+                                if u_m:
+                                    try:
+                                        import base64
+                                        dec = base64.b64decode(urllib.parse.unquote(u_m.group(1))).decode('utf-8', errors='ignore')
+                                        if dec.startswith("http"):
+                                            cand_dl = dec
+                                    except Exception:
+                                        pass
+
                             if cand_dl and cand_dl.startswith("http"):
-                                target_stream = cand_dl
-                                try:
-                                    r = requests.get(cand_dl, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
-                                    loc = r.headers.get("Location")
-                                    if loc:
-                                        target_stream = loc
-                                except Exception:
-                                    pass
                                 return JSONResponse({
                                     "status": "success",
-                                    "download_url": target_stream,
+                                    "download_url": cand_dl,
                                     "filename": f"{clean_title}.{target_ext}"
                                 })
 
@@ -448,17 +461,9 @@ async def resolve_youtube(
                                                 except Exception:
                                                     pass
                                     if cand and cand.startswith("http"):
-                                        target_stream = cand
-                                        try:
-                                            r = requests.get(cand, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
-                                            loc = r.headers.get("Location")
-                                            if loc:
-                                                target_stream = loc
-                                        except Exception:
-                                            pass
                                         return JSONResponse({
                                             "status": "success",
-                                            "download_url": target_stream,
+                                            "download_url": cand,
                                             "filename": f"{clean_title}.{target_ext}"
                                         })
 
