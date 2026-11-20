@@ -514,12 +514,14 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
         return streamUrl;
     }
 
-    // 3. Route ALL external streams through edge proxy.
+    // 4. For SaveNow CDN attachment links (savenow.to, lbserver.xyz), they ALREADY provide Content-Disposition: attachment
+    // and Access-Control-Allow-Origin: *. NEVER route them through Vercel /api/proxy-download!
+    if (streamUrl.includes('savenow.to') || streamUrl.includes('lbserver.xyz')) {
+        return streamUrl;
+    }
+
+    // 5. Route ALL other external streams through edge proxy.
     // This guarantees Content-Disposition: attachment so the browser downloads right on the page without redirecting.
-    // NEVER return raw CDN URLs (Instagram/TikTok/Twitter/etc.) directly to the browser:
-    //   - Cross-origin fetch() fails with CORS error
-    //   - <a download> on cross-origin URLs is IGNORED by Chrome → opens new tab/media player
-    // SaveNow CDN URLs are same-origin-readable; still proxy for uniform Content-Disposition header.
     const params = new URLSearchParams({
         url: streamUrl,
         filename: filename || `${safeTitle}.${ext}`
@@ -638,17 +640,12 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
     const ext = (filename || '').split('.').pop() || 'mp4';
 
     // Check if this is a YouTube stream requiring cloud task conversion
-    const hasDirectDl = (typeof streamUrl === 'string' && (
-        streamUrl.includes('download_redirect') ||
-        streamUrl.includes('download-file') ||
-        streamUrl.includes('freevideosave.com') ||
-        streamUrl.includes('googlevideo.com')
-    ));
     const isPhoto = (item && item.type === 'photo') || (streamUrl && (streamUrl.includes('ytimg.com') || streamUrl.endsWith('.jpg') || streamUrl.endsWith('.png')));
-    const isYouTubeStream = !isPhoto && !hasDirectDl && (
+    const isYouTubeStream = !isPhoto && (
+        (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be')) ||
+        (typeof streamUrl === 'string' && (streamUrl.includes('youtube.com') || streamUrl.includes('youtu.be'))) ||
         (item && item.token) ||
-        (typeof streamUrl === 'string' && streamUrl.startsWith('Z0ve')) ||
-        (typeof streamUrl === 'string' && !streamUrl.startsWith('http') && (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be')))
+        (typeof streamUrl === 'string' && (streamUrl.startsWith('Z0ve') || streamUrl.startsWith('savenow:')))
     );
 
     if (isYouTubeStream) {
@@ -682,7 +679,7 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
                     token: token,
                     title: safeTitle,
                     format: formatCode,
-                    url: currentPostUrl
+                    url: currentPostUrl || (typeof streamUrl === 'string' && streamUrl.startsWith('http') ? streamUrl : '')
                 })
             });
             let data = null;

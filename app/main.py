@@ -125,52 +125,8 @@ async def resolve_youtube(
         'Referer': 'https://loader.to/'
     }
 
-    # 1. Polling existing task_id (Vidssave / SaveNow Engine)
+    # 1. Polling existing task_id (SaveNow Conversion Engine)
     if req_task_id:
-        # Check Vidssave task ID (starts with Z0ve)
-        if str(req_task_id).startswith("Z0ve"):
-            try:
-                query_url = f"https://api.vidssave.com/api/contentsite_api/media/download_query?auth=20250901majwlqo&domain=api-ak.vidssave.com&task_id={urllib.parse.quote(str(req_task_id))}&download_domain=vidssave.com&origin=content_site"
-                qr = requests.get(query_url, timeout=7)
-                if qr.ok:
-                    txt = qr.text
-                    dl_link = None
-                    if "data: " in txt:
-                        for line in txt.splitlines():
-                            if line.startswith("data: "):
-                                try:
-                                    d_json = json.loads(line[6:].strip())
-                                    if d_json.get("download_link"):
-                                        dl_link = d_json["download_link"]
-                                        break
-                                except Exception:
-                                    pass
-                    if not dl_link:
-                        try:
-                            q_json = qr.json()
-                            dl_link = q_json.get("data", {}).get("download_link") or q_json.get("download_link")
-                        except Exception:
-                            pass
-
-                    if dl_link and dl_link.startswith("http"):
-                        return JSONResponse({
-                            "status": "success",
-                            "download_url": dl_link,
-                            "filename": f"{clean_title}.{target_ext}"
-                        })
-
-                    if "event: running" in txt or '"status":"running"' in txt:
-                        return JSONResponse({
-                            "status": "pending",
-                            "task_id": req_task_id,
-                            "progress": 65,
-                            "title": clean_title,
-                            "format": target_ext
-                        })
-            except Exception as v_err:
-                logger.warning(f"Vidssave task query error: {v_err}")
-
-        # Check SaveNow task ID fallback
         try:
             chk_resp = requests.get(
                 f"https://p.savenow.to/api/progress?id={urllib.parse.quote(str(req_task_id))}",
@@ -210,176 +166,30 @@ async def resolve_youtube(
     if not req_token and not original_url and not req_task_id:
         return JSONResponse({"status": "error", "message": "Missing conversion token or URL"}, status_code=200)
 
-    # Fast Path 1: If req_token is a download_redirect link (Vidssave direct stream)
-    if req_token and "download_redirect" in req_token:
+    # If req_token is already a direct SaveNow attachment link, return immediately
+    if req_token and ("savenow.to" in req_token or "lbserver.xyz" in req_token) and req_token.startswith("http"):
         return JSONResponse({
             "status": "success",
             "download_url": req_token,
             "filename": f"{clean_title}.{target_ext}"
         })
-
-    # Fast Path 2: If req_token is already a direct Cloudflare vidssave link (/tmp/recycle/)
-    if req_token and ("/tmp/recycle/" in req_token or "down.vidssave.com" in req_token or "down-de.vidssave.com" in req_token):
-        return JSONResponse({
-            "status": "success",
-            "download_url": req_token,
-            "filename": f"{clean_title}.{target_ext}"
-        })
-
-    # Fast Path 3: If req_token is a Vidssave Task ID (starts with Z0ve)
-    if req_token and req_token.startswith("Z0ve"):
-        try:
-            query_url = f"https://api.vidssave.com/api/contentsite_api/media/download_query?auth=20250901majwlqo&domain=api-ak.vidssave.com&task_id={urllib.parse.quote(req_token)}&download_domain=vidssave.com&origin=content_site"
-            qr = requests.get(query_url, timeout=7)
-            txt = qr.text
-            dl_link = None
-            if "data: " in txt:
-                for line in txt.splitlines():
-                    if line.startswith("data: "):
-                        try:
-                            d_json = json.loads(line[6:].strip())
-                            if d_json.get("download_link"):
-                                dl_link = d_json["download_link"]
-                                break
-                        except Exception:
-                            pass
-            if dl_link and dl_link.startswith("http"):
-                return JSONResponse({
-                    "status": "success",
-                    "download_url": dl_link,
-                    "filename": f"{clean_title}.{target_ext}"
-                })
-        except Exception as z_err:
-            logger.warning(f"Vidssave task query error: {z_err}")
-
-    gw_headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'X-Forwarded-For': '103.240.235.10',
-        'X-Real-IP': '103.240.235.10',
-        'Client-IP': '103.240.235.10'
-    }
-
-    # Fast Path 4: If req_token is a resource_content string from Grapweb (length > 50)
-    if req_token and len(req_token) > 50 and not req_token.startswith("http"):
-        try:
-            st_resp = requests.post(
-                "https://grapweb.com/youtube/api.php?action=start_task",
-                data={"content": req_token},
-                headers=gw_headers,
-                timeout=8
-            )
-            if st_resp.ok:
-                st_data = st_resp.json()
-                dl_link = st_data.get("direct_link") or st_data.get("download_link")
-                if dl_link and "api.php?action=stream" in dl_link:
-                    u_m = re.search(r'[?&]url=([^&]+)', dl_link)
-                    if u_m:
-                        try:
-                            import base64
-                            dec = base64.b64decode(urllib.parse.unquote(u_m.group(1))).decode('utf-8', errors='ignore')
-                            if dec.startswith("http"):
-                                dl_link = dec
-                        except Exception:
-                            pass
-
-                if dl_link and dl_link.startswith("http"):
-                    return JSONResponse({
-                        "status": "success",
-                        "download_url": dl_link,
-                        "filename": f"{clean_title}.{target_ext}"
-                    })
-
-                task_id = st_data.get("task_id")
-                if task_id:
-                    for _ in range(2):
-                        time.sleep(0.8)
-                        q_url = f"https://api.vidssave.com/api/contentsite_api/media/download_query?auth=20250901majwlqo&domain=api-ak.vidssave.com&task_id={urllib.parse.quote(task_id)}&download_domain=vidssave.com&origin=content_site"
-                        chk_r = requests.get(q_url, timeout=5)
-                        txt = chk_r.text
-                        cand = None
-                        if "data: " in txt:
-                            for line in txt.splitlines():
-                                if line.startswith("data: "):
-                                    try:
-                                        d_j = json.loads(line[6:].strip())
-                                        if d_j.get("download_link"):
-                                            cand = d_j["download_link"]
-                                            break
-                                    except Exception:
-                                        pass
-                        if cand and cand.startswith("http"):
-                            return JSONResponse({
-                                "status": "success",
-                                "download_url": cand,
-                                "filename": f"{clean_title}.{target_ext}"
-                            })
-
-                    return JSONResponse({
-                        "status": "pending",
-                        "task_id": task_id,
-                        "title": clean_title,
-                        "format": target_ext
-                    })
-        except Exception as gw_task_err:
-            logger.warning(f"Grapweb resource_content task error: {gw_task_err}")
 
     # Extract clean canonical YouTube watch URL
     yt_url = original_url or (req_token if ("youtube.com" in req_token or "youtu.be" in req_token) else "")
-    if not yt_url and len(req_token) == 11:
+    if not yt_url and len(req_token) == 11 and not req_token.startswith("savenow:"):
         yt_url = f"https://www.youtube.com/watch?v={req_token}"
 
     m_yt = re.search(r'(?:v=|\/v\/|\/embed\/|\/shorts\/|\/live\/|youtu\.be\/)([a-zA-Z0-9_-]{11})', yt_url)
     if m_yt:
         yt_url = f"https://www.youtube.com/watch?v={m_yt.group(1)}"
     elif not yt_url.startswith("http"):
-        yt_url = f"https://www.youtube.com/watch?v={req_token}"
+        if req_token and not req_token.startswith("savenow:"):
+            yt_url = f"https://www.youtube.com/watch?v={req_token}"
 
-    # Tier 0: FreeVideoSave Instant Direct Stream Engine
-    try:
-        fvs_r = requests.post("https://freevideosave.com/fetch", json={"url": yt_url}, timeout=6)
-        if fvs_r.ok:
-            fvs_d = fvs_r.json()
-            if fvs_d.get("status") == "success" and fvs_d.get("results"):
-                raw_fvs = fvs_d["results"]
-                cand_match = None
-                is_audio = target_ext in ["mp3", "m4a"]
-                if is_audio:
-                    for it in raw_fvs:
-                        q = (it.get("quality") or "").lower()
-                        t = (it.get("type") or "").lower()
-                        if "130kb/s" in q or "audio" in t or "m4a" in q or "mp3" in q:
-                            cand_match = it
-                            break
-                else:
-                    target_q = clean_format.lower()
-                    for it in raw_fvs:
-                        q = (it.get("quality") or "").lower()
-                        if target_q in q and "mp4" in q:
-                            cand_match = it
-                            break
-                    if not cand_match:
-                        for it in raw_fvs:
-                            q = (it.get("quality") or "").lower()
-                            if target_q in q:
-                                cand_match = it
-                                break
-                    if not cand_match and raw_fvs:
-                        cand_match = raw_fvs[0]
+    if not yt_url:
+        return JSONResponse({"status": "error", "message": "Could not identify YouTube video URL"}, status_code=200)
 
-                if cand_match and cand_match.get("url"):
-                    cand_u = cand_match["url"]
-                    if cand_u.startswith("/"):
-                        cand_u = "https://freevideosave.com" + cand_u
-                    proxy_link = f"/api/proxy-download?url={urllib.parse.quote(cand_u)}&filename={urllib.parse.quote(clean_title + '.' + target_ext)}"
-                    return JSONResponse({
-                        "status": "success",
-                        "download_url": proxy_link,
-                        "filename": f"{clean_title}.{target_ext}"
-                    })
-    except Exception as fvs_err:
-        logger.warning(f"Resolve YouTube FVS error: {fvs_err}")
-
-    # Tier 1: SaveNow High-Speed Conversion Engine (Fastest, High-Reliability MP4/MP3)
+    # Primary: SaveNow High-Speed Cloud Conversion Engine (Direct Attachment Streams)
     try:
         savenow_fmt = "1080"
         if req_token and req_token.startswith("savenow:"):
@@ -389,7 +199,11 @@ async def resolve_youtube(
 
         for ep in ["https://p.savenow.to/api/v2/download", "https://p.lbserver.xyz/api/v2/download"]:
             try:
-                sn_res = requests.get(f"{ep}?format={savenow_fmt}&url={urllib.parse.quote(yt_url)}", headers=savenow_headers, timeout=8)
+                sn_res = requests.get(
+                    f"{ep}?format={savenow_fmt}&url={urllib.parse.quote(yt_url)}",
+                    headers=savenow_headers,
+                    timeout=8
+                )
                 if sn_res.ok:
                     sn_data = sn_res.json()
                     if sn_data.get("download_url"):
@@ -402,7 +216,17 @@ async def resolve_youtube(
                     if task_id:
                         for _ in range(4):
                             time.sleep(1.0)
-                            poll_r = requests.get(f"https://p.savenow.to/api/progress?id={urllib.parse.quote(str(task_id))}", headers=savenow_headers, timeout=5)
+                            poll_r = requests.get(
+                                f"https://p.savenow.to/api/progress?id={urllib.parse.quote(str(task_id))}",
+                                headers=savenow_headers,
+                                timeout=5
+                            )
+                            if not poll_r.ok:
+                                poll_r = requests.get(
+                                    f"https://p.lbserver.xyz/api/progress?id={urllib.parse.quote(str(task_id))}",
+                                    headers=savenow_headers,
+                                    timeout=5
+                                )
                             if poll_r.ok:
                                 p_data = poll_r.json()
                                 if p_data.get("success") == 1 and p_data.get("download_url"):
@@ -417,165 +241,13 @@ async def resolve_youtube(
                             "title": clean_title,
                             "format": target_ext
                         })
-            except Exception:
-                pass
+            except Exception as sn_e:
+                logger.warning(f"SaveNow attempt error on {ep}: {sn_e}")
     except Exception as sn_err:
         logger.warning(f"SaveNow conversion error: {sn_err}")
-    try:
-        gw_resp = requests.get(f"https://grapweb.com/youtube/api.php?url={urllib.parse.quote(yt_url)}", headers=gw_headers, timeout=8)
-        if gw_resp.ok:
-            gw_json = gw_resp.json()
-            if gw_json.get("status") == "success" and gw_json.get("data"):
-                v_list = gw_json["data"].get("videos", [])
-                a_list = gw_json["data"].get("audios", [])
-                match = None
-
-                is_audio = target_ext in ["mp3", "m4a"]
-                if is_audio:
-                    for a in a_list:
-                        fmt_name = (a.get("format") or "").upper()
-                        if target_ext.upper() in fmt_name:
-                            match = a
-                            break
-                    if not match and a_list:
-                        match = a_list[0]
-                else:
-                    fmt_req = clean_format.upper()
-                    for v in v_list:
-                        q = (v.get("quality") or "").upper()
-                        if fmt_req in q:
-                            match = v
-                            break
-                    if not match and v_list:
-                        match = v_list[0]
-
-                if match:
-                    dl = match.get("download_url") or ""
-                    rc = match.get("resource_content") or ""
-
-                    if dl and "download_redirect" in dl:
-                        return JSONResponse({
-                            "status": "success",
-                            "download_url": dl,
-                            "filename": f"{clean_title}.{target_ext}"
-                        })
-
-                    if rc:
-                        st_r = requests.post("https://grapweb.com/youtube/api.php?action=start_task", data={"content": rc}, headers=gw_headers, timeout=8)
-                        if st_r.ok:
-                            st_d = st_r.json()
-                            cand_dl = st_d.get("direct_link") or st_d.get("download_link")
-                            if cand_dl and "api.php?action=stream" in cand_dl:
-                                u_m = re.search(r'[?&]url=([^&]+)', cand_dl)
-                                if u_m:
-                                    try:
-                                        import base64
-                                        dec = base64.b64decode(urllib.parse.unquote(u_m.group(1))).decode('utf-8', errors='ignore')
-                                        if dec.startswith("http"):
-                                            cand_dl = dec
-                                    except Exception:
-                                        pass
-
-                            if cand_dl and cand_dl.startswith("http"):
-                                return JSONResponse({
-                                    "status": "success",
-                                    "download_url": cand_dl,
-                                    "filename": f"{clean_title}.{target_ext}"
-                                })
-
-                            tid = st_d.get("task_id")
-                            if tid:
-                                for _ in range(2):
-                                    time.sleep(0.8)
-                                    q_url = f"https://api.vidssave.com/api/contentsite_api/media/download_query?auth=20250901majwlqo&domain=api-ak.vidssave.com&task_id={urllib.parse.quote(tid)}&download_domain=vidssave.com&origin=content_site"
-                                    chk_r = requests.get(q_url, timeout=5)
-                                    txt = chk_r.text
-                                    cand = None
-                                    if "data: " in txt:
-                                        for line in txt.splitlines():
-                                            if line.startswith("data: "):
-                                                try:
-                                                    d_j = json.loads(line[6:].strip())
-                                                    if d_j.get("download_link"):
-                                                        cand = d_j["download_link"]
-                                                        break
-                                                except Exception:
-                                                    pass
-                                    if cand and cand.startswith("http"):
-                                        return JSONResponse({
-                                            "status": "success",
-                                            "download_url": cand,
-                                            "filename": f"{clean_title}.{target_ext}"
-                                        })
-
-                                return JSONResponse({
-                                    "status": "pending",
-                                    "task_id": tid,
-                                    "title": clean_title,
-                                    "format": target_ext
-                                })
-    except Exception as gw_flow_err:
-        logger.warning(f"Grapweb flow error: {gw_flow_err}")
-
-    # Tier 2: SaveNow Fallback Engine
-    try:
-        savenow_fmt = "1080"
-        if req_token and req_token.startswith("savenow:"):
-            savenow_fmt = req_token.replace("savenow:", "").strip()
-        elif clean_format in ["1080", "720", "480", "360", "mp3", "m4a"]:
-            savenow_fmt = clean_format
-
-        start_resp = requests.get(
-            f"https://p.savenow.to/api/v2/download?format={savenow_fmt}&url={urllib.parse.quote(yt_url)}",
-            headers=savenow_headers,
-            timeout=8
-        )
-        if not start_resp.ok:
-            start_resp = requests.get(
-                f"https://p.lbserver.xyz/api/v2/download?format={savenow_fmt}&url={urllib.parse.quote(yt_url)}",
-                headers=savenow_headers,
-                timeout=8
-            )
-
-        if start_resp.ok:
-            start_data = start_resp.json()
-            if start_data.get("download_url"):
-                return JSONResponse({
-                    "status": "success",
-                    "download_url": start_data["download_url"],
-                    "filename": f"{clean_title}.{target_ext}"
-                })
-
-            task_id = start_data.get("id")
-            if task_id:
-                for _ in range(2):
-                    time.sleep(0.7)
-                    poll_r = requests.get(
-                        f"https://p.savenow.to/api/progress?id={urllib.parse.quote(str(task_id))}",
-                        headers=savenow_headers,
-                        timeout=5
-                    )
-                    if poll_r.ok:
-                        p_data = poll_r.json()
-                        if p_data.get("success") == 1 and p_data.get("download_url"):
-                            return JSONResponse({
-                                "status": "success",
-                                "download_url": p_data["download_url"],
-                                "filename": f"{clean_title}.{target_ext}"
-                            })
-
-                return JSONResponse({
-                    "status": "pending",
-                    "task_id": task_id,
-                    "title": clean_title,
-                    "format": target_ext
-                })
-    except Exception as sn_err:
-        logger.warning(f"SaveNow start task error: {sn_err}")
-
     # Fallback to direct yt-dlp progressive stream (Prevents 504 timeouts entirely)
     try:
-        target_yt = yt_page_url or (original_url if "youtube" in original_url else f"https://www.youtube.com/watch?v={req_token}")
+        target_yt = yt_url or (original_url if "youtube" in original_url else f"https://www.youtube.com/watch?v={req_token}")
         if "shorts/" in target_yt:
             s_match = re.search(r'shorts/([a-zA-Z0-9_-]{11})', target_yt)
             if s_match:

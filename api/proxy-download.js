@@ -80,6 +80,13 @@ export default async function handler(request) {
       finalFetchUrl = 'https://freevideosave.com' + finalFetchUrl;
     }
 
+    // Direct Attachment Shortcut: If target URL already provides Content-Disposition: attachment
+    // (SaveNow CDN or Grapweb download.php gateways), redirect directly with 302.
+    // This allows browser to save directly to disk at maximum network speed without Vercel 4.5MB payload limitations.
+    if (finalFetchUrl.includes('savenow.to') || finalFetchUrl.includes('lbserver.xyz') || (finalFetchUrl.includes('grapweb.com') && finalFetchUrl.includes('download.php'))) {
+      return Response.redirect(finalFetchUrl, 302);
+    }
+
     // Determine platform referer
     if (domain.includes('vidssave.com') || finalFetchUrl.includes('vidssave.com')) {
       headers.set('Referer', 'https://vidssave.com/');
