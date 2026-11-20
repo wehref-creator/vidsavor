@@ -303,7 +303,13 @@ class MediaExtractor:
 
         # Tier 0: High-Speed Direct Stream Extractor (Grapweb & Vidssave Cloud Engine)
         try:
-            gw_resp = requests.get(f"https://grapweb.com/youtube/api.php?url={urllib.parse.quote(clean_url)}", timeout=8)
+            gw_headers = {
+                'User-Agent': USER_AGENT,
+                'X-Forwarded-For': '103.240.235.10',
+                'X-Real-IP': '103.240.235.10',
+                'Client-IP': '103.240.235.10'
+            }
+            gw_resp = requests.get(f"https://grapweb.com/youtube/api.php?url={urllib.parse.quote(clean_url)}", headers=gw_headers, timeout=8)
             if gw_resp.status_code == 200:
                 gw_json = gw_resp.json()
                 if gw_json.get("status") == "success" and gw_json.get("data"):

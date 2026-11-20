@@ -274,12 +274,20 @@ async def resolve_youtube(
         except Exception as z_err:
             logger.warning(f"Vidssave task query error: {z_err}")
 
+    gw_headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'X-Forwarded-For': '103.240.235.10',
+        'X-Real-IP': '103.240.235.10',
+        'Client-IP': '103.240.235.10'
+    }
+
     # Fast Path 4: If req_token is a resource_content string from Grapweb (length > 50)
     if req_token and len(req_token) > 50 and not req_token.startswith("http"):
         try:
             st_resp = requests.post(
                 "https://grapweb.com/youtube/api.php?action=start_task",
                 data={"content": req_token},
+                headers=gw_headers,
                 timeout=8
             )
             if st_resp.ok:
@@ -355,7 +363,7 @@ async def resolve_youtube(
 
     # Tier 1: Grapweb Direct Extractor & Task Engine
     try:
-        gw_resp = requests.get(f"https://grapweb.com/youtube/api.php?url={urllib.parse.quote(yt_url)}", timeout=8)
+        gw_resp = requests.get(f"https://grapweb.com/youtube/api.php?url={urllib.parse.quote(yt_url)}", headers=gw_headers, timeout=8)
         if gw_resp.ok:
             gw_json = gw_resp.json()
             if gw_json.get("status") == "success" and gw_json.get("data"):
@@ -402,7 +410,7 @@ async def resolve_youtube(
                         })
 
                     if rc:
-                        st_r = requests.post("https://grapweb.com/youtube/api.php?action=start_task", data={"content": rc}, timeout=8)
+                        st_r = requests.post("https://grapweb.com/youtube/api.php?action=start_task", data={"content": rc}, headers=gw_headers, timeout=8)
                         if st_r.ok:
                             st_d = st_r.json()
                             cand_dl = st_d.get("direct_link") or st_d.get("download_link")
@@ -582,7 +590,13 @@ async def index_py_dispatcher(
 
     if request.query_params.get("debug") == "grapweb":
         try:
-            gw_r = requests.get("https://grapweb.com/youtube/api.php?url=" + urllib.parse.quote("https://www.youtube.com/watch?v=aDmhFUcp__c"), headers={'User-Agent': 'Mozilla/5.0'}, timeout=8)
+            gw_hdrs = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                'X-Forwarded-For': '103.240.235.10',
+                'X-Real-IP': '103.240.235.10',
+                'Client-IP': '103.240.235.10'
+            }
+            gw_r = requests.get("https://grapweb.com/youtube/api.php?url=" + urllib.parse.quote("https://www.youtube.com/watch?v=aDmhFUcp__c"), headers=gw_hdrs, timeout=8)
             return JSONResponse({"debug_status": gw_r.status_code, "debug_body": gw_r.text[:500]})
         except Exception as de:
             return JSONResponse({"debug_error": str(de)})
