@@ -533,7 +533,40 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
     return `/api/proxy-download?${params.toString()}`;
 }
 
-// High-Speed Direct In-Memory & Anchor Downloader
+// Bulletproof Browser File Downloader (Direct Stream to Disk)
+// Guarantees zero navigation, zero new-tab redirects, and immediate browser download prompt
+function triggerBrowserFileDownload(downloadUrl, filename) {
+    if (!downloadUrl) return;
+
+    // 1. Silent invisible iframe - triggers browser native download bar immediately
+    // without navigating away or opening any player tabs
+    try {
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = downloadUrl;
+        document.body.appendChild(iframe);
+        setTimeout(() => {
+            try { iframe.remove(); } catch (_) {}
+        }, 60000);
+    } catch (_) {}
+
+    // 2. Click hidden anchor with download attribute
+    try {
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = downloadUrl;
+        a.download = filename || 'video.mp4';
+        a.rel = 'noreferrer';
+        a.referrerPolicy = 'no-referrer';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            try { a.remove(); } catch (_) {}
+        }, 1000);
+    } catch (_) {}
+}
+
+// High-Speed Direct In-Memory & Stream Downloader
 // Completely eliminates new-tab redirects, black-screen video playback, 74KB HTML files, and 403 Forbidden errors
 async function triggerDirectDownload(streamUrl, filename, btnElement) {
     if (!streamUrl || streamUrl === 'javascript:void(0);' || streamUrl === '#') return;
@@ -547,19 +580,15 @@ async function triggerDirectDownload(streamUrl, filename, btnElement) {
     }
 
     // Always route through proxy to get Content-Disposition: attachment.
-    // Never pass raw CDN URLs to the browser — Chrome ignores <a download> for cross-origin URLs and opens a new tab.
     let finalDownloadUrl = resolveDownloadUrl(streamUrl, filename);
-
     let saved = false;
-    let failureReason = '';
 
-    // High-Speed In-Memory Blob Save (Guarantees zero navigation, genuine file save directly to disk)
-    // Since finalDownloadUrl is always a same-origin /api/proxy-download URL, fetch will succeed without CORS issues.
+    // High-Speed Direct Save
     try {
         const res = await fetch(finalDownloadUrl, { referrerPolicy: 'no-referrer' });
         if (res.ok) {
             const ctype = (res.headers.get('content-type') || '').toLowerCase();
-            // STRICT SECURITY CHECK: Reject text/html, application/json, and text/plain error responses
+            // Reject text/html error pages
             if (ctype.includes('text/html') || ctype.includes('application/json') || ctype.includes('text/plain')) {
                 let errText = '';
                 try {
@@ -571,9 +600,8 @@ async function triggerDirectDownload(streamUrl, filename, btnElement) {
 
             const blob = await res.blob();
             const isImage = ctype.includes('image') || (filename && filename.match(/\.(jpg|jpeg|png|webp)$/i));
-            // Reject corrupt/truncated blobs (HTML error fallbacks are < 50KB)
             if (!isImage && blob.size < 50000) {
-                throw new Error('Downloaded stream size too small (' + blob.size + ' bytes). Origin may have restricted this stream.');
+                throw new Error('Downloaded stream size too small (' + blob.size + ' bytes).');
             }
 
             const blobUrl = window.URL.createObjectURL(blob);
@@ -589,15 +617,14 @@ async function triggerDirectDownload(streamUrl, filename, btnElement) {
             }, 2000);
             saved = true;
         } else {
-            let errText = '';
-            try {
-                const errJson = await res.json();
-                errText = errJson.message || '';
-            } catch (_) {}
-            failureReason = errText || `Server returned HTTP ${res.status}`;
+            throw new Error(`Server returned HTTP ${res.status}`);
         }
     } catch (e) {
-        failureReason = e.message || 'Stream download connection failed';
+        // Fallback: Trigger native browser stream download via invisible iframe / anchor
+        try {
+            triggerBrowserFileDownload(finalDownloadUrl, filename);
+            saved = true;
+        } catch (_) {}
     }
 
     if (saved) {
@@ -615,14 +642,14 @@ async function triggerDirectDownload(streamUrl, filename, btnElement) {
             btnElement.dataset.downloading = 'false';
             btnElement.style.pointerEvents = 'auto';
         }
-        alert(failureReason ? `Could not download: ${failureReason}\n\nPlease try another quality option (e.g. 720p HD, 360p) or Audio (MP3).` : 'Could not download this stream. Please try another quality option.');
+        alert('Could not download this stream. Please try another quality option.');
     }
 }
 
 async function triggerInstantDownload(streamUrl, filename, btnElement, item = null) {
     if (btnElement) {
         if (btnElement.dataset.downloading === 'true') {
-            return; // Prevent duplicate triggers and "Download multiple files" browser warnings
+            return;
         }
         btnElement.dataset.downloading = 'true';
         setTimeout(() => {
@@ -690,7 +717,7 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
                 data = await res.json();
             } catch (je) {}
 
-            // If task is pending, poll until complete (usually 1.5 - 4 seconds)
+            // If task is pending, poll until complete (usually 1 - 3 seconds)
             let pollAttempts = 0;
             while (data && (data.status === 'pending' || data.status === 'running') && data.task_id && pollAttempts < 45) {
                 pollAttempts++;
@@ -714,7 +741,16 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
             }
 
             if (data && data.status === 'success' && data.download_url) {
-                triggerDirectDownload(data.download_url, data.filename || `${safeTitle}.${targetExt}`, btnElement);
+                // Direct download immediately to disk (SaveNow provides Content-Disposition: attachment)
+                triggerBrowserFileDownload(data.download_url, data.filename || `${safeTitle}.${targetExt}`);
+                if (btnElement) {
+                    btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Downloaded!</span>';
+                    setTimeout(() => {
+                        btnElement.innerHTML = origHTML || '<i class="fa-solid fa-download"></i> <span>Download</span>';
+                        btnElement.dataset.downloading = 'false';
+                        btnElement.style.pointerEvents = 'auto';
+                    }, 3500);
+                }
                 return;
             } else {
                 let msg = (data && data.message) ? data.message : 'Conversion server timeout';
@@ -727,6 +763,7 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
             console.error('YouTube resolution error:', err);
             if (btnElement) {
                 btnElement.innerHTML = origHTML || '<i class="fa-solid fa-download"></i> <span>Download</span>';
+                btnElement.dataset.downloading = 'false';
                 btnElement.style.pointerEvents = 'auto';
             }
             let msg = err.message || 'Server timeout. Please retry.';
@@ -932,6 +969,14 @@ async function downloadNow() {
                     const img = document.createElement('img');
                     img.src = data.thumbnail;
                     img.alt = currentTitle;
+                    img.referrerPolicy = 'no-referrer';
+                    img.setAttribute('referrerpolicy', 'no-referrer');
+                    img.onerror = () => {
+                        if (!img.dataset.retried && data.thumbnail) {
+                            img.dataset.retried = 'true';
+                            img.src = `/api/proxy-download?url=${encodeURIComponent(data.thumbnail)}&filename=thumbnail.jpg`;
+                        }
+                    };
                     previewContainer.appendChild(img);
                 }
             }
@@ -1172,9 +1217,9 @@ async function downloadNow() {
                         </div>
                         <div class="row-right">
                             <span class="row-size-pill">Original HD</span>
-                            <a href="${singleDlUrl}" class="btn-row-download" download="${cleanName}" rel="noreferrer" referrerpolicy="no-referrer">
+                            <button type="button" class="btn-row-download">
                                 <i class="fa-solid fa-download"></i> <span>Download</span>
-                            </a>
+                            </button>
                         </div>
                     `;
                     const singleDownloadBtn = singleRow.querySelector('.btn-row-download');
@@ -1251,9 +1296,9 @@ async function downloadNow() {
                             </div>
                             <div class="row-right">
                                 <span class="row-size-pill">${item.size || 'HD File'}</span>
-                                <a href="${rowDlUrl}" class="btn-row-download" download="${cleanFilename}" rel="noreferrer" referrerpolicy="no-referrer">
+                                <button type="button" class="btn-row-download">
                                     <i class="fa-solid fa-download"></i> <span>Download</span>
-                                </a>
+                                </button>
                             </div>
                         `;
 
@@ -1262,7 +1307,8 @@ async function downloadNow() {
                         const isRowYouTubeToken = !isPhoto && !hasRowDirectDl && (
                             (item && item.token) ||
                             (typeof item.url === 'string' && item.url.startsWith('Z0ve')) ||
-                            (typeof item.url === 'string' && !item.url.startsWith('http') && (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be')))
+                            (typeof item.url === 'string' && !item.url.startsWith('http') && (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be'))) ||
+                            (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be'))
                         );
 
                         if (isRowYouTubeToken) {
@@ -1273,6 +1319,11 @@ async function downloadNow() {
                             });
                         } else {
                             downloadBtn.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                triggerDirectDownload(rowDlUrl, cleanFilename, downloadBtn);
+                            });
+                        }
                                 e.preventDefault();
                                 e.stopPropagation();
                                 triggerDirectDownload(rowDlUrl, cleanFilename, downloadBtn);

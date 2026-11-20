@@ -543,10 +543,10 @@ class MediaExtractor:
         # Tier 1: SSSTik High-Speed Unwatermarked Extractor
         try:
             s_ss = requests.Session()
-            r_ss = s_ss.get('https://ssstik.io/en', headers={'User-Agent': USER_AGENT}, timeout=4)
-            m_tt = re.search(r"s_tt\s*=\s*'([^']+)'", r_ss.text) or re.search(r'data-tt="([^"]+)"', r_ss.text) or re.search(r"tt:\s*'([^']+)'", r_ss.text)
-            tt_val = m_tt.group(1) if m_tt else 'MjJ5OUoz'
-            r_post = s_ss.post('https://ssstik.io/abc?url=dl', data={'id': url, 'locale': 'en', 'tt': tt_val}, headers={'User-Agent': USER_AGENT}, timeout=5)
+            r_ss = s_ss.get('https://ssstik.io/en', headers={'User-Agent': USER_AGENT}, timeout=5)
+            m_tt = re.search(r"s_tt\s*=\s*['\"]([^'\"]+)['\"]|tt:\s*['\"]([^'\"]+)['\"]|data-tt=[\"']([^\"']+)[\"']", r_ss.text)
+            tt_val = (m_tt.group(1) or m_tt.group(2) or m_tt.group(3)) if m_tt else 'YW1icm9zaWE='
+            r_post = s_ss.post('https://ssstik.io/abc?url=dl', data={'id': url, 'locale': 'en', 'tt': tt_val}, headers={'User-Agent': USER_AGENT, 'Referer': 'https://ssstik.io/en'}, timeout=7)
             if r_post.status_code == 200:
                 html = r_post.text
                 tm = re.search(r'<h2>([^<]+)</h2>|<p class="maintext">([^<]+)</p>', html)
@@ -555,21 +555,66 @@ class MediaExtractor:
                 thumb = im.group(1) if im else ""
 
                 results = []
-                for href, label in re.findall(r'<a[^>]+href="([^"]+)"[^>]*>([^<]+)</a>', html):
-                    label_clean = label.strip()
-                    if any(k in label_clean.lower() for k in ['without watermark', 'download', 'direct', 'mp3']):
-                        is_mp3 = 'mp3' in label_clean.lower() or 'audio' in label_clean.lower()
-                        if href not in [res['url'] for res in results]:
+                seen_urls = set()
+
+                # Robust <a> tag extraction handling nested SVG and SPAN tags inside the anchor
+                for a_match in re.finditer(r'<a\s+([^>]+)>(.*?)</a>', html, re.DOTALL):
+                    attrs = a_match.group(1)
+                    inner = a_match.group(2)
+
+                    href_m = re.search(r'href=["\']([^"\']+)["\']', attrs)
+                    if not href_m:
+                        continue
+                    href = href_m.group(1).strip()
+                    if not href.startswith('http') or href in seen_urls:
+                        continue
+
+                    clean_text = re.sub(r'<[^>]+>', ' ', inner).strip().lower()
+                    if any(k in clean_text for k in ['without watermark', 'download', 'direct', 'mp3']) or 'download_link' in attrs:
+                        is_mp3 = 'mp3' in clean_text or 'music' in attrs.lower()
+                        seen_urls.add(href)
+
+                        if not is_mp3:
                             results.append({
                                 "url": href,
-                                "type": "audio" if is_mp3 else "video",
-                                "quality": "HD (No Watermark)" if not is_mp3 else "Original Audio (MP3)",
-                                "format": "mp3" if is_mp3 else "mp4",
+                                "type": "video",
+                                "quality": "HD (No Watermark)",
+                                "format": "mp4",
                                 "has_audio": True,
-                                "size": "Original Stream",
+                                "size": "Original HD Stream",
                                 "thumbnail": thumb
                             })
-                if thumb and thumb not in [res['url'] for res in results]:
+                        else:
+                            results.append({
+                                "url": href,
+                                "type": "audio",
+                                "quality": "Original Audio (MP3)",
+                                "format": "mp3",
+                                "has_audio": True,
+                                "size": "Audio Stream",
+                                "thumbnail": thumb
+                            })
+                            # Direct 1080p unwatermarked video stream encoded inside SSSTik MP3 base64 /m/ link
+                            if '/m/' in href:
+                                try:
+                                    b64_part = href.split('/m/')[1]
+                                    b64_part += '=' * (-len(b64_part) % 4)
+                                    direct_url = base64.b64decode(b64_part).decode('utf-8', errors='ignore')
+                                    if direct_url.startswith('http') and direct_url not in seen_urls:
+                                        seen_urls.add(direct_url)
+                                        results.insert(0, {
+                                            "url": direct_url,
+                                            "type": "video",
+                                            "quality": "1080p Full HD",
+                                            "format": "mp4",
+                                            "has_audio": True,
+                                            "size": "High Speed HD",
+                                            "thumbnail": thumb
+                                        })
+                                except Exception:
+                                    pass
+
+                if thumb and thumb not in seen_urls:
                     results.append({
                         "url": thumb,
                         "type": "photo",
@@ -579,6 +624,7 @@ class MediaExtractor:
                         "size": "Original JPG",
                         "thumbnail": thumb
                     })
+
                 if results:
                     return {
                         "status": "success",
@@ -1023,34 +1069,45 @@ class MediaExtractor:
     def _extract_pinterest(self, url: str) -> Optional[Dict[str, Any]]:
         # Tier 1: Direct HTML Regex Scraping (HLS to MP4, Direct MP4, /originals/ High-Res)
         try:
-            r = requests.get(url, headers={'User-Agent': USER_AGENT, 'Accept-Language': 'en-US,en;q=0.9'}, timeout=5)
-            html = r.text
+            r = requests.get(url, headers={'User-Agent': USER_AGENT, 'Accept-Language': 'en-US,en;q=0.9'}, timeout=7, allow_redirects=True)
+            html = r.text.replace('\\/', '/')
 
+            # Title extraction with fallback to og:title
             title_m = re.findall(r'<title>([^<]+)</title>', html)
-            title = title_m[0].split('|')[0].strip() if title_m else "Pinterest Media"
+            title = title_m[0].split('|')[0].strip() if title_m else ""
+            if not title or title.lower() == "pinterest":
+                og_t = re.search(r'<meta[^>]+(?:property|name)=["\'](?:og:)?title["\'][^>]+content=["\']([^"\']+)["\']', html)
+                if og_t:
+                    title = og_t.group(1).split('|')[0].strip()
+            if not title:
+                title = "Pinterest Media"
 
             results = []
             seen_urls = set()
 
-            # 1. Look for direct MP4 videos
-            mp4s = re.findall(r'https://v[0-9]?\.pinimg\.com/videos/[^\s"\'<>]+\.mp4', html)
+            # 1. Look for direct MP4 videos in page content / JSON
+            mp4s = re.findall(r'https?://v[0-9]?\.pinimg\.com/videos/[^\s"\'<>\\]+\.mp4[^\s"\'<>\\]*', html)
             for m in mp4s:
-                if m not in seen_urls:
-                    seen_urls.add(m)
+                clean_m = m.split('&amp;')[0]
+                if clean_m not in seen_urls:
+                    seen_urls.add(clean_m)
                     results.append({
-                        "url": m,
+                        "url": clean_m,
                         "type": "video",
-                        "quality": "720p HD Video",
+                        "quality": "1080p / 720p HD Video",
                         "format": "mp4",
                         "has_audio": True,
                         "size": "HD MP4",
                         "thumbnail": ""
                     })
 
-            # 2. Look for HLS m3u8 streams and convert to 720p MP4
-            m3u8s = re.findall(r'https://v[0-9]?\.pinimg\.com/videos/[^\s"\'<>]+\.m3u8', html)
+            # 2. Look for HLS m3u8 streams and convert to progressive 720p MP4
+            m3u8s = re.findall(r'https?://v[0-9]?\.pinimg\.com/videos/[^\s"\'<>\\]+\.m3u8[^\s"\'<>\\]*', html)
             for m in m3u8s:
-                conv_mp4 = m.replace('/hls/', '/720p/').replace('.m3u8', '.mp4')
+                # Progressive conversion formula for Pinterest HLS
+                conv_mp4 = re.sub(r'/hls/', '/720p/', m)
+                conv_mp4 = re.sub(r'master\.m3u8.*', 'video.mp4', conv_mp4)
+                conv_mp4 = re.sub(r'\.m3u8.*', '.mp4', conv_mp4)
                 if conv_mp4 not in seen_urls:
                     seen_urls.add(conv_mp4)
                     results.append({
@@ -1063,11 +1120,15 @@ class MediaExtractor:
                         "thumbnail": ""
                     })
 
-            # 3. Look for high-resolution images and upgrade to /originals/
-            imgs = re.findall(r'https://i\.pinimg\.com/[0-9a-zA-Z_/-]+/[a-f0-9]{32}\.(?:jpg|png|webp)', html)
+            # 3. Look for cover / high-res images
             thumb = ""
+            og_img = re.search(r'<meta[^>]+(?:property|name)=["\'](?:og:)?image["\'][^>]+content=["\']([^"\']+)["\']', html)
+            if og_img and og_img.group(1).startswith('http'):
+                thumb = og_img.group(1)
+
+            imgs = re.findall(r'https?://i\.pinimg\.com/[0-9a-zA-Z_/-]+/[a-f0-9]{32}\.(?:jpg|png|webp)', html)
             for img in imgs:
-                orig_img = re.sub(r'https://i\.pinimg\.com/[^/]+/', 'https://i.pinimg.com/originals/', img)
+                orig_img = re.sub(r'https?://i\.pinimg\.com/[^/]+/', 'https://i.pinimg.com/originals/', img)
                 if not thumb:
                     thumb = orig_img
                 if orig_img not in seen_urls:
@@ -1082,11 +1143,10 @@ class MediaExtractor:
                         "size": "Original Resolution",
                         "thumbnail": orig_img
                     })
-                if len(results) >= 4:
+                if len(results) >= 5:
                     break
 
             if results:
-                # Update thumbnail on videos if available
                 if thumb:
                     for item in results:
                         if not item.get('thumbnail'):

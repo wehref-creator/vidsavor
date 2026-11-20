@@ -103,6 +103,8 @@ export default async function handler(request) {
       headers.set('Referer', 'https://www.tiktok.com/');
     } else if (domain.includes('twimg') || domain.includes('twitter') || domain.includes('x.com')) {
       headers.set('Referer', 'https://x.com/');
+    } else if (domain.includes('pinimg.com') || finalFetchUrl.includes('pinimg.com')) {
+      headers.set('Referer', 'https://www.pinterest.com/');
     }
 
     // Fetch stream from origin CDN
