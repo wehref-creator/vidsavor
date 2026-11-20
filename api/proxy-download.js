@@ -170,6 +170,8 @@ export default async function handler(request) {
       return new Response(
         JSON.stringify({
           status: 'error',
+          debug_fetch_url: finalFetchUrl,
+          debug_status: cdnRes.status,
           message: 'Origin media server temporarily restricted direct streaming for this stream. Please choose another resolution (such as 720p HD or 360p) or MP3 Audio.'
         }),
         {
