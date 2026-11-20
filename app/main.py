@@ -59,13 +59,14 @@ async def fetch_media(request: Request, req: Optional[FetchRequest] = None):
     target_url = (req.url if req else None) or body_dict.get("url")
 
     # If it's a resolve-youtube conversion request forwarded to /api/index.py
-    if target_token and not target_url:
+    if target_token or body_dict.get("task_id") or request.query_params.get("action") == "resolve" or "resolve" in str(request.url.path):
         return await resolve_youtube(
             request,
             token=target_token,
             title=body_dict.get("title", "youtube_video"),
             format=body_dict.get("format", "mp4"),
-            task_id=body_dict.get("task_id")
+            task_id=body_dict.get("task_id"),
+            url=target_url
         )
 
     if not target_url or not target_url.strip():
@@ -84,7 +85,8 @@ async def resolve_youtube(
     token: Optional[str] = Query(None),
     title: Optional[str] = Query("youtube_video"),
     format: Optional[str] = Query("mp4"),
-    url: Optional[str] = Query(None)
+    url: Optional[str] = Query(None),
+    task_id: Optional[str] = Query(None)
 ):
     """
     Resolves YouTube video streams into high-speed unthrottled direct downloads
@@ -365,7 +367,7 @@ async def resolve_youtube(
         "message": "Could not prepare YouTube stream. Please choose another quality or retry."
     }, status_code=200)
 
-@app.api_route("/api/index.py", methods=["GET", "HEAD"])
+@app.api_route("/api/index.py", methods=["GET", "POST", "HEAD"])
 async def index_py_dispatcher(
     request: Request,
     url: Optional[str] = Query(None),
@@ -373,10 +375,29 @@ async def index_py_dispatcher(
     task_id: Optional[str] = Query(None),
     filename: Optional[str] = Query("video.mp4")
 ):
-    if task_id or token:
-        return await resolve_youtube(request, token=token, url=url)
-    if url:
-        return await proxy_download(request, url=url, filename=filename)
+    body_dict = {}
+    if request.method == "POST":
+        try:
+            body_dict = await request.json()
+        except Exception:
+            pass
+    req_token = token or body_dict.get("token")
+    req_task_id = task_id or body_dict.get("task_id")
+    req_url = url or body_dict.get("url")
+
+    if req_task_id or req_token or request.query_params.get("action") == "resolve" or "resolve" in str(request.url.path):
+        return await resolve_youtube(
+            request,
+            token=req_token,
+            url=req_url,
+            task_id=req_task_id,
+            title=body_dict.get("title", "youtube_video"),
+            format=body_dict.get("format", "mp4")
+        )
+    if req_url and request.method == "POST":
+        return await fetch_media(request)
+    if req_url:
+        return await proxy_download(request, url=req_url, filename=filename)
     return JSONResponse({"status": "ok", "service": "VidSavor Multi-Platform Engine v2.0"})
 
 @app.api_route("/api/proxy-download", methods=["GET", "HEAD"])
