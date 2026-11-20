@@ -483,18 +483,9 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
     if (!streamUrl) return '';
     streamUrl = unpackSnapcdnUrl(streamUrl);
 
-    // Clean any nested/wrapped freevideosave redirect URLs
-    if (streamUrl.includes('freevideosave.com') && streamUrl.includes('url=')) {
-        try {
-            const m = streamUrl.match(/[?&]url=([^&]+)/);
-            if (m) {
-                let inner = m[1];
-                while (inner.includes('%25') || inner.includes('%3A') || inner.includes('%3a')) {
-                    inner = decodeURIComponent(inner);
-                }
-                streamUrl = inner;
-            }
-        } catch (e) {}
+    // If it's a relative path on freevideosave, prepend origin
+    if (streamUrl.startsWith('/download-file')) {
+        streamUrl = 'https://freevideosave.com' + streamUrl;
     }
 
     const currentPostUrl = document.getElementById('videoUrl')?.value?.trim() || '';
@@ -538,19 +529,6 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
 function triggerBrowserFileDownload(downloadUrl, filename) {
     if (!downloadUrl) return;
 
-    // 1. Silent invisible iframe - triggers browser native download bar immediately
-    // without navigating away or opening any player tabs
-    try {
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = downloadUrl;
-        document.body.appendChild(iframe);
-        setTimeout(() => {
-            try { iframe.remove(); } catch (_) {}
-        }, 60000);
-    } catch (_) {}
-
-    // 2. Click hidden anchor with download attribute
     try {
         const a = document.createElement('a');
         a.style.display = 'none';
@@ -562,7 +540,7 @@ function triggerBrowserFileDownload(downloadUrl, filename) {
         a.click();
         setTimeout(() => {
             try { a.remove(); } catch (_) {}
-        }, 1000);
+        }, 2000);
     } catch (_) {}
 }
 
@@ -974,7 +952,7 @@ async function downloadNow() {
                     img.onerror = () => {
                         if (!img.dataset.retried && data.thumbnail) {
                             img.dataset.retried = 'true';
-                            img.src = `/api/proxy-download?url=${encodeURIComponent(data.thumbnail)}&filename=thumbnail.jpg`;
+                            img.src = `/api/proxy-download?inline=1&url=${encodeURIComponent(data.thumbnail)}&filename=thumbnail.jpg`;
                         }
                     };
                     previewContainer.appendChild(img);
@@ -1319,11 +1297,6 @@ async function downloadNow() {
                             });
                         } else {
                             downloadBtn.addEventListener('click', (e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                triggerDirectDownload(rowDlUrl, cleanFilename, downloadBtn);
-                            });
-                        }
                                 e.preventDefault();
                                 e.stopPropagation();
                                 triggerDirectDownload(rowDlUrl, cleanFilename, downloadBtn);

@@ -125,8 +125,59 @@ async def resolve_youtube(
         'Referer': 'https://loader.to/'
     }
 
-    # Polling existing task_id (SaveNow Engine)
+    # 1. Polling existing task_id (Vidssave / SaveNow Engine)
     if req_task_id:
+        # Check Vidssave task ID (starts with Z0ve)
+        if str(req_task_id).startswith("Z0ve"):
+            try:
+                query_url = f"https://api.vidssave.com/api/contentsite_api/media/download_query?auth=20250901majwlqo&domain=api-ak.vidssave.com&task_id={urllib.parse.quote(str(req_task_id))}&download_domain=vidssave.com&origin=content_site"
+                qr = requests.get(query_url, timeout=7)
+                if qr.ok:
+                    txt = qr.text
+                    dl_link = None
+                    if "data: " in txt:
+                        for line in txt.splitlines():
+                            if line.startswith("data: "):
+                                try:
+                                    d_json = json.loads(line[6:].strip())
+                                    if d_json.get("download_link"):
+                                        dl_link = d_json["download_link"]
+                                        break
+                                except Exception:
+                                    pass
+                    if not dl_link:
+                        try:
+                            q_json = qr.json()
+                            dl_link = q_json.get("data", {}).get("download_link") or q_json.get("download_link")
+                        except Exception:
+                            pass
+
+                    if dl_link and dl_link.startswith("http"):
+                        loc = dl_link
+                        try:
+                            r_loc = requests.get(dl_link, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
+                            if r_loc.headers.get("Location"):
+                                loc = r_loc.headers.get("Location")
+                        except Exception:
+                            pass
+                        return JSONResponse({
+                            "status": "success",
+                            "download_url": loc,
+                            "filename": f"{clean_title}.{target_ext}"
+                        })
+
+                    if "event: running" in txt or '"status":"running"' in txt:
+                        return JSONResponse({
+                            "status": "pending",
+                            "task_id": req_task_id,
+                            "progress": 65,
+                            "title": clean_title,
+                            "format": target_ext
+                        })
+            except Exception as v_err:
+                logger.warning(f"Vidssave task query error: {v_err}")
+
+        # Check SaveNow task ID fallback
         try:
             chk_resp = requests.get(
                 f"https://p.savenow.to/api/progress?id={urllib.parse.quote(str(req_task_id))}",
@@ -139,7 +190,6 @@ async def resolve_youtube(
                     headers=savenow_headers,
                     timeout=7
                 )
-
             if chk_resp.ok:
                 chk_data = chk_resp.json()
                 if chk_data.get("success") == 1 and chk_data.get("download_url"):
@@ -148,13 +198,11 @@ async def resolve_youtube(
                         "download_url": chk_data["download_url"],
                         "filename": f"{clean_title}.{target_ext}"
                     })
-
                 if chk_data.get("progress", 0) >= 1000 and not chk_data.get("download_url"):
                     return JSONResponse({
                         "status": "error",
                         "message": chk_data.get("text") or "Conversion server could not complete this format. Please select 720p HD or 360p."
                     })
-
                 raw_prog = round(chk_data.get("progress", 500) / 10) if chk_data.get("progress") else 50
                 return JSONResponse({
                     "status": "pending",
@@ -169,17 +217,8 @@ async def resolve_youtube(
     if not req_token and not original_url and not req_task_id:
         return JSONResponse({"status": "error", "message": "Missing conversion token or URL"}, status_code=200)
 
-    # Fast Path 1: If req_token is already a direct googlevideo / freevideosave / cdn stream, stream via proxy immediately
-    if "googlevideo.com" in req_token or "freevideosave.com" in req_token or "rapidcdn" in req_token or "snapcdn" in req_token or "/tmp/recycle/" in req_token:
-        proxy_dl = f"/api/proxy-download?url={urllib.parse.quote(req_token)}&filename={urllib.parse.quote(clean_title + '.' + target_ext)}"
-        return JSONResponse({
-            "status": "success",
-            "download_url": proxy_dl,
-            "filename": f"{clean_title}.{target_ext}"
-        })
-
-    # Fast Path 2: If download_redirect link provided, route through proxy with Content-Disposition
-    if "download_redirect" in req_token:
+    # Fast Path 1: If req_token is a download_redirect link (Vidssave direct stream)
+    if req_token and "download_redirect" in req_token:
         target_stream = req_token
         try:
             r = requests.get(req_token, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
@@ -188,12 +227,120 @@ async def resolve_youtube(
                 target_stream = loc
         except Exception:
             pass
-        proxy_dl = f"/api/proxy-download?url={urllib.parse.quote(target_stream)}&filename={urllib.parse.quote(clean_title + '.' + target_ext)}"
         return JSONResponse({
             "status": "success",
-            "download_url": proxy_dl,
+            "download_url": target_stream,
             "filename": f"{clean_title}.{target_ext}"
         })
+
+    # Fast Path 2: If req_token is already a direct Cloudflare vidssave link (/tmp/recycle/)
+    if req_token and ("/tmp/recycle/" in req_token or "down.vidssave.com" in req_token or "down-de.vidssave.com" in req_token):
+        return JSONResponse({
+            "status": "success",
+            "download_url": req_token,
+            "filename": f"{clean_title}.{target_ext}"
+        })
+
+    # Fast Path 3: If req_token is a Vidssave Task ID (starts with Z0ve)
+    if req_token and req_token.startswith("Z0ve"):
+        try:
+            query_url = f"https://api.vidssave.com/api/contentsite_api/media/download_query?auth=20250901majwlqo&domain=api-ak.vidssave.com&task_id={urllib.parse.quote(req_token)}&download_domain=vidssave.com&origin=content_site"
+            qr = requests.get(query_url, timeout=7)
+            txt = qr.text
+            dl_link = None
+            if "data: " in txt:
+                for line in txt.splitlines():
+                    if line.startswith("data: "):
+                        try:
+                            d_json = json.loads(line[6:].strip())
+                            if d_json.get("download_link"):
+                                dl_link = d_json["download_link"]
+                                break
+                        except Exception:
+                            pass
+            if dl_link and dl_link.startswith("http"):
+                loc = dl_link
+                try:
+                    r_loc = requests.get(dl_link, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
+                    if r_loc.headers.get("Location"):
+                        loc = r_loc.headers.get("Location")
+                except Exception:
+                    pass
+                return JSONResponse({
+                    "status": "success",
+                    "download_url": loc,
+                    "filename": f"{clean_title}.{target_ext}"
+                })
+        except Exception as z_err:
+            logger.warning(f"Vidssave task query error: {z_err}")
+
+    # Fast Path 4: If req_token is a resource_content string from Grapweb (length > 50)
+    if req_token and len(req_token) > 50 and not req_token.startswith("http"):
+        try:
+            st_resp = requests.post(
+                "https://grapweb.com/youtube/api.php?action=start_task",
+                data={"content": req_token},
+                timeout=8
+            )
+            if st_resp.ok:
+                st_data = st_resp.json()
+                dl_link = st_data.get("direct_link") or st_data.get("download_link")
+                if dl_link and dl_link.startswith("http"):
+                    target_stream = dl_link
+                    try:
+                        r = requests.get(dl_link, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
+                        loc = r.headers.get("Location")
+                        if loc:
+                            target_stream = loc
+                    except Exception:
+                        pass
+                    return JSONResponse({
+                        "status": "success",
+                        "download_url": target_stream,
+                        "filename": f"{clean_title}.{target_ext}"
+                    })
+
+                task_id = st_data.get("task_id")
+                if task_id:
+                    for _ in range(2):
+                        time.sleep(0.8)
+                        q_url = f"https://api.vidssave.com/api/contentsite_api/media/download_query?auth=20250901majwlqo&domain=api-ak.vidssave.com&task_id={urllib.parse.quote(task_id)}&download_domain=vidssave.com&origin=content_site"
+                        chk_r = requests.get(q_url, timeout=5)
+                        txt = chk_r.text
+                        cand = None
+                        if "data: " in txt:
+                            for line in txt.splitlines():
+                                if line.startswith("data: "):
+                                    try:
+                                        d_j = json.loads(line[6:].strip())
+                                        if d_j.get("download_link"):
+                                            cand = d_j["download_link"]
+                                            break
+                                    except Exception:
+                                        pass
+                        if cand and cand.startswith("http"):
+                            target_stream = cand
+                            try:
+                                r = requests.get(cand, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
+                                loc = r.headers.get("Location")
+                                if loc:
+                                    target_stream = loc
+                            except Exception:
+                                pass
+                            return JSONResponse({
+                                "status": "success",
+                                "download_url": target_stream,
+                                "filename": f"{clean_title}.{target_ext}"
+                            })
+
+                    return JSONResponse({
+                        "status": "pending",
+                        "task_id": task_id,
+                        "title": clean_title,
+                        "format": target_ext
+                    })
+        except Exception as gw_task_err:
+            logger.warning(f"Grapweb resource_content task error: {gw_task_err}")
 
     # Extract clean canonical YouTube watch URL
     yt_url = original_url or (req_token if ("youtube.com" in req_token or "youtu.be" in req_token) else "")
@@ -206,17 +353,124 @@ async def resolve_youtube(
     elif not yt_url.startswith("http"):
         yt_url = f"https://www.youtube.com/watch?v={req_token}"
 
-    # Determine format code for SaveNow
-    savenow_fmt = "1080"
-    if req_token and req_token.startswith("savenow:"):
-        savenow_fmt = req_token.replace("savenow:", "").strip()
-    elif clean_format in ["1080", "720", "480", "360", "mp3", "m4a"]:
-        savenow_fmt = clean_format
-    elif req_format in ["1080", "720", "480", "360", "mp3", "m4a"]:
-        savenow_fmt = req_format
-
-    # Tier 1: SaveNow High-Speed Engine
+    # Tier 1: Grapweb Direct Extractor & Task Engine
     try:
+        gw_resp = requests.get(f"https://grapweb.com/youtube/api.php?url={urllib.parse.quote(yt_url)}", timeout=8)
+        if gw_resp.ok:
+            gw_json = gw_resp.json()
+            if gw_json.get("status") == "success" and gw_json.get("data"):
+                v_list = gw_json["data"].get("videos", [])
+                a_list = gw_json["data"].get("audios", [])
+                match = None
+
+                is_audio = target_ext in ["mp3", "m4a"]
+                if is_audio:
+                    for a in a_list:
+                        fmt_name = (a.get("format") or "").upper()
+                        if target_ext.upper() in fmt_name:
+                            match = a
+                            break
+                    if not match and a_list:
+                        match = a_list[0]
+                else:
+                    fmt_req = clean_format.upper()
+                    for v in v_list:
+                        q = (v.get("quality") or "").upper()
+                        if fmt_req in q:
+                            match = v
+                            break
+                    if not match and v_list:
+                        match = v_list[0]
+
+                if match:
+                    dl = match.get("download_url") or ""
+                    rc = match.get("resource_content") or ""
+
+                    if dl and "download_redirect" in dl:
+                        target_stream = dl
+                        try:
+                            r = requests.get(dl, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
+                            loc = r.headers.get("Location")
+                            if loc:
+                                target_stream = loc
+                        except Exception:
+                            pass
+                        return JSONResponse({
+                            "status": "success",
+                            "download_url": target_stream,
+                            "filename": f"{clean_title}.{target_ext}"
+                        })
+
+                    if rc:
+                        st_r = requests.post("https://grapweb.com/youtube/api.php?action=start_task", data={"content": rc}, timeout=8)
+                        if st_r.ok:
+                            st_d = st_r.json()
+                            cand_dl = st_d.get("direct_link") or st_d.get("download_link")
+                            if cand_dl and cand_dl.startswith("http"):
+                                target_stream = cand_dl
+                                try:
+                                    r = requests.get(cand_dl, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
+                                    loc = r.headers.get("Location")
+                                    if loc:
+                                        target_stream = loc
+                                except Exception:
+                                    pass
+                                return JSONResponse({
+                                    "status": "success",
+                                    "download_url": target_stream,
+                                    "filename": f"{clean_title}.{target_ext}"
+                                })
+
+                            tid = st_d.get("task_id")
+                            if tid:
+                                for _ in range(2):
+                                    time.sleep(0.8)
+                                    q_url = f"https://api.vidssave.com/api/contentsite_api/media/download_query?auth=20250901majwlqo&domain=api-ak.vidssave.com&task_id={urllib.parse.quote(tid)}&download_domain=vidssave.com&origin=content_site"
+                                    chk_r = requests.get(q_url, timeout=5)
+                                    txt = chk_r.text
+                                    cand = None
+                                    if "data: " in txt:
+                                        for line in txt.splitlines():
+                                            if line.startswith("data: "):
+                                                try:
+                                                    d_j = json.loads(line[6:].strip())
+                                                    if d_j.get("download_link"):
+                                                        cand = d_j["download_link"]
+                                                        break
+                                                except Exception:
+                                                    pass
+                                    if cand and cand.startswith("http"):
+                                        target_stream = cand
+                                        try:
+                                            r = requests.get(cand, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=4)
+                                            loc = r.headers.get("Location")
+                                            if loc:
+                                                target_stream = loc
+                                        except Exception:
+                                            pass
+                                        return JSONResponse({
+                                            "status": "success",
+                                            "download_url": target_stream,
+                                            "filename": f"{clean_title}.{target_ext}"
+                                        })
+
+                                return JSONResponse({
+                                    "status": "pending",
+                                    "task_id": tid,
+                                    "title": clean_title,
+                                    "format": target_ext
+                                })
+    except Exception as gw_flow_err:
+        logger.warning(f"Grapweb flow error: {gw_flow_err}")
+
+    # Tier 2: SaveNow Fallback Engine
+    try:
+        savenow_fmt = "1080"
+        if req_token and req_token.startswith("savenow:"):
+            savenow_fmt = req_token.replace("savenow:", "").strip()
+        elif clean_format in ["1080", "720", "480", "360", "mp3", "m4a"]:
+            savenow_fmt = clean_format
+
         start_resp = requests.get(
             f"https://p.savenow.to/api/v2/download?format={savenow_fmt}&url={urllib.parse.quote(yt_url)}",
             headers=savenow_headers,
@@ -240,7 +494,6 @@ async def resolve_youtube(
 
             task_id = start_data.get("id")
             if task_id:
-                # Fast inline polling (2 iterations * 0.7s) to return immediately if already completed
                 for _ in range(2):
                     time.sleep(0.7)
                     poll_r = requests.get(
@@ -265,64 +518,6 @@ async def resolve_youtube(
                 })
     except Exception as sn_err:
         logger.warning(f"SaveNow start task error: {sn_err}")
-
-        dl_link = st_data.get("direct_link") or st_data.get("download_link")
-        if dl_link and dl_link.startswith("http"):
-            target_link = dl_link
-            try:
-                r = requests.get(dl_link, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=3)
-                loc = r.headers.get("Location")
-                if loc:
-                    target_link = loc
-            except Exception:
-                pass
-            proxy_dl = target_link if target_link.startswith("/api/proxy-download") else f"/api/proxy-download?url={urllib.parse.quote(target_link)}&filename={urllib.parse.quote(clean_title + '.' + clean_format)}"
-            return JSONResponse({
-                "status": "success",
-                "download_url": proxy_dl,
-                "filename": f"{clean_title}.{clean_format}"
-            })
-
-        task_id = st_data.get("task_id")
-        if task_id:
-            # Poll task (strict 3 iterations * 0.8s = 2.4s max)
-            for _ in range(3):
-                time.sleep(0.8)
-                chk_resp = requests.get(
-                    f"https://grapweb.com/youtube/api.php?action=check_task&task_id={urllib.parse.quote(task_id)}&title={urllib.parse.quote(clean_title)}&format={clean_format}",
-                    headers={'User-Agent': 'Mozilla/5.0'},
-                    timeout=4
-                )
-                chk_data = chk_resp.json()
-                cand_link = chk_data.get("direct_link")
-                if not cand_link and chk_data.get("download_link") and chk_data["download_link"].startswith("http"):
-                    cand_link = chk_data["download_link"]
-
-                if cand_link:
-                    target_stream = cand_link
-                    try:
-                        r = requests.get(cand_link, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vidssave.com/'}, allow_redirects=False, timeout=3)
-                        loc = r.headers.get("Location")
-                        if loc:
-                            target_stream = loc
-                    except Exception:
-                        pass
-                    proxy_dl = target_stream if target_stream.startswith("/api/proxy-download") else f"/api/proxy-download?url={urllib.parse.quote(target_stream)}&filename={urllib.parse.quote(clean_title + '.' + clean_format)}"
-                    return JSONResponse({
-                        "status": "success",
-                        "download_url": proxy_dl,
-                        "filename": f"{clean_title}.{clean_format}"
-                    })
-
-            # If task is still converting (e.g. 1080p muxing), return pending status with task_id
-            return JSONResponse({
-                "status": "pending",
-                "task_id": task_id,
-                "title": clean_title,
-                "format": clean_format
-            })
-    except Exception as gw_err:
-        logger.warning(f"Grapweb task error: {gw_err}")
 
     # Fallback to direct yt-dlp progressive stream (Prevents 504 timeouts entirely)
     try:

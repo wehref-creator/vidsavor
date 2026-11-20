@@ -74,7 +74,7 @@ export default async function handler(request) {
         break;
       }
     }
-    if (finalFetchUrl.includes('url=')) {
+    if (finalFetchUrl.includes('/download-file?url=') || finalFetchUrl.includes('/proxy-download?url=')) {
       try {
         const uMatch = finalFetchUrl.match(/[?&]url=([^&]+)/);
         if (uMatch) {
@@ -90,7 +90,6 @@ export default async function handler(request) {
     // Determine platform referer
     if (domain.includes('vidssave.com') || finalFetchUrl.includes('vidssave.com')) {
       headers.set('Referer', 'https://vidssave.com/');
-      headers.set('Origin', 'https://vidssave.com');
     } else if (domain.includes('savenow.to') || domain.includes('lbserver.xyz') || finalFetchUrl.includes('savenow.to') || finalFetchUrl.includes('lbserver.xyz')) {
       headers.set('Referer', 'https://loader.to/');
       headers.set('Origin', 'https://loader.to');
@@ -156,6 +155,22 @@ export default async function handler(request) {
       } catch (fbGrapErr) {}
     }
 
+    // High-Reliability Fallback 3: Use user's dedicated grapweb.com/pinterest/download.php engine for Pinterest
+    if (!cdnRes.ok && (domain.includes('pinimg.com') || domain.includes('pinterest'))) {
+      try {
+        const ext = cleanFilename.split('.').pop() || 'jpg';
+        const pinGrapwebUrl = `https://grapweb.com/pinterest/download.php?url=${encodeURIComponent(targetUrl)}&title=${encodeURIComponent(cleanFilename)}&ext=${encodeURIComponent(ext)}`;
+        const pinGrapRes = await fetch(pinGrapwebUrl, {
+          method: request.method === 'HEAD' ? 'HEAD' : 'GET',
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
+          redirect: 'follow',
+        });
+        if (pinGrapRes.ok || pinGrapRes.status === 206) {
+          cdnRes = pinGrapRes;
+        }
+      } catch (pinGrapErr) {}
+    }
+
     // If failed to stream from origin or fallbacks, return clean error response with CORS
     // (Never 302 redirect to raw googlevideo / media streams, which forces the browser to open a black-screen player or fail with CORS)
     if (!cdnRes.ok && cdnRes.status !== 206) {
@@ -196,11 +211,16 @@ export default async function handler(request) {
 
     const responseHeaders = new Headers();
     responseHeaders.set('Content-Type', contentType);
-    // RFC 5987 encoded attachment header ensures correct filename in Chrome, Edge, Safari, Firefox
-    responseHeaders.set(
-      'Content-Disposition',
-      `attachment; filename="${cleanFilename}"; filename*=UTF-8''${encodeURIComponent(cleanFilename)}`
-    );
+    const isInline = url.searchParams.get('inline') === '1' || url.searchParams.get('inline') === 'true';
+    if (!isInline) {
+      // RFC 5987 encoded attachment header ensures correct filename in Chrome, Edge, Safari, Firefox
+      responseHeaders.set(
+        'Content-Disposition',
+        `attachment; filename="${cleanFilename}"; filename*=UTF-8''${encodeURIComponent(cleanFilename)}`
+      );
+    } else {
+      responseHeaders.set('Content-Disposition', 'inline');
+    }
     responseHeaders.set('Access-Control-Allow-Origin', '*');
     responseHeaders.set('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length, Content-Range');
     responseHeaders.set('Cache-Control', 'public, max-age=3600');
