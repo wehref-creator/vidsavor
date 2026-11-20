@@ -306,6 +306,18 @@ async def index_py_dispatcher(
     req_task_id = task_id or body_dict.get("task_id")
     req_url = url or body_dict.get("url")
 
+    if request.query_params.get("debug") == "savenow":
+        try:
+            s_hdrs = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                'Origin': 'https://loader.to',
+                'Referer': 'https://loader.to/'
+            }
+            sn_r = requests.get("https://p.savenow.to/api/v2/download?format=1080&url=" + urllib.parse.quote("https://www.youtube.com/watch?v=aDmhFUcp__c"), headers=s_hdrs, timeout=8)
+            return JSONResponse({"status_code": sn_r.status_code, "body": sn_r.text[:500]})
+        except Exception as se:
+            return JSONResponse({"error": str(se)})
+
     if request.query_params.get("debug") == "grapweb":
         try:
             gw_hdrs = {
