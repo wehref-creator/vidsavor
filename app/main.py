@@ -379,7 +379,48 @@ async def resolve_youtube(
     except Exception as fvs_err:
         logger.warning(f"Resolve YouTube FVS error: {fvs_err}")
 
-    # Tier 1: Grapweb Direct Extractor & Task Engine
+    # Tier 1: SaveNow High-Speed Conversion Engine (Fastest, High-Reliability MP4/MP3)
+    try:
+        savenow_fmt = "1080"
+        if req_token and req_token.startswith("savenow:"):
+            savenow_fmt = req_token.replace("savenow:", "").strip()
+        elif clean_format in ["1080", "720", "480", "360", "mp3", "m4a"]:
+            savenow_fmt = clean_format
+
+        for ep in ["https://p.savenow.to/api/v2/download", "https://p.lbserver.xyz/api/v2/download"]:
+            try:
+                sn_res = requests.get(f"{ep}?format={savenow_fmt}&url={urllib.parse.quote(yt_url)}", headers=savenow_headers, timeout=8)
+                if sn_res.ok:
+                    sn_data = sn_res.json()
+                    if sn_data.get("download_url"):
+                        return JSONResponse({
+                            "status": "success",
+                            "download_url": sn_data["download_url"],
+                            "filename": f"{clean_title}.{target_ext}"
+                        })
+                    task_id = sn_data.get("id")
+                    if task_id:
+                        for _ in range(4):
+                            time.sleep(1.0)
+                            poll_r = requests.get(f"https://p.savenow.to/api/progress?id={urllib.parse.quote(str(task_id))}", headers=savenow_headers, timeout=5)
+                            if poll_r.ok:
+                                p_data = poll_r.json()
+                                if p_data.get("success") == 1 and p_data.get("download_url"):
+                                    return JSONResponse({
+                                        "status": "success",
+                                        "download_url": p_data["download_url"],
+                                        "filename": f"{clean_title}.{target_ext}"
+                                    })
+                        return JSONResponse({
+                            "status": "pending",
+                            "task_id": task_id,
+                            "title": clean_title,
+                            "format": target_ext
+                        })
+            except Exception:
+                pass
+    except Exception as sn_err:
+        logger.warning(f"SaveNow conversion error: {sn_err}")
     try:
         gw_resp = requests.get(f"https://grapweb.com/youtube/api.php?url={urllib.parse.quote(yt_url)}", headers=gw_headers, timeout=8)
         if gw_resp.ok:

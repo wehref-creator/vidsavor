@@ -305,111 +305,92 @@ class MediaExtractor:
         video_id = m.group(1) if m else None
         clean_url = f"https://www.youtube.com/watch?v={video_id}" if video_id else url
 
-        # Tier 0: Direct Stream Engine (freevideosave direct media streams)
+        # Tier 0: YouTube Instant Extraction with SaveNow Direct Attachment Engine
         try:
-            fvs_r = requests.post("https://freevideosave.com/fetch", json={"url": clean_url}, headers={'User-Agent': USER_AGENT}, timeout=7)
-            if fvs_r.status_code == 200:
-                fvs_d = fvs_r.json()
-                if fvs_d.get("status") == "success" and fvs_d.get("results"):
-                    title = fvs_d.get("title") or "YouTube Video"
-                    thumbnail = fvs_d.get("thumbnail") or (f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg" if video_id else "")
-                    raw = fvs_d.get("results", [])
+            oembed_url = f"https://www.youtube.com/oembed?url={urllib.parse.quote(clean_url)}&format=json"
+            oe_resp = requests.get(oembed_url, headers={'User-Agent': USER_AGENT}, timeout=5)
+            if oe_resp.status_code == 200:
+                oe_data = oe_resp.json()
+                title = oe_data.get('title') or "YouTube Video"
+                author = oe_data.get('author_name') or "YouTube Creator"
+                thumbnail = oe_data.get('thumbnail_url') or (f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg" if video_id else "")
 
-                    clean_results = []
-                    seen = set()
+                results = [
+                    {
+                        "url": clean_url,
+                        "token": "savenow:1080",
+                        "type": "video",
+                        "quality": "1080p Full HD (MP4)",
+                        "has_audio": True,
+                        "format": "mp4",
+                        "size": "Full HD",
+                        "thumbnail": thumbnail
+                    },
+                    {
+                        "url": clean_url,
+                        "token": "savenow:720",
+                        "type": "video",
+                        "quality": "720p HD (MP4)",
+                        "has_audio": True,
+                        "format": "mp4",
+                        "size": "HD 720p",
+                        "thumbnail": thumbnail
+                    },
+                    {
+                        "url": clean_url,
+                        "token": "savenow:480",
+                        "type": "video",
+                        "quality": "480p SD (MP4)",
+                        "has_audio": True,
+                        "format": "mp4",
+                        "size": "Standard 480p",
+                        "thumbnail": thumbnail
+                    },
+                    {
+                        "url": clean_url,
+                        "token": "savenow:360",
+                        "type": "video",
+                        "quality": "360p Medium (MP4)",
+                        "has_audio": True,
+                        "format": "mp4",
+                        "size": "Medium 360p",
+                        "thumbnail": thumbnail
+                    },
+                    {
+                        "url": clean_url,
+                        "token": "savenow:mp3",
+                        "type": "audio",
+                        "quality": "High Quality Audio (MP3)",
+                        "has_audio": True,
+                        "format": "mp3",
+                        "size": "320kbps MP3",
+                        "thumbnail": thumbnail
+                    }
+                ]
+                if thumbnail:
+                    results.append({
+                        "url": thumbnail,
+                        "type": "photo",
+                        "quality": "HD Cover Poster (JPG)",
+                        "format": "jpg",
+                        "has_audio": False,
+                        "size": "Original JPG",
+                        "thumbnail": thumbnail
+                    })
 
-                    targets = [
-                        ('1080', '1080p Full HD (MP4)', 'mp4', ['mp4 (1080p) avc1', 'mp4 (1080p) av01', 'webm (1080p) vp9', '1080p']),
-                        ('720', '720p HD (MP4)', 'mp4', ['mp4 (720p) avc1', 'mp4 (720p) av01', 'webm (720p) vp9', '720p']),
-                        ('480', '480p SD (MP4)', 'mp4', ['mp4 (480p) avc1', 'mp4 (480p) av01', 'webm (480p) vp9', '480p']),
-                        ('360', '360p Medium (MP4)', 'mp4', ['360p', 'mp4 (360p) avc1', 'mp4 (360p) av01', 'webm (360p) vp9']),
-                    ]
-
-                    for q_key, label, ext, preferred_names in targets:
-                        match = None
-                        for pname in preferred_names:
-                            for item in raw:
-                                q = (item.get('quality') or '').lower()
-                                if q == pname.lower():
-                                    match = item
-                                    break
-                            if match:
-                                break
-                        if not match:
-                            for item in raw:
-                                q = (item.get('quality') or '').lower()
-                                if q_key in q and 'mp4' in q:
-                                    match = item
-                                    break
-                        if not match:
-                            for item in raw:
-                                q = (item.get('quality') or '').lower()
-                                if q_key in q:
-                                    match = item
-                                    break
-
-                        if match and label not in seen:
-                            seen.add(label)
-                            u = match.get('url', '')
-                            if u.startswith('/'):
-                                u = 'https://freevideosave.com' + u
-                            clean_results.append({
-                                "url": u,
-                                "type": "video",
-                                "quality": label,
-                                "format": ext,
-                                "has_audio": True,
-                                "size": "Original HD Stream",
-                                "thumbnail": thumbnail
-                            })
-
-                    # Audio stream
-                    audio_match = None
-                    for item in raw:
-                        q = (item.get('quality') or '').lower()
-                        t = (item.get('type') or '').lower()
-                        if '130kb/s' in q or 'audio' in t or 'm4a' in q or 'mp3' in q:
-                            audio_match = item
-                            break
-                    if audio_match:
-                        u = audio_match.get('url', '')
-                        if u.startswith('/'):
-                            u = 'https://freevideosave.com' + u
-                        clean_results.append({
-                            "url": u,
-                            "type": "audio",
-                            "quality": "High Quality Audio (MP3)",
-                            "format": "mp3",
-                            "has_audio": True,
-                            "size": "Original Audio",
-                            "thumbnail": thumbnail
-                        })
-
-                    if thumbnail:
-                        clean_results.append({
-                            "url": thumbnail,
-                            "type": "photo",
-                            "quality": "HD Cover Poster (JPG)",
-                            "format": "jpg",
-                            "has_audio": False,
-                            "size": "Original JPG",
-                            "thumbnail": thumbnail
-                        })
-
-                    if clean_results:
-                        return {
-                            "status": "success",
-                            "title": title,
-                            "thumbnail": thumbnail,
-                            "type": "video",
-                            "download": clean_results[0]["url"],
-                            "author": "YouTube Creator",
-                            "duration": "",
-                            "platform": "youtube",
-                            "results": clean_results
-                        }
-        except Exception as fvs_err:
-            logger.warning(f"FreeVideoSave extractor error: {fvs_err}")
+                return {
+                    "status": "success",
+                    "title": title,
+                    "thumbnail": thumbnail,
+                    "type": "video",
+                    "download": results[0]["url"],
+                    "author": author,
+                    "duration": "",
+                    "platform": "youtube",
+                    "results": results
+                }
+        except Exception as oe_err:
+            logger.warning(f"YouTube oEmbed error: {oe_err}")
 
         # Tier 1: Grapweb Direct Stream Extractor
         try:
