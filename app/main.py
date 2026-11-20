@@ -310,13 +310,10 @@ async def index_py_dispatcher(
         try:
             s_hdrs = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-                'Origin': 'https://loader.to',
-                'Referer': 'https://loader.to/',
-                'X-Forwarded-For': '103.240.235.10',
-                'X-Real-IP': '103.240.235.10',
-                'Client-IP': '103.240.235.10'
+                'Origin': 'https://p.savenow.to',
+                'Referer': 'https://p.savenow.to/api/button/'
             }
-            sn_r = requests.get("https://p.savenow.to/api/v2/download?format=1080&url=" + urllib.parse.quote("https://www.youtube.com/watch?v=aDmhFUcp__c"), headers=s_hdrs, timeout=8)
+            sn_r = requests.get("https://p.savenow.to/api/v2/download?button=1&format=1080&url=" + urllib.parse.quote("https://www.youtube.com/watch?v=aDmhFUcp__c"), headers=s_hdrs, timeout=8)
             return JSONResponse({"status_code": sn_r.status_code, "body": sn_r.text[:500]})
         except Exception as se:
             return JSONResponse({"error": str(se)})
