@@ -67,22 +67,11 @@ export default async function handler(request) {
     }
 
     let finalFetchUrl = resolvedTargetUrl;
-    while (finalFetchUrl.includes('%25') || finalFetchUrl.includes('%3A') || finalFetchUrl.includes('%3a')) {
-      try {
-        finalFetchUrl = decodeURIComponent(finalFetchUrl);
-      } catch (e) {
-        break;
-      }
-    }
     if (finalFetchUrl.includes('/proxy-download?url=')) {
       try {
         const uMatch = finalFetchUrl.match(/[?&]url=([^&]+)/);
         if (uMatch) {
-          let inner = uMatch[1];
-          while (inner.includes('%25') || inner.includes('%3A') || inner.includes('%3a')) {
-            inner = decodeURIComponent(inner);
-          }
-          finalFetchUrl = inner;
+          finalFetchUrl = decodeURIComponent(uMatch[1]);
         }
       } catch (e) {}
     }
