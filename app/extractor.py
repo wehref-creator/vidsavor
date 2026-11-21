@@ -84,7 +84,9 @@ def canonicalize_url(raw_url: str) -> str:
     # Follow short-links for known redirect domains
     if any(short in url.lower() for short in ['pin.it', 'fb.watch', 't.co', 'bit.ly', 'vm.tiktok.com', 'vt.tiktok.com']):
         try:
-            resp = requests.get(url, allow_redirects=True, stream=True, timeout=5, headers={'User-Agent': USER_AGENT})
+            s = requests.Session()
+            s.headers.update({'User-Agent': USER_AGENT})
+            resp = s.get(url, allow_redirects=True, timeout=6)
             if resp.url and resp.url.startswith("http"):
                 url = resp.url
         except Exception:
@@ -98,6 +100,12 @@ def canonicalize_url(raw_url: str) -> str:
         )
         if m:
             return f"https://www.youtube.com/watch?v={m.group(1)}"
+
+    # TikTok parameter cleanup (Strip tracking query strings like ?lang=en, ?_r=1)
+    if 'tiktok.com' in url.lower():
+        url = re.sub(r'[?&](lang|is_from_webapp|sender_device|_r|_t|ug_btm|utm_[^&]+)=[^&#]*', '', url)
+        if url.endswith('?') or url.endswith('&'):
+            url = url[:-1]
 
     # Instagram parameter cleanup
     if 'instagram.com' in url.lower() or 'instagr.am' in url.lower():
@@ -273,8 +281,8 @@ class MediaExtractor:
         except Exception as e:
             logger.warning(f"Universal yt-dlp fallback error: {e}")
 
-        # Fallback to OpenGraph Scraper (Only for non-YouTube media; never return photo-only for a YouTube video)
-        if platform != 'youtube':
+        # Fallback to OpenGraph Scraper (Only for photo platforms; never return photo-only for video platforms like YouTube & TikTok)
+        if platform not in ['youtube', 'tiktok']:
             og_res = self._extract_opengraph(url, platform)
             if og_res and og_res.get('status') == 'success' and og_res.get('results'):
                 return sanitize_result(og_res)
@@ -305,434 +313,144 @@ class MediaExtractor:
         video_id = m.group(1) if m else None
         clean_url = f"https://www.youtube.com/watch?v={video_id}" if video_id else url
 
-        # Tier 0: YouTube Instant Extraction with SaveNow Direct Attachment Engine
-        try:
-            oembed_url = f"https://www.youtube.com/oembed?url={urllib.parse.quote(clean_url)}&format=json"
-            oe_resp = requests.get(oembed_url, headers={'User-Agent': USER_AGENT}, timeout=5)
-            if oe_resp.status_code == 200:
-                oe_data = oe_resp.json()
-                title = oe_data.get('title') or "YouTube Video"
-                author = oe_data.get('author_name') or "YouTube Creator"
-                thumbnail = oe_data.get('thumbnail_url') or (f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg" if video_id else "")
-
-                results = [
-                    {
-                        "url": clean_url,
-                        "token": "savenow:1080",
-                        "type": "video",
-                        "quality": "1080p Full HD (MP4)",
-                        "has_audio": True,
-                        "format": "mp4",
-                        "size": "Full HD",
-                        "thumbnail": thumbnail
-                    },
-                    {
-                        "url": clean_url,
-                        "token": "savenow:720",
-                        "type": "video",
-                        "quality": "720p HD (MP4)",
-                        "has_audio": True,
-                        "format": "mp4",
-                        "size": "HD 720p",
-                        "thumbnail": thumbnail
-                    },
-                    {
-                        "url": clean_url,
-                        "token": "savenow:480",
-                        "type": "video",
-                        "quality": "480p SD (MP4)",
-                        "has_audio": True,
-                        "format": "mp4",
-                        "size": "Standard 480p",
-                        "thumbnail": thumbnail
-                    },
-                    {
-                        "url": clean_url,
-                        "token": "savenow:360",
-                        "type": "video",
-                        "quality": "360p Medium (MP4)",
-                        "has_audio": True,
-                        "format": "mp4",
-                        "size": "Medium 360p",
-                        "thumbnail": thumbnail
-                    },
-                    {
-                        "url": clean_url,
-                        "token": "savenow:mp3",
-                        "type": "audio",
-                        "quality": "High Quality Audio (MP3)",
-                        "has_audio": True,
-                        "format": "mp3",
-                        "size": "320kbps MP3",
-                        "thumbnail": thumbnail
-                    }
-                ]
-                if thumbnail:
-                    results.append({
-                        "url": thumbnail,
-                        "type": "photo",
-                        "quality": "HD Cover Poster (JPG)",
-                        "format": "jpg",
-                        "has_audio": False,
-                        "size": "Original JPG",
-                        "thumbnail": thumbnail
-                    })
-
-                return {
-                    "status": "success",
-                    "title": title,
-                    "thumbnail": thumbnail,
-                    "type": "video",
-                    "download": results[0]["url"],
-                    "author": author,
-                    "duration": "",
-                    "platform": "youtube",
-                    "results": results
-                }
-        except Exception as oe_err:
-            logger.warning(f"YouTube oEmbed error: {oe_err}")
-
-        # Tier 1: Grapweb Direct Stream Extractor
-        try:
-            gw_headers = {
-                'User-Agent': USER_AGENT,
-                'X-Forwarded-For': '103.240.235.10',
-                'X-Real-IP': '103.240.235.10',
-                'Client-IP': '103.240.235.10'
-            }
-            gw_resp = requests.get(f"https://grapweb.com/youtube/api.php?url={urllib.parse.quote(clean_url)}", headers=gw_headers, timeout=8)
-            if gw_resp.status_code == 200:
-                gw_json = gw_resp.json()
-                if gw_json.get("status") == "success" and gw_json.get("data"):
-                    info = gw_json["data"]
-                    title = info.get("title") or "YouTube Video"
-                    thumbnail = info.get("thumbnail") or (f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg" if video_id else "")
-                    author = info.get("author") or "YouTube Creator"
-                    duration = info.get("durationFormatted") or ""
-
-                    raw_videos = info.get("videos", [])
-                    raw_audios = info.get("audios", [])
-                    clean_results = []
-                    seen_qualities = set()
-
-                    quality_map = [
-                        ('2160P', '2160p (4K Ultra HD)', 'mp4'),
-                        ('1440P', '1440p (2K QHD)', 'mp4'),
-                        ('1080P', '1080p Full HD', 'mp4'),
-                        ('720P', '720p HD', 'mp4'),
-                        ('480P', '480p SD', 'mp4'),
-                        ('360P', '360p Medium', 'mp4')
-                    ]
-
-                    for target_q, label, target_ext in quality_map:
-                        match = None
-                        for v in raw_videos:
-                            q = (v.get('quality') or '').upper()
-                            fmt = (v.get('format') or '').lower()
-                            if q == target_q and fmt == 'mp4':
-                                match = v
-                                break
-                        if not match:
-                            for v in raw_videos:
-                                q = (v.get('quality') or '').upper()
-                                if q == target_q:
-                                    match = v
-                                    break
-                        if match and label not in seen_qualities:
-                            seen_qualities.add(label)
-                            rc = match.get('resource_content') or ''
-                            dl_val = match.get('download_url') or ''
-                            target_url = dl_val if (dl_val and 'googlevideo' not in dl_val) else clean_url
-                            clean_results.append({
-                                "url": target_url,
-                                "token": rc or dl_val,
-                                "type": "video",
-                                "quality": label,
-                                "has_audio": True,
-                                "format": "mp4",
-                                "size": match.get('sizeFormatted') or 'HD Stream',
-                                "thumbnail": thumbnail
-                            })
-
-                    # High Quality MP3 Audio
-                    audio_match = None
-                    for a in raw_audios:
-                        fmt = (a.get('format') or '').upper()
-                        if 'MP3' in fmt:
-                            audio_match = a
-                            break
-                    if not audio_match and raw_audios:
-                        audio_match = raw_audios[0]
-
-                    if audio_match:
-                        rc_a = audio_match.get('resource_content') or ''
-                        dl_a = audio_match.get('download_url') or ''
-                        clean_results.append({
-                            "url": dl_a if (dl_a and 'googlevideo' not in dl_a) else clean_url,
-                            "token": rc_a or dl_a,
-                            "type": "audio",
-                            "quality": "High Quality Audio (MP3)",
-                            "has_audio": True,
-                            "format": "mp3",
-                            "size": audio_match.get('sizeFormatted') or 'Original Audio',
-                            "thumbnail": thumbnail
-                        })
-
-                    # Cover Photo
-                    if thumbnail:
-                        clean_results.append({
-                            "url": thumbnail,
-                            "type": "photo",
-                            "quality": "HD Cover Poster (JPG)",
-                            "has_audio": False,
-                            "format": "jpg",
-                            "size": "Original JPG",
-                            "thumbnail": thumbnail
-                        })
-
-                    if clean_results:
-                        return {
-                            "status": "success",
-                            "title": title,
-                            "thumbnail": thumbnail,
-                            "type": "video",
-                            "download": clean_results[0]["url"],
-                            "author": author,
-                            "duration": duration,
-                            "platform": "youtube",
-                            "results": clean_results
-                        }
-        except Exception as gw_err:
-            logger.warning(f"Grapweb YouTube extractor error: {gw_err}")
-
-        # Tier 1: YouTube oEmbed & SaveNow Cloud Conversion Fallback
-        try:
-            oembed_url = f"https://www.youtube.com/oembed?url={urllib.parse.quote(clean_url)}&format=json"
-            oe_resp = requests.get(oembed_url, headers={'User-Agent': USER_AGENT}, timeout=5)
-            if oe_resp.status_code == 200:
-                oe_data = oe_resp.json()
-                title = oe_data.get('title') or "YouTube Video"
-                author = oe_data.get('author_name') or "YouTube Creator"
-                thumbnail = oe_data.get('thumbnail_url') or (f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg" if video_id else "")
-
-                results = [
-                    {
-                        "url": clean_url,
-                        "token": "savenow:1080",
-                        "type": "video",
-                        "quality": "1080p Full HD",
-                        "has_audio": True,
-                        "format": "mp4",
-                        "size": "Full HD",
-                        "thumbnail": thumbnail
-                    },
-                    {
-                        "url": clean_url,
-                        "token": "savenow:720",
-                        "type": "video",
-                        "quality": "720p HD",
-                        "has_audio": True,
-                        "format": "mp4",
-                        "size": "HD 720p",
-                        "thumbnail": thumbnail
-                    },
-                    {
-                        "url": clean_url,
-                        "token": "savenow:480",
-                        "type": "video",
-                        "quality": "480p SD",
-                        "has_audio": True,
-                        "format": "mp4",
-                        "size": "Standard 480p",
-                        "thumbnail": thumbnail
-                    },
-                    {
-                        "url": clean_url,
-                        "token": "savenow:360",
-                        "type": "video",
-                        "quality": "360p Medium",
-                        "has_audio": True,
-                        "format": "mp4",
-                        "size": "Medium 360p",
-                        "thumbnail": thumbnail
-                    },
-                    {
-                        "url": clean_url,
-                        "token": "savenow:mp3",
-                        "type": "audio",
-                        "quality": "320kbps High Quality Audio (MP3)",
-                        "has_audio": True,
-                        "format": "mp3",
-                        "size": "320kbps MP3",
-                        "thumbnail": thumbnail
-                    },
-                    {
-                        "url": clean_url,
-                        "token": "savenow:m4a",
-                        "type": "audio",
-                        "quality": "Original Stereo Audio (M4A)",
-                        "has_audio": True,
-                        "format": "m4a",
-                        "size": "Fast M4A",
-                        "thumbnail": thumbnail
-                    }
-                ]
-                if thumbnail:
-                    results.append({
-                        "url": thumbnail,
-                        "type": "photo",
-                        "quality": "Original Cover Poster (JPG)",
-                        "format": "jpg",
-                        "size": "Original JPG",
-                        "thumbnail": thumbnail
-                    })
-
-                return {
-                    "status": "success",
-                    "title": title,
-                    "thumbnail": thumbnail,
-                    "type": "video",
-                    "download": results[0]["url"],
-                    "author": author,
-                    "duration": "",
-                    "platform": "youtube",
-                    "results": results
-                }
-        except Exception as oe_err:
-            logger.warning(f"YouTube oEmbed error: {oe_err}")
-
-        # Tier 1: Direct yt-dlp Extractor
-        try:
-            ydl_opts = dict(self.ydl_opts_base)
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(clean_url, download=False)
-                if info:
-                    parsed = self._parse_info(info, 'youtube', clean_url)
-                    if parsed and parsed.get('results'):
-                        return parsed
-        except Exception as e:
-            logger.warning(f"YouTube yt-dlp primary error: {e}")
-
-        # Tier 1: Hostinger Grapweb Parse API (Try POST first to avoid ModSecurity query string filtering, then GET fallback)
-        for method in ['POST', 'GET']:
+        # Tier 0: Grapweb Direct Stream Extractor (High Speed, Direct MP4 & Audio)
+        gw_headers = {
+            'User-Agent': USER_AGENT,
+            'X-Forwarded-For': '103.240.235.10',
+            'X-Real-IP': '103.240.235.10',
+            'Client-IP': '103.240.235.10'
+        }
+        for attempt_method in ['GET', 'POST']:
             try:
-                if method == 'POST':
-                    resp = requests.post(
-                        "https://grapweb.com/youtube/api.php",
-                        data={"action": "parse", "url": clean_url},
-                        timeout=10,
-                        headers={'User-Agent': USER_AGENT, 'Accept': 'application/json'}
+                if attempt_method == 'GET':
+                    gw_resp = requests.get(
+                        f"https://grapweb.com/youtube/api.php?url={urllib.parse.quote(clean_url)}",
+                        headers=gw_headers,
+                        timeout=8
                     )
                 else:
-                    parse_url = "https://grapweb.com/youtube/api.php?action=parse&url=" + urllib.parse.quote(clean_url)
-                    resp = requests.get(parse_url, timeout=10, headers={'User-Agent': USER_AGENT, 'Accept': 'application/json'})
+                    gw_resp = requests.post(
+                        "https://grapweb.com/youtube/api.php",
+                        data={"url": clean_url},
+                        headers=gw_headers,
+                        timeout=8
+                    )
 
-                if resp and resp.status_code == 200:
-                    data = resp.json()
-                    if data and data.get('status') == 'success' and data.get('data'):
-                        info = data['data']
-                        title = info.get('title') or "YouTube Video"
-                        thumbnail = info.get('thumbnail') or (f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg" if video_id else "")
-                        author = info.get('author') or "YouTube Creator"
-                        duration = info.get('durationFormatted') or ""
+                if gw_resp.status_code == 200:
+                    gw_json = gw_resp.json()
+                    if gw_json.get("status") == "success" and gw_json.get("data"):
+                        info = gw_json["data"]
+                        title = info.get("title") or "YouTube Video"
+                        thumbnail = info.get("thumbnail") or (f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg" if video_id else "")
+                        author = info.get("author") or "YouTube Creator"
+                        duration = info.get("durationFormatted") or ""
 
-                        results = []
+                        raw_videos = info.get("videos", [])
+                        raw_audios = info.get("audios", [])
+                        clean_results = []
                         seen_qualities = set()
 
-                        for v in info.get('videos', []):
-                            q = v.get('quality', '').upper()
-                            token = v.get('resource_content') or ''
-                            dl_url = v.get('download_url') or ''
-                            size_str = v.get('sizeFormatted') or 'HD Stream'
+                        quality_map = [
+                            ('2160P', '2160p (4K Ultra HD)', 'mp4'),
+                            ('1440P', '1440p (2K QHD)', 'mp4'),
+                            ('1080P', '1080p Full HD', 'mp4'),
+                            ('720P', '720p HD', 'mp4'),
+                            ('480P', '480p SD', 'mp4'),
+                            ('360P', '360p Medium', 'mp4'),
+                            ('240P', '240p SD', 'mp4'),
+                            ('144P', '144p SD', 'mp4'),
+                        ]
 
-                            clean_q = q
-                            if clean_q in seen_qualities:
-                                continue
-                            seen_qualities.add(clean_q)
+                        for target_q, label, target_ext in quality_map:
+                            match = None
+                            for v in raw_videos:
+                                q = (v.get('quality') or '').upper()
+                                fmt = (v.get('format') or '').lower()
+                                if q == target_q and fmt == 'mp4':
+                                    match = v
+                                    break
+                            if not match:
+                                for v in raw_videos:
+                                    q = (v.get('quality') or '').upper()
+                                    if q == target_q:
+                                        match = v
+                                        break
+                            if match and label not in seen_qualities:
+                                seen_qualities.add(label)
+                                dl_val = match.get('download_url') or ''
+                                rc = match.get('resource_content') or ''
+                                target_url = dl_val if dl_val else clean_url
+                                clean_results.append({
+                                    "url": target_url,
+                                    "token": "" if dl_val else rc,
+                                    "type": "video",
+                                    "quality": label,
+                                    "has_audio": True,
+                                    "format": "mp4",
+                                    "size": match.get('sizeFormatted') or 'HD Stream',
+                                    "thumbnail": thumbnail
+                                })
 
-                            if clean_q in ['1080P', '1080P60', 'FHD']:
-                                label = "1080p Full HD"
-                            elif clean_q in ['720P', 'HD']:
-                                label = "720p HD"
-                            elif clean_q == '2160P':
-                                label = "2160p (4K Ultra HD)"
-                            elif clean_q == '1440P':
-                                label = "1440p (2K QHD)"
-                            elif clean_q == '480P':
-                                label = "480p SD"
-                            elif clean_q == '360P':
-                                label = "360p"
-                            else:
-                                label = f"{clean_q.lower()}"
+                        # High Quality MP3 Audio
+                        audio_match = None
+                        for a in raw_audios:
+                            fmt = (a.get('format') or '').upper()
+                            if 'MP3' in fmt:
+                                audio_match = a
+                                break
+                        if not audio_match and raw_audios:
+                            audio_match = raw_audios[0]
 
-                            target_url = dl_url if dl_url else token
-                            if not target_url:
-                                continue
-
-                            results.append({
-                                "url": target_url,
-                                "token": "" if dl_url else token,
-                                "type": "video",
-                                "quality": label,
-                                "has_audio": True,
-                                "format": "mp4",
-                                "size": size_str,
-                                "thumbnail": thumbnail
-                            })
-
-                        for a in info.get('audios', []):
-                            q = a.get('quality', '').upper()
-                            token = a.get('resource_content') or ''
-                            dl_url = a.get('download_url') or ''
-                            size_str = a.get('sizeFormatted') or 'High Audio'
-                            target_url = dl_url if dl_url else token
-                            if not target_url:
-                                continue
-
-                            results.append({
-                                "url": target_url,
-                                "token": "" if dl_url else token,
+                        if audio_match:
+                            dl_a = audio_match.get('download_url') or ''
+                            rc_a = audio_match.get('resource_content') or ''
+                            q_a = audio_match.get('quality') or '256KBPS'
+                            clean_results.append({
+                                "url": dl_a if dl_a else clean_url,
+                                "token": "" if dl_a else rc_a,
                                 "type": "audio",
-                                "quality": f"{q} Audio (MP3)",
+                                "quality": f"{q_a} High Quality Audio (MP3)",
                                 "has_audio": True,
                                 "format": "mp3",
-                                "size": size_str,
+                                "size": audio_match.get('sizeFormatted') or 'Original Audio',
                                 "thumbnail": thumbnail
                             })
 
+                        # Cover Photo
                         if thumbnail:
-                            results.append({
+                            clean_results.append({
                                 "url": thumbnail,
                                 "type": "photo",
                                 "quality": "HD Cover Poster (JPG)",
+                                "has_audio": False,
                                 "format": "jpg",
                                 "size": "Original JPG",
                                 "thumbnail": thumbnail
                             })
 
-                        if results:
+                        if clean_results:
                             return {
                                 "status": "success",
                                 "title": title,
                                 "thumbnail": thumbnail,
                                 "type": "video",
-                                "download": results[0]['url'],
+                                "download": clean_results[0]["url"],
                                 "author": author,
                                 "duration": duration,
                                 "platform": "youtube",
-                                "results": results
+                                "results": clean_results
                             }
-            except Exception as e:
-                logger.warning(f"YouTube Grapweb parse {method} error: {e}")
+            except Exception as gw_err:
+                logger.warning(f"Grapweb YouTube {attempt_method} error: {gw_err}")
 
-        # Tier 2: yt-dlp Progressive Extractor
+        # Tier 1: yt-dlp Progressive Extractor Fallback
         try:
             ydl_opts = dict(self.ydl_opts_base)
             ydl_opts['format'] = 'best[ext=mp4]/best'
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=False)
+                info = ydl.extract_info(clean_url, download=False)
                 if info:
-                    parsed = self._parse_info(info, 'youtube', url)
+                    parsed = self._parse_info(info, 'youtube', clean_url)
                     if parsed and parsed.get('results'):
                         return parsed
         except Exception as e:
@@ -744,9 +462,12 @@ class MediaExtractor:
     # 2. TIKTOK EXTRACTOR
     # =========================================================================
     def _extract_tiktok(self, url: str) -> Optional[Dict[str, Any]]:
+        # Clean URL query params (?lang=en, etc.)
+        clean_url = re.sub(r'[?&].*', '', url).strip()
+
         # Tier 0: Hostinger Grapweb TikTok API (High Speed, Direct Unwatermarked HD & Audio)
         try:
-            r = requests.get(f"https://grapweb.com/tiktok/api.php?url={urllib.parse.quote(url)}", timeout=7, headers={'User-Agent': USER_AGENT})
+            r = requests.get(f"https://grapweb.com/tiktok/api.php?url={urllib.parse.quote(clean_url)}", timeout=7, headers={'User-Agent': USER_AGENT})
             if r.status_code == 200:
                 d = r.json()
                 if d.get("status") == "success" and d.get("medias"):
@@ -787,13 +508,15 @@ class MediaExtractor:
                             "thumbnail": thumb
                         })
 
-                    if results:
+                    # ONLY return success if at least one actual video stream was found
+                    if results and any(r_item.get("type") == "video" for r_item in results):
+                        main_vid = next((r_item for r_item in results if r_item.get("type") == "video"), results[0])
                         return {
                             "status": "success",
                             "title": title[:100],
                             "thumbnail": thumb,
-                            "type": results[0]["type"],
-                            "download": results[0]["url"],
+                            "type": "video",
+                            "download": main_vid["url"],
                             "author": author,
                             "duration": "",
                             "platform": "tiktok",
@@ -1382,14 +1105,35 @@ class MediaExtractor:
     # 5. PINTEREST EXTRACTOR
     # =========================================================================
     def _extract_pinterest(self, url: str) -> Optional[Dict[str, Any]]:
+        # Extract Pin ID from URL
+        pin_id_m = re.search(r'/pin/(?:[^/]+--)?([0-9]+)', url) or re.search(r'pin_id=([0-9]+)', url) or re.search(r'([0-9]{8,25})', url)
+        pin_id = pin_id_m.group(1) if pin_id_m else None
+        
+        # Primary Metadata Engine: Pinterest Official oEmbed
+        oe_title = ""
+        oe_thumb = ""
+        oe_author = "Pinterest Creator"
+        if pin_id:
+            try:
+                oe_url = f"https://www.pinterest.com/oembed.json?url=https%3A%2F%2Fwww.pinterest.com%2Fpin%2F{pin_id}%2F"
+                oe_r = requests.get(oe_url, headers={'User-Agent': USER_AGENT}, timeout=5)
+                if oe_r.status_code == 200:
+                    oe_json = oe_r.json()
+                    if oe_json:
+                        oe_title = oe_json.get("title") or ""
+                        oe_thumb = oe_json.get("thumbnail_url") or ""
+                        oe_author = oe_json.get("author_name") or "Pinterest Creator"
+            except Exception:
+                pass
+
         # Tier 0: Hostinger Grapweb Pinterest API (High Speed, Direct MP4 & High-Res Images)
         try:
             gw_r = requests.get(f"https://grapweb.com/pinterest/api.php?url={urllib.parse.quote(url)}", timeout=7, headers={'User-Agent': USER_AGENT})
             if gw_r.status_code == 200:
                 gw_d = gw_r.json()
                 if gw_d.get("status") == "success":
-                    title = gw_d.get("title") or "Pinterest Media"
-                    thumb = gw_d.get("thumbnail") or ""
+                    title = gw_d.get("title") or oe_title or "Pinterest Media"
+                    thumb = gw_d.get("thumbnail") or oe_thumb or ""
                     results = []
                     seen_urls = set()
 
@@ -1437,10 +1181,11 @@ class MediaExtractor:
                         })
 
                     if thumb and thumb not in seen_urls:
+                        orig_hd = re.sub(r'https?://i\.pinimg\.com/[^/]+/', 'https://i.pinimg.com/originals/', thumb)
                         results.append({
-                            "url": thumb,
+                            "url": orig_hd if orig_hd.startswith("http") else thumb,
                             "type": "photo",
-                            "quality": "Original Cover Poster (JPG)",
+                            "quality": "Original High-Res Cover (JPG)",
                             "format": "jpg",
                             "has_audio": False,
                             "size": "Original Resolution",
@@ -1458,7 +1203,7 @@ class MediaExtractor:
                             "thumbnail": final_thumb,
                             "type": results[0]["type"],
                             "download": results[0]["url"],
-                            "author": "Pinterest Creator",
+                            "author": oe_author,
                             "duration": "",
                             "platform": "pinterest",
                             "results": results
@@ -1479,7 +1224,7 @@ class MediaExtractor:
                 if og_t:
                     title = og_t.group(1).split('|')[0].strip()
             if not title:
-                title = "Pinterest Media"
+                title = oe_title or "Pinterest Media"
 
             results = []
             seen_urls = set()
@@ -1497,7 +1242,7 @@ class MediaExtractor:
                         "format": "mp4",
                         "has_audio": True,
                         "size": "HD MP4",
-                        "thumbnail": ""
+                        "thumbnail": oe_thumb or ""
                     })
 
             # 2. Look for HLS m3u8 streams and convert to progressive 720p MP4
@@ -1516,11 +1261,11 @@ class MediaExtractor:
                         "format": "mp4",
                         "has_audio": True,
                         "size": "720p MP4",
-                        "thumbnail": ""
+                        "thumbnail": oe_thumb or ""
                     })
 
             # 3. Look for cover / high-res images
-            thumb = ""
+            thumb = oe_thumb or ""
             og_img = re.search(r'<meta[^>]+(?:property|name)=["\'](?:og:)?image["\'][^>]+content=["\']([^"\']+)["\']', html)
             if og_img and og_img.group(1).startswith('http'):
                 thumb = og_img.group(1)
@@ -1545,27 +1290,66 @@ class MediaExtractor:
                 if len(results) >= 5:
                     break
 
+            if oe_thumb and oe_thumb not in seen_urls:
+                orig_oe = re.sub(r'https?://i\.pinimg\.com/[^/]+/', 'https://i.pinimg.com/originals/', oe_thumb)
+                if orig_oe not in seen_urls:
+                    seen_urls.add(orig_oe)
+                    results.append({
+                        "url": orig_oe,
+                        "type": "photo",
+                        "quality": "Original High-Res (JPG)",
+                        "format": "jpg",
+                        "has_audio": False,
+                        "size": "Original Resolution",
+                        "thumbnail": oe_thumb
+                    })
+
             if results:
-                if thumb:
-                    for item in results:
-                        if not item.get('thumbnail'):
-                            item['thumbnail'] = thumb
+                final_thumb = thumb or oe_thumb or results[0].get('thumbnail') or ""
+                for item in results:
+                    if not item.get('thumbnail'):
+                        item['thumbnail'] = final_thumb
 
                 return {
                     "status": "success",
-                    "title": title,
-                    "thumbnail": thumb,
+                    "title": title or oe_title or "Pinterest Media",
+                    "thumbnail": final_thumb,
                     "type": results[0]["type"],
                     "download": results[0]["url"],
-                    "author": "Pinterest Creator",
+                    "author": oe_author,
                     "duration": "",
                     "platform": "pinterest",
                     "results": results
                 }
         except Exception as e:
-            logger.warning(f"Pinterest HTML scraping error: {e}")
+            logger.warning(f"Pinterest regex error: {e}")
 
-        # Tier 2: yt-dlp
+        # Tier 2: If oEmbed succeeded with thumbnail, return high-res image
+        if oe_thumb:
+            orig_oe = re.sub(r'https?://i\.pinimg\.com/[^/]+/', 'https://i.pinimg.com/originals/', oe_thumb)
+            return {
+                "status": "success",
+                "title": oe_title or "Pinterest Media",
+                "thumbnail": oe_thumb,
+                "type": "photo",
+                "download": orig_oe,
+                "author": oe_author,
+                "duration": "",
+                "platform": "pinterest",
+                "results": [
+                    {
+                        "url": orig_oe,
+                        "type": "photo",
+                        "quality": "Original High-Res (JPG)",
+                        "format": "jpg",
+                        "has_audio": False,
+                        "size": "Original Resolution",
+                        "thumbnail": oe_thumb
+                    }
+                ]
+            }
+
+        # Tier 3: yt-dlp
         try:
             with yt_dlp.YoutubeDL(self.ydl_opts_base) as ydl:
                 info = ydl.extract_info(url, download=False)

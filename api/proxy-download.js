@@ -81,9 +81,8 @@ export default async function handler(request) {
     }
 
     // Direct Attachment Shortcut: If target URL already provides Content-Disposition: attachment
-    // (SaveNow CDN or Grapweb download.php gateways), redirect directly with 302.
-    // This allows browser to save directly to disk at maximum network speed without Vercel 4.5MB payload limitations.
-    if (finalFetchUrl.includes('savenow.to') || finalFetchUrl.includes('lbserver.xyz') || (finalFetchUrl.includes('grapweb.com') && finalFetchUrl.includes('download.php'))) {
+    // (VidSSave or SaveNow CDN gateways), redirect directly with 302 so client browser downloads directly from origin CDN.
+    if (finalFetchUrl.includes('vidssave.com') || finalFetchUrl.includes('savenow.to') || finalFetchUrl.includes('lbserver.xyz')) {
       return Response.redirect(finalFetchUrl, 302);
     }
 

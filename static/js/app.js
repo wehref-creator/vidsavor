@@ -492,13 +492,8 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
     const safeTitle = (filename || 'video').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
     const ext = (filename || '').split('.').pop() || 'mp4';
 
-    // Ensure googlevideo streams have &title= parameter so native fallback also downloads as file
-    if (streamUrl.includes('googlevideo.com') && !streamUrl.includes('title=')) {
-        streamUrl += (streamUrl.includes('?') ? '&' : '?') + `title=${encodeURIComponent(safeTitle + '.' + ext)}`;
-    }
-
     // 1. YouTube conversion tokens that require dynamic resolution
-    const isYouTubeToken = (item && item.token) || (typeof streamUrl === 'string' && streamUrl.startsWith('Z0ve'));
+    const isYouTubeToken = (item && item.token && item.token.startsWith('savenow:')) || (typeof streamUrl === 'string' && streamUrl.startsWith('Z0ve'));
     if (isYouTubeToken && !streamUrl.includes('download-file') && !streamUrl.includes('freevideosave.com')) {
         return 'javascript:void(0);';
     }
@@ -508,20 +503,14 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
         return streamUrl;
     }
 
-    // 3. For Grapweb download endpoints (tiktok, facebook, pinterest) that already provide Content-Disposition: attachment,
-    // they can be downloaded directly
-    if (streamUrl.includes('grapweb.com') && streamUrl.includes('download.php')) {
+    // 3. For VidSSave or SaveNow CDN attachment links, they ALREADY provide Content-Disposition: attachment
+    // and must be fetched directly by residential browser!
+    if (streamUrl.includes('vidssave.com') || streamUrl.includes('savenow.to') || streamUrl.includes('lbserver.xyz')) {
         return streamUrl;
     }
 
-    // 4. For SaveNow CDN attachment links (savenow.to, lbserver.xyz), they ALREADY provide Content-Disposition: attachment
-    // and Access-Control-Allow-Origin: *. NEVER route them through Vercel /api/proxy-download!
-    if (streamUrl.includes('savenow.to') || streamUrl.includes('lbserver.xyz')) {
-        return streamUrl;
-    }
-
-    // 5. Route ALL other external streams through edge proxy.
-    // This guarantees Content-Disposition: attachment so the browser downloads right on the page without redirecting.
+    // 4. Route ALL other external streams (TikTok, Facebook, Instagram, Twitter, Pinterest, Grapweb, etc.) through edge proxy.
+    // This guarantees Content-Disposition: attachment on same-origin so the browser downloads right on the page without redirecting or playing video.
     const params = new URLSearchParams({
         url: streamUrl,
         filename: filename || `${safeTitle}.${ext}`
@@ -537,6 +526,28 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
 function triggerBrowserFileDownload(downloadUrl, filename) {
     if (!downloadUrl) return;
 
+    // Use a hidden iframe to initiate the download.
+    // This is the industry-standard technique to guarantee:
+    // 1. ZERO page navigation (the user never leaves the vidsavor page).
+    // 2. ZERO new tab creation.
+    // 3. ZERO in-browser video playback (the browser is forced to download the stream as a file).
+    try {
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.position = 'fixed';
+        iframe.style.top = '-9999px';
+        iframe.style.left = '-9999px';
+        iframe.src = downloadUrl;
+        document.body.appendChild(iframe);
+        setTimeout(() => {
+            try { iframe.remove(); } catch (_) {}
+        }, 120000);
+        return;
+    } catch (_) {}
+
+    // Fallback: programmatic anchor with download attribute
     try {
         const a = document.createElement('a');
         a.style.display = 'none';
@@ -548,7 +559,7 @@ function triggerBrowserFileDownload(downloadUrl, filename) {
         a.click();
         setTimeout(() => {
             try { a.remove(); } catch (_) {}
-        }, 2000);
+        }, 3000);
     } catch (_) {}
 }
 
@@ -1198,6 +1209,10 @@ async function downloadNow() {
                         e.stopPropagation();
                         triggerDirectDownload(singleDlUrl, cleanName, singleDownloadBtn);
                     });
+                    singleRow.addEventListener('click', (e) => {
+                        if (e.target && (e.target === singleDownloadBtn || singleDownloadBtn.contains(e.target))) return;
+                        singleDownloadBtn.click();
+                    });
                     container.appendChild(singleRow);
                 }
 
@@ -1273,12 +1288,11 @@ async function downloadNow() {
                         `;
 
                         const downloadBtn = rowEl.querySelector('.btn-row-download');
-                        const hasRowDirectDl = (typeof item.url === 'string' && item.url.includes('download_redirect'));
-                        const isRowYouTubeToken = !isPhoto && !hasRowDirectDl && (
-                            (item && item.token) ||
+                        const hasDirectUrl = typeof item.url === 'string' && item.url.startsWith('http') && (!item.token || item.token === '');
+                        const isRowYouTubeToken = !isPhoto && !hasDirectUrl && (
+                            (item && item.token && item.token.startsWith('savenow:')) ||
                             (typeof item.url === 'string' && item.url.startsWith('Z0ve')) ||
-                            (typeof item.url === 'string' && !item.url.startsWith('http') && (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be'))) ||
-                            (currentPostUrl.includes('youtube.com') || currentPostUrl.includes('youtu.be'))
+                            (typeof item.url === 'string' && !item.url.startsWith('http'))
                         );
 
                         if (isRowYouTubeToken) {
@@ -1294,6 +1308,12 @@ async function downloadNow() {
                                 triggerDirectDownload(rowDlUrl, cleanFilename, downloadBtn);
                             });
                         }
+
+                        // Allow clicking anywhere on the row to trigger download
+                        rowEl.addEventListener('click', (e) => {
+                            if (e.target && (e.target === downloadBtn || downloadBtn.contains(e.target))) return;
+                            downloadBtn.click();
+                        });
 
                         container.appendChild(rowEl);
                     });
