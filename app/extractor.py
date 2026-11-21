@@ -81,8 +81,25 @@ def canonicalize_url(raw_url: str) -> str:
     """Normalize short-links, mobile links, and platform-specific formats."""
     url = raw_url.strip()
 
-    # Follow short-links for known redirect domains
-    if any(short in url.lower() for short in ['pin.it', 'fb.watch', 't.co', 'bit.ly', 'vm.tiktok.com', 'vt.tiktok.com']):
+    # Follow short-links for known redirect domains (pin.it handled separately to avoid cookie-wall redirect)
+    if 'pin.it' in url.lower():
+        try:
+            cur_u = url
+            for _ in range(5):
+                r_redir = requests.get(cur_u, allow_redirects=False, headers={'User-Agent': USER_AGENT}, timeout=5)
+                loc = r_redir.headers.get('Location')
+                if not loc:
+                    break
+                if not loc.startswith('http'):
+                    loc = urllib.parse.urljoin(cur_u, loc)
+                cur_u = loc
+                pin_m = re.search(r'/pin/([0-9]+)', cur_u)
+                if pin_m:
+                    url = f"https://www.pinterest.com/pin/{pin_m.group(1)}/"
+                    break
+        except Exception:
+            pass
+    elif any(short in url.lower() for short in ['fb.watch', 't.co', 'bit.ly', 'vm.tiktok.com', 'vt.tiktok.com']):
         try:
             s = requests.Session()
             s.headers.update({'User-Agent': USER_AGENT})
@@ -382,7 +399,8 @@ class MediaExtractor:
                                 target_url = dl_val if dl_val else clean_url
                                 clean_results.append({
                                     "url": target_url,
-                                    "token": "" if dl_val else rc,
+                                    "token": rc if rc else target_url,
+                                    "resource_content": rc,
                                     "type": "video",
                                     "quality": label,
                                     "has_audio": True,
@@ -407,7 +425,8 @@ class MediaExtractor:
                             q_a = audio_match.get('quality') or '256KBPS'
                             clean_results.append({
                                 "url": dl_a if dl_a else clean_url,
-                                "token": "" if dl_a else rc_a,
+                                "token": rc_a if rc_a else (dl_a if dl_a else clean_url),
+                                "resource_content": rc_a,
                                 "type": "audio",
                                 "quality": f"{q_a} High Quality Audio (MP3)",
                                 "has_audio": True,
@@ -1105,6 +1124,25 @@ class MediaExtractor:
     # 5. PINTEREST EXTRACTOR
     # =========================================================================
     def _extract_pinterest(self, url: str) -> Optional[Dict[str, Any]]:
+        # Resolve pin.it shortlinks by following redirect Location headers without triggering cookie wall
+        if "pin.it" in url.lower():
+            try:
+                cur_u = url
+                for _ in range(5):
+                    r_redir = requests.get(cur_u, allow_redirects=False, headers={'User-Agent': USER_AGENT}, timeout=5)
+                    loc = r_redir.headers.get('Location')
+                    if not loc:
+                        break
+                    if not loc.startswith('http'):
+                        loc = urllib.parse.urljoin(cur_u, loc)
+                    cur_u = loc
+                    pin_m = re.search(r'/pin/([0-9]+)', cur_u)
+                    if pin_m:
+                        url = f"https://www.pinterest.com/pin/{pin_m.group(1)}/"
+                        break
+            except Exception as e_pinit:
+                logger.warning(f"Pinterest pin.it expansion error: {e_pinit}")
+
         # Extract Pin ID from URL
         pin_id_m = re.search(r'/pin/(?:[^/]+--)?([0-9]+)', url) or re.search(r'pin_id=([0-9]+)', url) or re.search(r'([0-9]{8,25})', url)
         pin_id = pin_id_m.group(1) if pin_id_m else None

@@ -508,13 +508,13 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
         return streamUrl;
     }
 
-    // 3. For VidSSave or SaveNow CDN attachment links, they ALREADY provide Content-Disposition: attachment
+    // 3. For VidSSave, SaveNow, or Grapweb CDN attachment links, they ALREADY provide Content-Disposition: attachment
     // and must be fetched directly by residential browser!
-    if (streamUrl.includes('vidssave.com') || streamUrl.includes('savenow.to') || streamUrl.includes('lbserver.xyz')) {
+    if (streamUrl.includes('vidssave.com') || streamUrl.includes('savenow.to') || streamUrl.includes('lbserver.xyz') || streamUrl.includes('grapweb.com') || streamUrl.includes('download.php')) {
         return streamUrl;
     }
 
-    // 4. Route ALL other external streams (TikTok, Facebook, Instagram, Twitter, Pinterest, Grapweb, etc.) through edge proxy.
+    // 4. Route ALL other external streams (raw Facebook, Instagram, Twitter, Pinterest images, etc.) through edge proxy.
     // This guarantees Content-Disposition: attachment on same-origin so the browser downloads right on the page without redirecting or playing video.
     const params = new URLSearchParams({
         url: streamUrl,
@@ -531,7 +531,23 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
 function triggerBrowserFileDownload(downloadUrl, filename) {
     if (!downloadUrl) return;
 
-    // 1. Programmatic anchor click with download attribute (standard native browser download prompt)
+    // 1. Silent invisible iframe - initiates browser file download without navigating top window
+    try {
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.style.width = '0px';
+        iframe.style.height = '0px';
+        iframe.style.position = 'fixed';
+        iframe.style.top = '-9999px';
+        iframe.style.left = '-9999px';
+        iframe.src = downloadUrl;
+        document.body.appendChild(iframe);
+        setTimeout(() => {
+            try { iframe.remove(); } catch (_) {}
+        }, 120000);
+    } catch (_) {}
+
+    // 2. Programmatic anchor click (works on mobile & desktop without navigating window)
     try {
         const a = document.createElement('a');
         a.style.display = 'none';
@@ -540,32 +556,132 @@ function triggerBrowserFileDownload(downloadUrl, filename) {
             a.download = filename;
             a.setAttribute('download', filename);
         }
-        a.target = '_self';
         a.rel = 'noreferrer';
         a.referrerPolicy = 'no-referrer';
         document.body.appendChild(a);
         a.click();
         setTimeout(() => {
             try { a.remove(); } catch (_) {}
-        }, 2000);
-        return;
+        }, 3000);
     } catch (_) {}
+}
 
-    // 2. Invisible iframe fallback if anchor click fails
+// Client-Side Dynamic CryptoJS Loader & VidSSave Resolver (Bypasses Datacenter IP Blocks)
+function loadCryptoJS() {
+    if (typeof CryptoJS !== 'undefined') return Promise.resolve();
+    return new Promise((resolve) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js';
+        s.onload = () => resolve();
+        s.onerror = () => resolve();
+        document.head.appendChild(s);
+    });
+}
+
+function decryptVidssaveClient(ciphertextB64) {
+    if (!ciphertextB64 || typeof ciphertextB64 !== 'string') return null;
+    ciphertextB64 = ciphertextB64.trim();
+    if (typeof CryptoJS !== 'undefined') {
+        const keys = [
+            "4c9b7d2e4c9b7d2e4c9b7d2e4c9b7d21",
+            "rz18efAXUbdiaO7k"
+        ];
+        for (const k of keys) {
+            try {
+                const key = CryptoJS.enc.Utf8.parse(k);
+                const iv = CryptoJS.enc.Utf8.parse(k.substring(0, 16));
+                const dec = CryptoJS.AES.decrypt(ciphertextB64, key, {
+                    iv: iv,
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.ZeroPadding
+                });
+                const plain = dec.toString(CryptoJS.enc.Utf8).replace(/\0+$/, '');
+                if (plain && (plain.startsWith('{') || plain.startsWith('['))) {
+                    return JSON.parse(plain);
+                }
+            } catch (e) {
+                try {
+                    const key = CryptoJS.enc.Utf8.parse(k);
+                    const iv = CryptoJS.enc.Utf8.parse(k.substring(0, 16));
+                    const dec = CryptoJS.AES.decrypt(ciphertextB64, key, {
+                        iv: iv,
+                        mode: CryptoJS.mode.CBC
+                    });
+                    const plain = dec.toString(CryptoJS.enc.Utf8).replace(/\0+$/, '');
+                    if (plain && (plain.startsWith('{') || plain.startsWith('['))) {
+                        return JSON.parse(plain);
+                    }
+                } catch (e2) {}
+            }
+        }
+    }
+    return null;
+}
+
+async function resolveVidssaveClient(resourceContent, btnElement) {
+    if (!resourceContent || typeof resourceContent !== 'string') return null;
+    await loadCryptoJS();
+
     try {
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.position = 'fixed';
-        iframe.style.top = '-9999px';
-        iframe.style.left = '-9999px';
-        iframe.src = downloadUrl;
-        document.body.appendChild(iframe);
-        setTimeout(() => {
-            try { iframe.remove(); } catch (_) {}
-        }, 60000);
-    } catch (_) {}
+        const dlPostData = new URLSearchParams({
+            hostname: 'vidssave.com',
+            auth: '4c9b7d21',
+            domain: 'api-ak.vidssave.com',
+            no_encrypt: '1',
+            request: resourceContent
+        });
+
+        const dlResp = await fetch('https://api.vidssave.com/api/contentsite_api/media/download', {
+            method: 'POST',
+            referrerPolicy: 'no-referrer',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: dlPostData.toString()
+        });
+
+        const dlJson = await dlResp.json();
+        let taskId = null;
+        if (dlJson && dlJson.data) {
+            if (typeof dlJson.data === 'string') {
+                const dec = decryptVidssaveClient(dlJson.data);
+                if (dec && dec.task_id) taskId = dec.task_id;
+            } else if (typeof dlJson.data === 'object' && dlJson.data.task_id) {
+                taskId = dlJson.data.task_id;
+            }
+        }
+
+        if (!taskId) return null;
+
+        let pollAttempts = 0;
+        while (pollAttempts < 30) {
+            pollAttempts++;
+            await new Promise(r => setTimeout(r, 900));
+
+            if (btnElement) {
+                const prog = Math.min(96, 30 + pollAttempts * 8);
+                btnElement.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Converting (${prog}%)...</span>`;
+            }
+
+            const queryUrl = 'https://api.vidssave.com/api/contentsite_api/media/download_query?' + new URLSearchParams({
+                auth: '20250901majwlqo',
+                domain: 'api-ak.vidssave.com',
+                task_id: taskId,
+                download_domain: 'vidssave.com',
+                origin: 'content_site'
+            }).toString();
+
+            const qResp = await fetch(queryUrl, { cache: 'no-store', referrerPolicy: 'no-referrer' });
+            const qText = await qResp.text();
+            if (qText.includes('"download_link"')) {
+                const m = qText.match(/"download_link"\s*:\s*"([^"]+)"/);
+                if (m && m[1]) {
+                    return m[1].replace(/\\/g, '');
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('Client VidSSave task error:', err);
+    }
+    return null;
 }
 
 // High-Speed Direct In-Memory & Stream Downloader
@@ -653,6 +769,29 @@ async function triggerInstantDownload(streamUrl, filename, btnElement, item = nu
 
         const targetExt = (formatCode === 'mp3' || formatCode === 'm4a') ? formatCode : 'mp4';
 
+        // 1. Direct Client Task Resolution (Solves IP-locked 403 Forbidden by signing with client's IP)
+        const rc = (item && item.resource_content) ? item.resource_content : (token && token.length > 50 && !token.startsWith('http') && !token.startsWith('savenow:') ? token : null);
+        if (rc) {
+            try {
+                const clientDl = await resolveVidssaveClient(rc, btnElement);
+                if (clientDl && clientDl.startsWith('http')) {
+                    triggerBrowserFileDownload(clientDl, filename || `${safeTitle}.${targetExt}`);
+                    if (btnElement) {
+                        btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Downloaded!</span>';
+                        setTimeout(() => {
+                            btnElement.innerHTML = origHTML || '<i class="fa-solid fa-download"></i> <span>Download</span>';
+                            btnElement.dataset.downloading = 'false';
+                            btnElement.style.pointerEvents = 'auto';
+                        }, 3500);
+                    }
+                    return;
+                }
+            } catch (cErr) {
+                console.warn('Client-side resolution attempt failed, falling back to server:', cErr);
+            }
+        }
+
+        // 2. Server-Side /api/resolve-youtube fallback
         try {
             let res = await fetch('/api/resolve-youtube', {
                 method: 'POST',
@@ -1175,11 +1314,20 @@ async function downloadNow() {
                         </div>
                     `;
                     const singleDownloadBtn = singleRow.querySelector('.btn-row-download');
-                    singleDownloadBtn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        triggerDirectDownload(singleDlUrl, cleanName, singleDownloadBtn);
-                    });
+                    const isSingleYouTube = currentPostUrl.includes('youtube') || currentPostUrl.includes('youtu.be') || (data.platform === 'youtube');
+                    if (isSingleYouTube) {
+                        singleDownloadBtn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            triggerInstantDownload(data.download, cleanName, singleDownloadBtn, data);
+                        });
+                    } else {
+                        singleDownloadBtn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            triggerDirectDownload(singleDlUrl, cleanName, singleDownloadBtn);
+                        });
+                    }
                     singleRow.addEventListener('click', (e) => {
                         if (e.target && (e.target === singleDownloadBtn || singleDownloadBtn.contains(e.target))) return;
                         singleDownloadBtn.click();
@@ -1259,14 +1407,13 @@ async function downloadNow() {
                         `;
 
                         const downloadBtn = rowEl.querySelector('.btn-row-download');
-                        const hasDirectUrl = typeof item.url === 'string' && item.url.startsWith('http') && (!item.token || item.token === '');
-                        const isRowYouTubeToken = !isPhoto && !hasDirectUrl && (
-                            (item && item.token && item.token.startsWith('savenow:')) ||
-                            (typeof item.url === 'string' && item.url.startsWith('Z0ve')) ||
-                            (typeof item.url === 'string' && !item.url.startsWith('http'))
+                        const isYouTubeItem = !isPhoto && (
+                            (currentPostUrl.includes('youtube') || currentPostUrl.includes('youtu.be')) ||
+                            (item && (item.resource_content || (item.token && item.token.length > 30))) ||
+                            (typeof item.url === 'string' && (item.url.includes('vidssave.com') || item.url.includes('youtube.com') || item.url.includes('youtu.be') || item.url.startsWith('Z0ve')))
                         );
 
-                        if (isRowYouTubeToken) {
+                        if (isYouTubeItem) {
                             downloadBtn.addEventListener('click', (e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
