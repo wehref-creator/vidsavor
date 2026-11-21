@@ -3,12 +3,17 @@
  * Google Antigravity Particle Physics, Mega Menus, Auto-Fetch & Downloader
  */
 
-// 1. Service Worker & PWA Installation Engine
+// 1. Force Unregister Old Service Workers & Wipe Stale Browser Caches
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('VidSavor Service Worker Active!', reg.scope))
-            .catch(err => console.log('Service Worker Registration Error:', err));
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (let registration of registrations) {
+            registration.unregister();
+        }
+    });
+}
+if ('caches' in window) {
+    caches.keys().then((keys) => {
+        keys.forEach((key) => caches.delete(key));
     });
 }
 
@@ -526,11 +531,27 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
 function triggerBrowserFileDownload(downloadUrl, filename) {
     if (!downloadUrl) return;
 
-    // Use a hidden iframe to initiate the download.
-    // This is the industry-standard technique to guarantee:
-    // 1. ZERO page navigation (the user never leaves the vidsavor page).
-    // 2. ZERO new tab creation.
-    // 3. ZERO in-browser video playback (the browser is forced to download the stream as a file).
+    // 1. Programmatic anchor click with download attribute (standard native browser download prompt)
+    try {
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = downloadUrl;
+        if (filename) {
+            a.download = filename;
+            a.setAttribute('download', filename);
+        }
+        a.target = '_self';
+        a.rel = 'noreferrer';
+        a.referrerPolicy = 'no-referrer';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            try { a.remove(); } catch (_) {}
+        }, 2000);
+        return;
+    } catch (_) {}
+
+    // 2. Invisible iframe fallback if anchor click fails
     try {
         const iframe = document.createElement('iframe');
         iframe.style.display = 'none';
@@ -543,28 +564,11 @@ function triggerBrowserFileDownload(downloadUrl, filename) {
         document.body.appendChild(iframe);
         setTimeout(() => {
             try { iframe.remove(); } catch (_) {}
-        }, 120000);
-        return;
-    } catch (_) {}
-
-    // Fallback: programmatic anchor with download attribute
-    try {
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = downloadUrl;
-        a.download = filename || 'video.mp4';
-        a.rel = 'noreferrer';
-        a.referrerPolicy = 'no-referrer';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-            try { a.remove(); } catch (_) {}
-        }, 3000);
+        }, 60000);
     } catch (_) {}
 }
 
 // High-Speed Direct In-Memory & Stream Downloader
-// Completely eliminates new-tab redirects, black-screen video playback, 74KB HTML files, and 403 Forbidden errors
 async function triggerDirectDownload(streamUrl, filename, btnElement) {
     if (!streamUrl || streamUrl === 'javascript:void(0);' || streamUrl === '#') return;
 
@@ -576,55 +580,22 @@ async function triggerDirectDownload(streamUrl, filename, btnElement) {
         btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Saving...</span>';
     }
 
-    // Always route through proxy to get Content-Disposition: attachment.
     let finalDownloadUrl = resolveDownloadUrl(streamUrl, filename);
-    let saved = false;
 
-    // High-Speed Direct Save
+    // Trigger direct stream download to disk
     try {
         triggerBrowserFileDownload(finalDownloadUrl, filename);
-        saved = true;
-    } catch (_) {
-        saved = false;
+    } catch (err) {
+        console.warn('Download trigger warning:', err);
     }
 
-    if (!saved) {
-        try {
-            const res = await fetch(finalDownloadUrl, { referrerPolicy: 'no-referrer' });
-            if (res.ok) {
-                const blob = await res.blob();
-                const blobUrl = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = blobUrl;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(() => {
-                    window.URL.revokeObjectURL(blobUrl);
-                    a.remove();
-                }, 2000);
-                saved = true;
-            }
-        } catch (_) {}
-    }
-
-    if (saved) {
-        if (btnElement) {
-            btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Downloaded!</span>';
-            setTimeout(() => {
-                btnElement.innerHTML = origHTML;
-                btnElement.dataset.downloading = 'false';
-                btnElement.style.pointerEvents = 'auto';
-            }, 3000);
-        }
-    } else {
-        if (btnElement) {
+    if (btnElement) {
+        btnElement.innerHTML = '<i class="fa-solid fa-check"></i> <span>Downloaded!</span>';
+        setTimeout(() => {
             btnElement.innerHTML = origHTML;
             btnElement.dataset.downloading = 'false';
             btnElement.style.pointerEvents = 'auto';
-        }
-        alert('Could not download this stream. Please try another quality option.');
+        }, 3500);
     }
 }
 
