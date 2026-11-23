@@ -896,6 +896,9 @@ async function downloadNow() {
         document.getElementById('videoUrl').value = urlInput;
     }
 
+    const currentPostUrl = urlInput || document.getElementById('videoUrl')?.value?.trim() || '';
+    window.currentPostUrl = currentPostUrl;
+
     // Loading State with animation
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching...';
     btn.disabled = true;
@@ -1395,7 +1398,8 @@ async function downloadNow() {
                         </div>
                     `;
                     const singleDownloadBtn = singleRow.querySelector('.btn-row-download');
-                    const isSingleYouTube = currentPostUrl.includes('youtube') || currentPostUrl.includes('youtu.be') || (data.platform === 'youtube');
+                    const postRef = (typeof currentPostUrl !== 'undefined' ? currentPostUrl : (window.currentPostUrl || urlInput || ''));
+                    const isSingleYouTube = postRef.includes('youtube') || postRef.includes('youtu.be') || (data.platform === 'youtube');
                     if (isSingleYouTube) {
                         singleDownloadBtn.addEventListener('click', (e) => {
                             e.preventDefault();
@@ -1488,8 +1492,9 @@ async function downloadNow() {
                         `;
 
                         const downloadBtn = rowEl.querySelector('.btn-row-download');
+                        const itemPostRef = (typeof currentPostUrl !== 'undefined' ? currentPostUrl : (window.currentPostUrl || urlInput || ''));
                         const isYouTubeItem = !isPhoto && (
-                            (currentPostUrl.includes('youtube') || currentPostUrl.includes('youtu.be')) ||
+                            (itemPostRef.includes('youtube') || itemPostRef.includes('youtu.be')) ||
                             (item && (item.resource_content || (item.token && item.token.length > 30))) ||
                             (typeof item.url === 'string' && (item.url.includes('vidssave.com') || item.url.includes('youtube.com') || item.url.includes('youtu.be') || item.url.startsWith('Z0ve')))
                         );
