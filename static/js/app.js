@@ -882,7 +882,16 @@ async function downloadNow() {
 
     // Auto-extract pure HTTP(S) link in case user pasted social share text (e.g. "Check out this reel https://...")
     const urlMatch = rawInput.match(/https?:\/\/[^\s"']+/i);
-    const urlInput = urlMatch ? urlMatch[0] : rawInput;
+    let urlInput = urlMatch ? urlMatch[0] : rawInput;
+
+    // Client-side Pinterest normalization: convert in.pinterest.com or /pin/ID to canonical www.pinterest.com/pin/ID/
+    if (urlInput.includes('pinterest.com') || urlInput.includes('pin.it')) {
+        const pinM = urlInput.match(/\/pin\/(?:[^\/]+--)?([0-9]+)/) || urlInput.match(/pin_id=([0-9]+)/);
+        if (pinM && pinM[1]) {
+            urlInput = `https://www.pinterest.com/pin/${pinM[1]}/`;
+        }
+    }
+
     if (urlMatch && urlMatch[0] !== rawInput) {
         document.getElementById('videoUrl').value = urlInput;
     }
@@ -893,6 +902,7 @@ async function downloadNow() {
 
     try {
         let data = null;
+        let lastErrorText = '';
         try {
             let response = await fetch('/api/fetch', {
                 method: 'POST',
@@ -911,8 +921,15 @@ async function downloadNow() {
 
             if (response.ok) {
                 data = await response.json();
+            } else {
+                try {
+                    const errData = await response.json();
+                    if (errData && errData.message) lastErrorText = errData.message;
+                } catch (_) {}
             }
-        } catch (fetchErr) {}
+        } catch (fetchErr) {
+            console.warn('Network fetch error:', fetchErr);
+        }
 
         const isYouTube = urlInput.includes('youtube.com') || urlInput.includes('youtu.be');
         const hasYouTubeVideo = data && data.status === 'success' && (data.results || []).some(r => r.type === 'video' || r.type === 'audio');
@@ -1021,6 +1038,70 @@ async function downloadNow() {
                         }
                     }
                 } catch (gwErr) {}
+            }
+        }
+
+        // Direct Client Fallback for Pinterest (guarantees instant result if serverless times out)
+        if ((urlInput.includes('pinterest.com') || urlInput.includes('pin.it')) && (!data || data.status !== 'success' || !data.results || data.results.length === 0)) {
+            try {
+                const gwPinRes = await fetch(`https://grapweb.com/pinterest/api.php?url=${encodeURIComponent(urlInput)}`);
+                if (gwPinRes.ok) {
+                    const gwPinData = await gwPinRes.json();
+                    if (gwPinData && gwPinData.status === 'success') {
+                        const pinTitle = gwPinData.title || 'Pinterest Media';
+                        const pinThumb = gwPinData.thumbnail || '';
+                        const pinResults = [];
+                        const seenUrls = new Set();
+
+                        const medias = gwPinData.medias || gwPinData.results || [];
+                        for (const m of medias) {
+                            let mUrl = m.download_url || m.direct_url || m.url;
+                            if (mUrl && !mUrl.startsWith('http')) {
+                                mUrl = 'https://grapweb.com/pinterest/' + mUrl.replace(/^\/+/, '');
+                            }
+                            if (!mUrl || seenUrls.has(mUrl)) continue;
+                            seenUrls.add(mUrl);
+                            const isVid = (m.type === 'video' || (m.format && m.format.toLowerCase() === 'mp4'));
+                            pinResults.push({
+                                url: mUrl,
+                                type: isVid ? 'video' : 'photo',
+                                quality: m.quality || (isVid ? '720p HD Video' : 'Original Image'),
+                                format: isVid ? 'mp4' : 'jpg',
+                                has_audio: isVid,
+                                size: m.resolution || 'Original Resolution',
+                                thumbnail: pinThumb || mUrl
+                            });
+                        }
+
+                        if (pinThumb && !seenUrls.has(pinThumb)) {
+                            pinResults.push({
+                                url: pinThumb,
+                                type: 'photo',
+                                quality: 'Original High-Res Cover (JPG)',
+                                format: 'jpg',
+                                has_audio: false,
+                                size: 'Original Resolution',
+                                thumbnail: pinThumb
+                            });
+                        }
+
+                        if (pinResults.length > 0) {
+                            data = {
+                                status: 'success',
+                                title: pinTitle,
+                                thumbnail: pinThumb || pinResults[0].thumbnail,
+                                type: pinResults[0].type,
+                                download: pinResults[0].url,
+                                author: gwPinData.author || 'Pinterest Creator',
+                                duration: '',
+                                platform: 'pinterest',
+                                results: pinResults
+                            };
+                        }
+                    }
+                }
+            } catch (gwPinErr) {
+                console.warn('Client Pinterest fallback error:', gwPinErr);
             }
         }
 
@@ -1442,11 +1523,13 @@ async function downloadNow() {
             resultBox.style.display = 'block';
             resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } else {
-            alert('Error: ' + (data.message || 'Unable to extract media from this link.'));
+            const errMsg = (data && data.message) ? data.message : (lastErrorText || 'Unable to extract media from this link. Please check if the post is public and try again.');
+            alert('Error: ' + errMsg);
         }
     } catch (err) {
         console.error("Extraction error:", err);
-        alert('Server communication error. Please verify the URL and try again.');
+        const detailMsg = (err && err.message) ? `: ${err.message}` : '';
+        alert(`Server communication error${detailMsg}. Please verify the URL and try again.`);
     } finally {
         btn.innerHTML = '<i class="fa-solid fa-download"></i> <span>Download</span>';
         btn.disabled = false;

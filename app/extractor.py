@@ -136,6 +136,14 @@ def canonicalize_url(raw_url: str) -> str:
         if url.endswith('?') or url.endswith('&'):
             url = url[:-1]
 
+    # Pinterest canonicalization (in.pinterest.com, pin.it, etc. -> https://www.pinterest.com/pin/ID/)
+    if 'pinterest.com' in url.lower() or 'pinimg.com' in url.lower():
+        pin_m = re.search(r'/pin/(?:[^/]+--)?([0-9]+)', url) or re.search(r'pin_id=([0-9]+)', url)
+        if pin_m:
+            url = f"https://www.pinterest.com/pin/{pin_m.group(1)}/"
+        else:
+            url = re.sub(r'https?://[a-zA-Z0-9_-]+\.pinterest\.com', 'https://www.pinterest.com', url)
+
     return url
 
 def decode_hunter(h_str: str, n_str: str, t_val: int, e_val: int) -> str:
@@ -1143,35 +1151,22 @@ class MediaExtractor:
             except Exception as e_pinit:
                 logger.warning(f"Pinterest pin.it expansion error: {e_pinit}")
 
-        # Extract Pin ID from URL
+        # Extract Pin ID from URL and normalize to canonical www.pinterest.com
         pin_id_m = re.search(r'/pin/(?:[^/]+--)?([0-9]+)', url) or re.search(r'pin_id=([0-9]+)', url) or re.search(r'([0-9]{8,25})', url)
         pin_id = pin_id_m.group(1) if pin_id_m else None
-        
-        # Primary Metadata Engine: Pinterest Official oEmbed
-        oe_title = ""
-        oe_thumb = ""
-        oe_author = "Pinterest Creator"
         if pin_id:
-            try:
-                oe_url = f"https://www.pinterest.com/oembed.json?url=https%3A%2F%2Fwww.pinterest.com%2Fpin%2F{pin_id}%2F"
-                oe_r = requests.get(oe_url, headers={'User-Agent': USER_AGENT}, timeout=5)
-                if oe_r.status_code == 200:
-                    oe_json = oe_r.json()
-                    if oe_json:
-                        oe_title = oe_json.get("title") or ""
-                        oe_thumb = oe_json.get("thumbnail_url") or ""
-                        oe_author = oe_json.get("author_name") or "Pinterest Creator"
-            except Exception:
-                pass
-
+            url = f"https://www.pinterest.com/pin/{pin_id}/"
+        else:
+            url = re.sub(r'https?://[a-zA-Z0-9_-]+\.pinterest\.com', 'https://www.pinterest.com', url)
+        
         # Tier 0: Hostinger Grapweb Pinterest API (High Speed, Direct MP4 & High-Res Images)
         try:
-            gw_r = requests.get(f"https://grapweb.com/pinterest/api.php?url={urllib.parse.quote(url)}", timeout=7, headers={'User-Agent': USER_AGENT})
+            gw_r = requests.get(f"https://grapweb.com/pinterest/api.php?url={urllib.parse.quote(url)}", timeout=5, headers={'User-Agent': USER_AGENT})
             if gw_r.status_code == 200:
                 gw_d = gw_r.json()
                 if gw_d.get("status") == "success":
-                    title = gw_d.get("title") or oe_title or "Pinterest Media"
-                    thumb = gw_d.get("thumbnail") or oe_thumb or ""
+                    title = gw_d.get("title") or "Pinterest Media"
+                    thumb = gw_d.get("thumbnail") or ""
                     results = []
                     seen_urls = set()
 
@@ -1241,13 +1236,30 @@ class MediaExtractor:
                             "thumbnail": final_thumb,
                             "type": results[0]["type"],
                             "download": results[0]["url"],
-                            "author": oe_author,
+                            "author": gw_d.get("author") or "Pinterest Creator",
                             "duration": "",
                             "platform": "pinterest",
                             "results": results
                         }
         except Exception as gw_pin_err:
             logger.warning(f"Pinterest Grapweb error: {gw_pin_err}")
+
+        # Tier 1 Fallback: Pinterest Official oEmbed
+        oe_title = ""
+        oe_thumb = ""
+        oe_author = "Pinterest Creator"
+        if pin_id:
+            try:
+                oe_url = f"https://www.pinterest.com/oembed.json?url=https%3A%2F%2Fwww.pinterest.com%2Fpin%2F{pin_id}%2F"
+                oe_r = requests.get(oe_url, headers={'User-Agent': USER_AGENT}, timeout=3)
+                if oe_r.status_code == 200:
+                    oe_json = oe_r.json()
+                    if oe_json:
+                        oe_title = oe_json.get("title") or ""
+                        oe_thumb = oe_json.get("thumbnail_url") or ""
+                        oe_author = oe_json.get("author_name") or "Pinterest Creator"
+            except Exception:
+                pass
 
         # Tier 1: Direct HTML Regex Scraping (HLS to MP4, Direct MP4, /originals/ High-Res)
         try:
