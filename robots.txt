@@ -7,7 +7,7 @@ Disallow: /fetch
 Disallow: /resolve-youtube
 Disallow: /proxy-download
 
-# Search Engine Specific
+# Search Engines
 User-agent: Googlebot
 Allow: /
 Disallow: /api/
@@ -23,7 +23,25 @@ User-agent: Bingbot
 Allow: /
 Disallow: /api/
 
-# Sitemap location
+# AI, Answer Engine & Generative Optimization (AEO / GEO)
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# Sitemap & Host Authority
 Sitemap: https://www.vidsavor.com/sitemap.xml
-Sitemap: https://vidsavor.com/sitemap.xml
 Host: https://www.vidsavor.com

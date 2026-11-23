@@ -2,6 +2,14 @@
   "version": 2,
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    { "source": "/about", "destination": "/about-us", "permanent": true },
+    { "source": "/contact", "destination": "/contact-us", "permanent": true },
+    { "source": "/help", "destination": "/faq", "permanent": true },
+    { "source": "/dmca", "destination": "/dmca-policy", "permanent": true },
+    { "source": "/privacy", "destination": "/privacy-policy", "permanent": true },
+    { "source": "/terms", "destination": "/terms-of-service", "permanent": true }
+  ],
   "headers": [
     {
       "source": "/robots.txt",
@@ -72,12 +80,6 @@
     { "source": "/api/health", "destination": "/api/index.py" },
     { "source": "/api/(.*)", "destination": "/api/index.py" },
     { "source": "/reels", "destination": "/instagram.html" },
-    { "source": "/download", "destination": "/download.html" },
-    { "source": "/about", "destination": "/about-us.html" },
-    { "source": "/contact", "destination": "/contact-us.html" },
-    { "source": "/help", "destination": "/faq.html" },
-    { "source": "/dmca", "destination": "/dmca-policy.html" },
-    { "source": "/privacy", "destination": "/privacy-policy.html" },
-    { "source": "/terms", "destination": "/terms-of-service.html" }
+    { "source": "/download", "destination": "/download.html" }
   ]
 }
