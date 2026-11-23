@@ -483,6 +483,41 @@ function unpackSnapcdnUrl(rawUrl) {
     return rawUrl;
 }
 
+// Generate clean filename: First 7 words of title + _vidsavor.com.<ext>
+function generateVidsavorFilename(rawTitle, ext = 'mp4', platform = '') {
+    ext = (ext || 'mp4').replace(/^\.+/, '');
+
+    let text = (rawTitle || '').trim();
+
+    // 1. Strip URLs and hashtags
+    text = text.replace(/https?:\/\/[^\s]+/gi, '');
+    text = text.replace(/#[a-zA-Z0-9_\u0080-\uFFFF]+/g, '');
+
+    // 2. Strip asterisks (e.g. F***ing -> Fing)
+    text = text.replace(/\*+/g, '');
+
+    // 3. Keep letters (including Unicode), digits, spaces, and hyphens
+    text = text.replace(/[^\p{L}\p{N}\s-]/gu, ' ').trim();
+
+    // 4. Split into words
+    let words = text.split(/\s+/).filter(w => w.length > 0);
+
+    // 5. Fallback if words are missing or too generic (e.g. "Instagram Media", "Extracted Content")
+    const genericWords = new Set(['instagram', 'media', 'extracted', 'content', 'video', 'post', 'reel', 'reels', 'tiktok', 'facebook', 'pinterest']);
+    const isGeneric = words.length === 0 || (words.length <= 2 && words.every(w => genericWords.has(w.toLowerCase())));
+
+    if (isGeneric) {
+        const plat = platform ? (platform.charAt(0).toUpperCase() + platform.slice(1)) : 'Social';
+        words = [plat, 'Video'];
+    } else {
+        // Take exactly up to the first 7 words
+        words = words.slice(0, 7);
+    }
+
+    const titleSlug = words.join('_');
+    return `${titleSlug}_vidsavor.com.${ext}`;
+}
+
 // Instant Direct Download Engine (Direct Streams & In-Memory Blob Saver)
 function resolveDownloadUrl(streamUrl, filename, item = null) {
     if (!streamUrl) return '';
@@ -494,8 +529,8 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
     }
 
     const currentPostUrl = document.getElementById('videoUrl')?.value?.trim() || '';
-    const safeTitle = (filename || 'video').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
     const ext = (filename || '').split('.').pop() || 'mp4';
+    const cleanFinalName = filename || generateVidsavorFilename(currentTitle, ext);
 
     // 1. YouTube conversion tokens that require dynamic resolution
     const isYouTubeToken = (item && item.token && item.token.startsWith('savenow:')) || (typeof streamUrl === 'string' && streamUrl.startsWith('Z0ve'));
@@ -508,17 +543,16 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
         return streamUrl;
     }
 
-    // 3. For VidSSave, SaveNow, or Grapweb CDN attachment links, they ALREADY provide Content-Disposition: attachment
-    // and must be fetched directly by residential browser!
-    if (streamUrl.includes('vidssave.com') || streamUrl.includes('savenow.to') || streamUrl.includes('lbserver.xyz') || streamUrl.includes('grapweb.com') || streamUrl.includes('download.php')) {
+    // 3. For VidSSave or SaveNow direct links, they require direct residential fetch
+    if (streamUrl.includes('vidssave.com') || streamUrl.includes('savenow.to') || streamUrl.includes('lbserver.xyz')) {
         return streamUrl;
     }
 
-    // 4. Route ALL other external streams (raw Facebook, Instagram, Twitter, Pinterest images, etc.) through edge proxy.
-    // This guarantees Content-Disposition: attachment on same-origin so the browser downloads right on the page without redirecting or playing video.
+    // 4. Route ALL other external streams (Instagram, TikTok, Facebook, Twitter, Pinterest, Grapweb, etc.) through edge proxy.
+    // This guarantees same-origin Content-Disposition: attachment so the browser downloads cleanly with the exact filename.
     const params = new URLSearchParams({
         url: streamUrl,
-        filename: filename || `${safeTitle}.${ext}`
+        filename: cleanFinalName
     });
     if (currentPostUrl) {
         params.set('referer', currentPostUrl);
@@ -527,27 +561,10 @@ function resolveDownloadUrl(streamUrl, filename, item = null) {
 }
 
 // Bulletproof Browser File Downloader (Direct Stream to Disk)
-// Guarantees zero navigation, zero new-tab redirects, and immediate browser download prompt
+// Uses a single programmatic anchor click to guarantee exactly 1 file is downloaded
 function triggerBrowserFileDownload(downloadUrl, filename) {
     if (!downloadUrl) return;
 
-    // 1. Silent invisible iframe - initiates browser file download without navigating top window
-    try {
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.style.width = '0px';
-        iframe.style.height = '0px';
-        iframe.style.position = 'fixed';
-        iframe.style.top = '-9999px';
-        iframe.style.left = '-9999px';
-        iframe.src = downloadUrl;
-        document.body.appendChild(iframe);
-        setTimeout(() => {
-            try { iframe.remove(); } catch (_) {}
-        }, 120000);
-    } catch (_) {}
-
-    // 2. Programmatic anchor click (works on mobile & desktop without navigating window)
     try {
         const a = document.createElement('a');
         a.style.display = 'none';
@@ -562,8 +579,10 @@ function triggerBrowserFileDownload(downloadUrl, filename) {
         a.click();
         setTimeout(() => {
             try { a.remove(); } catch (_) {}
-        }, 3000);
-    } catch (_) {}
+        }, 1500);
+    } catch (err) {
+        console.error('Trigger browser download error:', err);
+    }
 }
 
 // Client-Side Dynamic CryptoJS Loader & VidSSave Resolver (Bypasses Datacenter IP Blocks)
@@ -1376,8 +1395,7 @@ async function downloadNow() {
                 if (data.download && (!data.results || data.results.length === 0)) {
                     const singleRow = document.createElement('div');
                     singleRow.className = 'download-item-row primary-row';
-                    const safeTitle = (currentTitle || 'vidsavor').slice(0, 45).replace(/[^a-zA-Z0-9_-]/g, '_');
-                    const cleanName = `${safeTitle}.mp4`;
+                    const cleanName = generateVidsavorFilename(currentTitle, 'mp4', data.platform);
                     const singleDlUrl = resolveDownloadUrl(data.download, cleanName);
                     singleRow.innerHTML = `
                         <div class="row-left">
@@ -1443,8 +1461,7 @@ async function downloadNow() {
                         let rawQ = item.quality || (isAudio ? 'High Audio' : (isPhoto ? 'HD Photo' : 'HD Video'));
                         let cleanQ = rawQ.replace(/\s+(MP4|MP3|JPG|JPEG|PNG)$/i, '').trim();
 
-                        const safeTitle = (currentTitle || 'vidsavor').slice(0, 45).replace(/[^a-zA-Z0-9_-]/g, '_');
-                        const cleanFilename = `${safeTitle}_${index}_${cleanQ.replace(/[^a-zA-Z0-9_-]/g, '_')}.${ext}`;
+                        const cleanFilename = generateVidsavorFilename(currentTitle, ext, data.platform);
                         const rowDlUrl = resolveDownloadUrl(item.url, cleanFilename, item);
 
                         let iconClass = 'fa-solid fa-video';
