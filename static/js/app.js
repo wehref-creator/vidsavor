@@ -1571,8 +1571,8 @@ window.shareMedia = shareMedia;
 // ==========================================================================
 const UI_TRANSLATIONS = {
     EN: {
-        title: 'Download Social Media Instantly. <span class="gradient">No Ads. No Watermarks.</span>',
-        desc: 'From viral reels to high-res photos and crystal-clear audio, VidSavor lets you download unlimited, watermark-free content across all major social networks instantly.',
+        title: 'VidSavor: Free Online Video Downloader. <span class="gradient">No Ads. No Watermarks.</span>',
+        desc: 'VidSavor is the premier online video downloader to save high-definition videos, reels, photos, and crystal-clear audio in 4K & HD across Instagram, YouTube, TikTok, Facebook, Twitter, and Pinterest without watermarks.',
         placeholder: 'Paste link from Instagram, TikTok, YouTube, Facebook, Twitter...',
         paste: 'Paste',
         download: 'Download',
