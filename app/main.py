@@ -464,8 +464,12 @@ def get_page_path(filename: str):
 def serve_html_file(filename: str):
     path = get_page_path(filename)
     if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read(), status_code=200)
+        for enc in ("utf-8", "utf-8-sig", "latin-1"):
+            try:
+                with open(path, "r", encoding=enc, errors="replace") as f:
+                    return HTMLResponse(content=f.read(), status_code=200)
+            except Exception:
+                continue
     return HTMLResponse(content="<h1>Page Not Found</h1>", status_code=404)
 
 @app.get("/", response_class=HTMLResponse)
