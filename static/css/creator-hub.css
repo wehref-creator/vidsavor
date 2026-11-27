@@ -1,0 +1,539 @@
+/* ==========================================================================
+   VidSavor Creator Hub Stylesheet
+   Powers /sound-effects, /meme-sounds, and /meme-clips
+   ========================================================================== */
+
+.hub-hero {
+    padding: 70px 6% 40px;
+    text-align: center;
+    background: radial-gradient(circle at 50% 15%, rgba(124, 58, 237, 0.08) 0%, transparent 70%);
+}
+
+.hub-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: #f5f3ff;
+    color: #7c3aed;
+    border-radius: var(--radius-pill);
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    border: 1px solid rgba(124, 58, 237, 0.2);
+}
+
+.hub-title {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.04em;
+    line-height: 1.15;
+    margin-bottom: 16px;
+}
+
+.hub-subtitle {
+    font-size: clamp(1rem, 2vw, 1.15rem);
+    color: var(--text-muted);
+    max-width: 720px;
+    margin: 0 auto 30px;
+    line-height: 1.6;
+}
+
+/* Hub Search & Filter Bar */
+.hub-search-wrapper {
+    max-width: 680px;
+    margin: 0 auto 28px;
+    position: relative;
+}
+
+.hub-search-bar {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-pill);
+    padding: 8px 16px 8px 22px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    transition: all 0.2s ease;
+}
+
+.hub-search-bar:focus-within {
+    border-color: #7c3aed;
+    box-shadow: 0 10px 30px rgba(124, 58, 237, 0.15);
+}
+
+.hub-search-bar i {
+    color: var(--text-subtle);
+    font-size: 18px;
+    margin-right: 14px;
+}
+
+.hub-search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-main);
+    background: transparent;
+}
+
+.hub-search-input::placeholder {
+    color: var(--text-subtle);
+}
+
+/* Category Filter Tabs */
+.category-tabs-scroll {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 40px;
+}
+
+.category-pill {
+    padding: 9px 20px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-light);
+    color: var(--text-muted);
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.category-pill:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    color: var(--text-main);
+}
+
+.category-pill.active {
+    background: #111827;
+    border-color: #111827;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+
+/* Hub Grid Container */
+.hub-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 5% 80px;
+}
+
+.hub-results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.hub-results-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.hub-stop-all-btn {
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fee2e2;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.hub-stop-all-btn:hover {
+    background: #fee2e2;
+}
+
+/* =========================================================================
+   1. SOUND EFFECTS CARD STYLES
+   ========================================================================= */
+.sound-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.sound-card {
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    box-shadow: var(--shadow-card);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+}
+
+.sound-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    border-color: #cbd5e1;
+}
+
+.sound-card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.sound-play-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #111827;
+    color: #ffffff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    flex-shrink: 0;
+}
+
+.sound-play-btn:hover {
+    transform: scale(1.08);
+    background: #7c3aed;
+}
+
+.sound-play-btn.playing {
+    background: #7c3aed;
+    animation: soundPulse 1.2s infinite alternate;
+}
+
+@keyframes soundPulse {
+    from { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
+    to { box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); }
+}
+
+.sound-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.sound-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sound-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-subtle);
+}
+
+.sound-meta-tag {
+    background: var(--bg-subtle);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* Sound Waveform Visualizer simulation */
+.sound-waveform {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 24px;
+    margin-bottom: 16px;
+    padding: 0 8px;
+}
+
+.sound-wave-bar {
+    flex: 1;
+    background: #e2e8f0;
+    border-radius: 2px;
+    transition: height 0.2s, background-color 0.2s;
+}
+
+.sound-card:hover .sound-wave-bar {
+    background: #cbd5e1;
+}
+
+.sound-play-btn.playing ~ .sound-info .sound-wave-bar,
+.sound-card.playing .sound-wave-bar {
+    background: #7c3aed;
+    animation: waveBounce 0.6s infinite alternate ease-in-out;
+}
+
+@keyframes waveBounce {
+    0% { height: 4px; }
+    100% { height: 22px; }
+}
+
+.sound-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.sound-license {
+    font-size: 11.5px;
+    color: #10b981;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sound-download-btn {
+    padding: 7px 16px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-light);
+    color: var(--text-main);
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.sound-download-btn:hover {
+    background: #111827;
+    color: #ffffff;
+    border-color: #111827;
+}
+
+/* =========================================================================
+   2. MEME SOUNDBOARD BUTTON STYLES
+   ========================================================================= */
+.soundboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.soundboard-card {
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    text-align: center;
+    box-shadow: var(--shadow-card);
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.soundboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    border-color: #cbd5e1;
+}
+
+.soundboard-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    margin: 8px auto 14px;
+    position: relative;
+    box-shadow: 0 8px 0 #cbd5e1, 0 12px 20px rgba(0,0,0,0.12);
+    transition: all 0.1s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    color: #ffffff;
+}
+
+.soundboard-btn:active, .soundboard-btn.active {
+    transform: translateY(6px);
+    box-shadow: 0 2px 0 #94a3b8, 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.soundboard-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 6px;
+    line-height: 1.3;
+}
+
+.soundboard-tag {
+    font-size: 11px;
+    color: var(--text-subtle);
+    background: var(--bg-subtle);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.soundboard-dl-btn {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-pill);
+    padding: 4px 12px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.soundboard-dl-btn:hover {
+    background: #111827;
+    color: #ffffff;
+    border-color: #111827;
+}
+
+/* =========================================================================
+   3. MEME VIDEO CLIPS STYLES
+   ========================================================================= */
+.clips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 22px;
+}
+
+.clip-card {
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.clip-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+    border-color: #cbd5e1;
+}
+
+.clip-thumb-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #0f172a;
+    overflow: hidden;
+}
+
+.clip-thumb-wrap.portrait {
+    aspect-ratio: 9/16;
+}
+
+.clip-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.clip-duration-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.75);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.clip-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1;
+}
+
+.clip-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 6px;
+    line-height: 1.35;
+}
+
+.clip-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.clip-tag-pill {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    background: var(--bg-subtle);
+    border-radius: 4px;
+    color: var(--text-subtle);
+}
+
+.clip-dl-btn {
+    width: 100%;
+    padding: 9px;
+    border-radius: var(--radius-pill);
+    background: #111827;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.clip-dl-btn:hover {
+    background: #7c3aed;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .hub-hero { padding: 40px 5% 24px; }
+    .hub-title { font-size: 1.85rem; }
+    .sound-grid { grid-template-columns: 1fr; }
+    .soundboard-grid { grid-template-columns: repeat(2, 1fr); }
+    .clips-grid { grid-template-columns: 1fr; }
+}

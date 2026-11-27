@@ -80,6 +80,9 @@
     { "source": "/api/health", "destination": "/api/index.py" },
     { "source": "/api/(.*)", "destination": "/api/index.py" },
     { "source": "/reels", "destination": "/instagram.html" },
-    { "source": "/download", "destination": "/download.html" }
+    { "source": "/download", "destination": "/download.html" },
+    { "source": "/sound-effects", "destination": "/sound-effects.html" },
+    { "source": "/meme-sounds", "destination": "/meme-sounds.html" },
+    { "source": "/meme-clips", "destination": "/meme-clips.html" }
   ]
 }

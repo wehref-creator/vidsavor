@@ -583,6 +583,21 @@ async def serve_audio():
 async def serve_photo():
     return serve_html_file("photo.html")
 
+@app.get("/sound-effects", response_class=HTMLResponse)
+@app.get("/sound-effects/", response_class=HTMLResponse)
+async def serve_sound_effects():
+    return serve_html_file("sound-effects.html")
+
+@app.get("/meme-sounds", response_class=HTMLResponse)
+@app.get("/meme-sounds/", response_class=HTMLResponse)
+async def serve_meme_sounds():
+    return serve_html_file("meme-sounds.html")
+
+@app.get("/meme-clips", response_class=HTMLResponse)
+@app.get("/meme-clips/", response_class=HTMLResponse)
+async def serve_meme_clips():
+    return serve_html_file("meme-clips.html")
+
 @app.get("/robots.txt")
 def serve_robots():
     for f in [os.path.join(PUBLIC_DIR, "robots.txt"), os.path.join(STATIC_DIR, "robots.txt"), os.path.join(BASE_DIR, "robots.txt")]:
