@@ -203,344 +203,338 @@
     </div>
 
     <!-- CATEGORY TABS -->
-    <div class="category-tabs-scroll">
+        <div class="category-tabs-scroll">
         <button type="button" class="category-pill active" data-cat="all"><i class="fa-solid fa-border-all"></i> All Sounds</button>
-        <button type="button" class="category-pill" data-cat="whoosh"><i class="fa-solid fa-wind"></i> Whooshes &amp; Transitions</button>
-        <button type="button" class="category-pill" data-cat="ui"><i class="fa-solid fa-mouse-pointer"></i> Pops, Clicks &amp; UI</button>
-        <button type="button" class="category-pill" data-cat="impact"><i class="fa-solid fa-burst"></i> Impacts &amp; Bass Drops</button>
-        <button type="button" class="category-pill" data-cat="funny"><i class="fa-solid fa-face-grin-squint"></i> Funny &amp; Cartoons</button>
-        <button type="button" class="category-pill" data-cat="meme"><i class="fa-solid fa-fire"></i> Viral Meme SFX</button>
-        <button type="button" class="category-pill" data-cat="gaming"><i class="fa-solid fa-gamepad"></i> Gaming &amp; 8-Bit</button>
+        <button type="button" class="category-pill" data-cat="whoosh"><i class="fa-solid fa-wind"></i> Transitions &amp; Whooshes</button>
+        <button type="button" class="category-pill" data-cat="clicks"><i class="fa-solid fa-arrow-pointer"></i> Clicks, UI &amp; Pops</button>
+        <button type="button" class="category-pill" data-cat="impacts"><i class="fa-solid fa-burst"></i> Impacts, Hits &amp; Bass</button>
+        <button type="button" class="category-pill" data-cat="notification"><i class="fa-solid fa-bell"></i> Notifications &amp; Bells</button>
+        <button type="button" class="category-pill" data-cat="tension"><i class="fa-solid fa-chart-line"></i> Tension &amp; Risers</button>
     </div>
 </section>
 
 <!-- MAIN SOUND EFFECTS GRID -->
 <main class="hub-container">
     <div class="hub-results-header">
-        <div class="hub-results-title" id="resultsCount">24 Featured Sound Effects</div>
+        <div class="hub-results-title" id="resultsCount">21 Video Editing Sound Effects Available</div>
         <button type="button" class="hub-stop-all-btn" onclick="VidSavorHub.stopAllAudio()">
             <i class="fa-solid fa-stop"></i> Stop Audio
         </button>
     </div>
 
     <div class="sound-grid" id="soundEffectsGrid">
-        <!-- Card 1: Fast Air Whoosh -->
-        <div class="sound-card" data-category="whoosh" data-title="Fast Air Whoosh Transition" data-tags="swoosh transition cut fast quick">
+        <!-- Card 1: Fast Air Whoosh Transition -->
+        <div class="sound-card" data-category="whoosh transition" data-title="Fast Air Whoosh Transition" data-tags="fast air whoosh swoosh speed cut whip pan transition youtube shorts reels" data-sound-id="whoosh_fast" data-src="/static/audio/sfx/whoosh_fast.mp3">
             <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-whoosh_fast" onclick="VidSavorHub.playSound('whoosh_fast', 'btn-whoosh_fast')" aria-label="Play Fast Air Whoosh"><i class="fa-solid fa-play"></i></button>
+                <button type="button" class="sound-play-btn" onclick="playSound('whoosh_fast', '/static/audio/sfx/whoosh_fast.mp3')" aria-label="Play Fast Air Whoosh Transition"><i class="fa-solid fa-play"></i></button>
                 <div class="sound-info">
                     <div class="sound-title">Fast Air Whoosh Transition</div>
                     <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
                 </div>
             </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:16px;"></span><span class="sound-wave-bar" style="height:8px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:4px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('whoosh_fast', 'Fast_Air_Whoosh_Transition')"><i class="fa-solid fa-download"></i> Download</button>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Fast Air Whoosh Transition', '/static/audio/sfx/whoosh_fast.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
             </div>
         </div>
 
-        <!-- Card 2: Cinematic Sub Riser -->
-        <div class="sound-card" data-category="whoosh impact" data-title="Cinematic Sub Riser Swell" data-tags="tension build dramatic trailer cinematic">
+        <!-- Card 2: Cinematic Camera Whoosh -->
+        <div class="sound-card" data-category="whoosh cinematic" data-title="Cinematic Camera Whoosh" data-tags="cinematic camera whoosh soft pan drone deep bass intro transition" data-sound-id="whoosh_cinematic" data-src="/static/audio/sfx/whoosh_cinematic.mp3">
             <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-cinematic_riser" onclick="VidSavorHub.playSound('cinematic_riser', 'btn-cinematic_riser')" aria-label="Play Cinematic Riser"><i class="fa-solid fa-play"></i></button>
+                <button type="button" class="sound-play-btn" onclick="playSound('whoosh_cinematic', '/static/audio/sfx/whoosh_cinematic.mp3')" aria-label="Play Cinematic Camera Whoosh"><i class="fa-solid fa-play"></i></button>
                 <div class="sound-info">
-                    <div class="sound-title">Cinematic Sub Riser Swell</div>
-                    <div class="sound-meta"><span class="sound-meta-tag">0:03</span> • <span>320kbps MP3</span></div>
-                </div>
-            </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:4px;"></span><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('cinematic_riser', 'Cinematic_Sub_Riser_Swell')"><i class="fa-solid fa-download"></i> Download</button>
-            </div>
-        </div>
-
-        <!-- Card 3: Whip Fast Swoosh -->
-        <div class="sound-card" data-category="whoosh" data-title="Whip Fast Pan Swoosh" data-tags="whip pan camera snap transition">
-            <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-whip_whoosh" onclick="VidSavorHub.playSound('whip_whoosh', 'btn-whip_whoosh')" aria-label="Play Whip Fast Swoosh"><i class="fa-solid fa-play"></i></button>
-                <div class="sound-info">
-                    <div class="sound-title">Whip Fast Pan Swoosh</div>
+                    <div class="sound-title">Cinematic Camera Whoosh</div>
                     <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
                 </div>
             </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:4px;"></span><span class="sound-wave-bar" style="height:16px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:8px;"></span><span class="sound-wave-bar" style="height:4px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('whip_whoosh', 'Whip_Fast_Pan_Swoosh')"><i class="fa-solid fa-download"></i> Download</button>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Cinematic Camera Whoosh', '/static/audio/sfx/whoosh_cinematic.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
             </div>
         </div>
 
-        <!-- Card 4: Bubble Pop -->
-        <div class="sound-card" data-category="ui" data-title="Bubble Pop Click SFX" data-tags="bubble pop button tap clean cute ui">
+        <!-- Card 3: Whip Pan Speed Whoosh -->
+        <div class="sound-card" data-category="whoosh transition" data-title="Whip Pan Speed Whoosh" data-tags="whip pan speed whoosh swift fast cut action reel transition" data-sound-id="whip_whoosh" data-src="/static/audio/sfx/whip_whoosh.mp3">
             <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-bubble_pop" onclick="VidSavorHub.playSound('bubble_pop', 'btn-bubble_pop')" aria-label="Play Bubble Pop"><i class="fa-solid fa-play"></i></button>
+                <button type="button" class="sound-play-btn" onclick="playSound('whip_whoosh', '/static/audio/sfx/whip_whoosh.mp3')" aria-label="Play Whip Pan Speed Whoosh"><i class="fa-solid fa-play"></i></button>
                 <div class="sound-info">
-                    <div class="sound-title">Bubble Pop Click SFX</div>
+                    <div class="sound-title">Whip Pan Speed Whoosh</div>
                     <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
                 </div>
             </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:8px;"></span><span class="sound-wave-bar" style="height:4px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('bubble_pop', 'Bubble_Pop_Click_SFX')"><i class="fa-solid fa-download"></i> Download</button>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Whip Pan Speed Whoosh', '/static/audio/sfx/whip_whoosh.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
             </div>
         </div>
 
-        <!-- Card 5: Mouse Click -->
-        <div class="sound-card" data-category="ui" data-title="Mechanical Mouse Click" data-tags="mouse click button tap desktop tech">
+        <!-- Card 4: Clean Bubble Pop Sound -->
+        <div class="sound-card" data-category="clicks ui" data-title="Clean Bubble Pop Sound" data-tags="bubble pop sound text reveal graphic pop in notification animation capcut" data-sound-id="bubble_pop" data-src="/static/audio/sfx/bubble_pop.mp3">
             <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-mouse_click" onclick="VidSavorHub.playSound('mouse_click', 'btn-mouse_click')" aria-label="Play Mouse Click"><i class="fa-solid fa-play"></i></button>
+                <button type="button" class="sound-play-btn" onclick="playSound('bubble_pop', '/static/audio/sfx/bubble_pop.mp3')" aria-label="Play Clean Bubble Pop Sound"><i class="fa-solid fa-play"></i></button>
                 <div class="sound-info">
-                    <div class="sound-title">Mechanical Mouse Click</div>
+                    <div class="sound-title">Clean Bubble Pop Sound</div>
                     <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
                 </div>
             </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:4px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('mouse_click', 'Mechanical_Mouse_Click')"><i class="fa-solid fa-download"></i> Download</button>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Clean Bubble Pop Sound', '/static/audio/sfx/bubble_pop.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
             </div>
         </div>
 
-        <!-- Card 6: DSLR Camera Shutter -->
-        <div class="sound-card" data-category="ui" data-title="DSLR Camera Shutter Snapshot" data-tags="camera snapshot photo picture shutter capture">
+        <!-- Card 5: Camera Shutter Snapshot Click -->
+        <div class="sound-card" data-category="clicks ui" data-title="Camera Shutter Snapshot Click" data-tags="camera shutter click snapshot dslr photo flash capture freeze frame" data-sound-id="camera_shutter" data-src="/static/audio/sfx/camera_shutter.mp3">
             <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-camera_shutter" onclick="VidSavorHub.playSound('camera_shutter', 'btn-camera_shutter')" aria-label="Play Camera Shutter"><i class="fa-solid fa-play"></i></button>
+                <button type="button" class="sound-play-btn" onclick="playSound('camera_shutter', '/static/audio/sfx/camera_shutter.mp3')" aria-label="Play Camera Shutter Snapshot Click"><i class="fa-solid fa-play"></i></button>
                 <div class="sound-info">
-                    <div class="sound-title">DSLR Camera Shutter Snapshot</div>
+                    <div class="sound-title">Camera Shutter Snapshot Click</div>
                     <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
                 </div>
             </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:16px;"></span><span class="sound-wave-bar" style="height:8px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('camera_shutter', 'DSLR_Camera_Shutter_Snapshot')"><i class="fa-solid fa-download"></i> Download</button>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Camera Shutter Snapshot Click', '/static/audio/sfx/camera_shutter.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
             </div>
         </div>
 
-        <!-- Card 7: Notification Ding -->
-        <div class="sound-card" data-category="ui" data-title="Bell Notification Ding Chime" data-tags="notification ding chime bell alert message">
+        <!-- Card 6: Computer Mouse Click -->
+        <div class="sound-card" data-category="clicks ui" data-title="Computer Mouse Click" data-tags="computer mouse click ui tap button press tutorial screen record" data-sound-id="mouse_click" data-src="/static/audio/sfx/mouse_click.mp3">
             <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-notification_ding" onclick="VidSavorHub.playSound('notification_ding', 'btn-notification_ding')" aria-label="Play Notification Ding"><i class="fa-solid fa-play"></i></button>
+                <button type="button" class="sound-play-btn" onclick="playSound('mouse_click', '/static/audio/sfx/mouse_click.mp3')" aria-label="Play Computer Mouse Click"><i class="fa-solid fa-play"></i></button>
                 <div class="sound-info">
-                    <div class="sound-title">Bell Notification Ding Chime</div>
+                    <div class="sound-title">Computer Mouse Click</div>
                     <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
                 </div>
             </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:16px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('notification_ding', 'Bell_Notification_Ding_Chime')"><i class="fa-solid fa-download"></i> Download</button>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Computer Mouse Click', '/static/audio/sfx/mouse_click.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
             </div>
         </div>
 
-        <!-- Card 8: Keyboard Typing -->
-        <div class="sound-card" data-category="ui" data-title="Fast Keyboard Typing Sequence" data-tags="typing keyboard mechanical keys coding text">
+        <!-- Card 7: Mechanical Keyboard Typing -->
+        <div class="sound-card" data-category="clicks ui" data-title="Mechanical Keyboard Typing" data-tags="mechanical keyboard typing keys text typing code typewriter tutorial" data-sound-id="keyboard_typing" data-src="/static/audio/sfx/keyboard_typing.mp3">
             <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-keyboard_typing" onclick="VidSavorHub.playSound('keyboard_typing', 'btn-keyboard_typing')" aria-label="Play Keyboard Typing"><i class="fa-solid fa-play"></i></button>
+                <button type="button" class="sound-play-btn" onclick="playSound('keyboard_typing', '/static/audio/sfx/keyboard_typing.mp3')" aria-label="Play Mechanical Keyboard Typing"><i class="fa-solid fa-play"></i></button>
                 <div class="sound-info">
-                    <div class="sound-title">Fast Keyboard Typing Sequence</div>
+                    <div class="sound-title">Mechanical Keyboard Typing</div>
                     <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
                 </div>
             </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:8px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:16px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('keyboard_typing', 'Fast_Keyboard_Typing_Sequence')"><i class="fa-solid fa-download"></i> Download</button>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Mechanical Keyboard Typing', '/static/audio/sfx/keyboard_typing.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
             </div>
         </div>
 
-        <!-- Card 9: 808 Sub Bass Drop -->
-        <div class="sound-card" data-category="impact" data-title="808 Sub Bass Boom Drop" data-tags="bass boom 808 sub impact heavy drop">
+        <!-- Card 8: Bright Ding Bell Sound -->
+        <div class="sound-card" data-category="notification ui" data-title="Bright Ding Bell Sound" data-tags="bright ding bell sound idea lightbulb tip bullet point notification chime" data-sound-id="bell_ding" data-src="/static/audio/sfx/bell_ding.mp3">
             <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-sub_bass_drop" onclick="VidSavorHub.playSound('sub_bass_drop', 'btn-sub_bass_drop')" aria-label="Play Sub Bass Drop"><i class="fa-solid fa-play"></i></button>
+                <button type="button" class="sound-play-btn" onclick="playSound('bell_ding', '/static/audio/sfx/bell_ding.mp3')" aria-label="Play Bright Ding Bell Sound"><i class="fa-solid fa-play"></i></button>
                 <div class="sound-info">
-                    <div class="sound-title">808 Sub Bass Boom Drop</div>
-                    <div class="sound-meta"><span class="sound-meta-tag">0:02</span> • <span>320kbps MP3</span></div>
-                </div>
-            </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:24px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:16px;"></span><span class="sound-wave-bar" style="height:10px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('sub_bass_drop', '808_Sub_Bass_Boom_Drop')"><i class="fa-solid fa-download"></i> Download</button>
-            </div>
-        </div>
-
-        <!-- Card 10: Vine Boom -->
-        <div class="sound-card" data-category="meme impact" data-title="Vine Boom Sound Effect" data-tags="vine boom meme reverb bass shock dramatic">
-            <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-vine_boom" onclick="VidSavorHub.playSound('vine_boom', 'btn-vine_boom')" aria-label="Play Vine Boom"><i class="fa-solid fa-play"></i></button>
-                <div class="sound-info">
-                    <div class="sound-title">Vine Boom Sound Effect</div>
-                    <div class="sound-meta"><span class="sound-meta-tag">0:02</span> • <span>320kbps MP3</span></div>
-                </div>
-            </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:24px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:12px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('vine_boom', 'Vine_Boom_Sound_Effect')"><i class="fa-solid fa-download"></i> Download</button>
-            </div>
-        </div>
-
-        <!-- Card 11: Bruh Sound Effect #2 -->
-        <div class="sound-card" data-category="meme funny" data-title="Bruh Sound Effect #2" data-tags="bruh meme funny voice reaction head shake">
-            <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-bruh_sound" onclick="VidSavorHub.playSound('bruh_sound', 'btn-bruh_sound')" aria-label="Play Bruh Sound Effect"><i class="fa-solid fa-play"></i></button>
-                <div class="sound-info">
-                    <div class="sound-title">Bruh Sound Effect #2</div>
+                    <div class="sound-title">Bright Ding Bell Sound</div>
                     <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
                 </div>
             </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:4px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('bruh_sound', 'Bruh_Sound_Effect')"><i class="fa-solid fa-download"></i> Download</button>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Bright Ding Bell Sound', '/static/audio/sfx/bell_ding.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
             </div>
         </div>
 
-        <!-- Card 12: Metal Pipe Falling -->
-        <div class="sound-card" data-category="meme impact" data-title="Metal Pipe Falling SFX" data-tags="metal pipe clang crash meme loud iron">
+        <!-- Card 9: Digital Glitch Distortion -->
+        <div class="sound-card" data-category="impacts glitch" data-title="Digital Glitch Distortion" data-tags="digital glitch distortion cyber error tv static interference transition" data-sound-id="glitch_error" data-src="/static/audio/sfx/glitch_error.mp3">
             <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-metal_pipe" onclick="VidSavorHub.playSound('metal_pipe', 'btn-metal_pipe')" aria-label="Play Metal Pipe Falling"><i class="fa-solid fa-play"></i></button>
+                <button type="button" class="sound-play-btn" onclick="playSound('glitch_error', '/static/audio/sfx/glitch_error.mp3')" aria-label="Play Digital Glitch Distortion"><i class="fa-solid fa-play"></i></button>
                 <div class="sound-info">
-                    <div class="sound-title">Metal Pipe Falling SFX</div>
-                    <div class="sound-meta"><span class="sound-meta-tag">0:02</span> • <span>320kbps MP3</span></div>
-                </div>
-            </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:24px;"></span><span class="sound-wave-bar" style="height:16px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:8px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('metal_pipe', 'Metal_Pipe_Falling_SFX')"><i class="fa-solid fa-download"></i> Download</button>
-            </div>
-        </div>
-
-        <!-- Card 13: Cartoon Boing -->
-        <div class="sound-card" data-category="funny" data-title="Cartoon Boing Spring Jump" data-tags="cartoon boing jump bounce spring funny comedy">
-            <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-cartoon_boing" onclick="VidSavorHub.playSound('cartoon_boing', 'btn-cartoon_boing')" aria-label="Play Cartoon Boing"><i class="fa-solid fa-play"></i></button>
-                <div class="sound-info">
-                    <div class="sound-title">Cartoon Boing Spring Jump</div>
+                    <div class="sound-title">Digital Glitch Distortion</div>
                     <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
                 </div>
             </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:16px;"></span><span class="sound-wave-bar" style="height:10px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('cartoon_boing', 'Cartoon_Boing_Spring_Jump')"><i class="fa-solid fa-download"></i> Download</button>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Digital Glitch Distortion', '/static/audio/sfx/glitch_error.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
             </div>
         </div>
 
-        <!-- Card 14: Sad Trombone -->
-        <div class="sound-card" data-category="funny meme" data-title="Sad Trombone Wah-Wah Fail" data-tags="fail sad trombone wah wah lost comedy meme">
+        <!-- Card 10: Cinematic Tension Suspense Riser -->
+        <div class="sound-card" data-category="tension cinematic" data-title="Cinematic Tension Suspense Riser" data-tags="cinematic tension suspense riser build up climax climax thriller mystery" data-sound-id="cinematic_riser" data-src="/static/audio/sfx/cinematic_riser.mp3">
             <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-sad_trombone" onclick="VidSavorHub.playSound('sad_trombone', 'btn-sad_trombone')" aria-label="Play Sad Trombone"><i class="fa-solid fa-play"></i></button>
+                <button type="button" class="sound-play-btn" onclick="playSound('cinematic_riser', '/static/audio/sfx/cinematic_riser.mp3')" aria-label="Play Cinematic Tension Suspense Riser"><i class="fa-solid fa-play"></i></button>
                 <div class="sound-info">
-                    <div class="sound-title">Sad Trombone Wah-Wah Fail</div>
-                    <div class="sound-meta"><span class="sound-meta-tag">0:02</span> • <span>320kbps MP3</span></div>
-                </div>
-            </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:16px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:8px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('sad_trombone', 'Sad_Trombone_Wah_Wah_Fail')"><i class="fa-solid fa-download"></i> Download</button>
-            </div>
-        </div>
-
-        <!-- Card 15: MLG Air Horn -->
-        <div class="sound-card" data-category="meme gaming" data-title="MLG Triple Air Horn Blast" data-tags="airhorn mlg horn loud blast meme gaming party">
-            <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-mlg_airhorn" onclick="VidSavorHub.playSound('mlg_airhorn', 'btn-mlg_airhorn')" aria-label="Play MLG Air Horn"><i class="fa-solid fa-play"></i></button>
-                <div class="sound-info">
-                    <div class="sound-title">MLG Triple Air Horn Blast</div>
+                    <div class="sound-title">Cinematic Tension Suspense Riser</div>
                     <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
                 </div>
             </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:8px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:8px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('mlg_airhorn', 'MLG_Triple_Air_Horn_Blast')"><i class="fa-solid fa-download"></i> Download</button>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Cinematic Tension Suspense Riser', '/static/audio/sfx/cinematic_riser.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
             </div>
         </div>
 
-        <!-- Card 16: Sad Emotional Violin -->
-        <div class="sound-card" data-category="meme funny" data-title="Sad Emotional Violin Sorrow" data-tags="sad violin emotional sorrow tragedy crying meme flute">
+        <!-- Card 11: Heavy Sub Bass Drop -->
+        <div class="sound-card" data-category="impacts bass" data-title="Heavy Sub Bass Drop" data-tags="heavy sub bass drop 808 boom deep rumble shockwave impact drop" data-sound-id="sub_bass_drop" data-src="/static/audio/sfx/sub_bass_drop.mp3">
             <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-sad_violin" onclick="VidSavorHub.playSound('sad_violin', 'btn-sad_violin')" aria-label="Play Sad Violin"><i class="fa-solid fa-play"></i></button>
+                <button type="button" class="sound-play-btn" onclick="playSound('sub_bass_drop', '/static/audio/sfx/sub_bass_drop.mp3')" aria-label="Play Heavy Sub Bass Drop"><i class="fa-solid fa-play"></i></button>
                 <div class="sound-info">
-                    <div class="sound-title">Sad Emotional Violin Sorrow</div>
-                    <div class="sound-meta"><span class="sound-meta-tag">0:04</span> • <span>320kbps MP3</span></div>
-                </div>
-            </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:16px;"></span><span class="sound-wave-bar" style="height:12px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('sad_violin', 'Sad_Emotional_Violin_Sorrow')"><i class="fa-solid fa-download"></i> Download</button>
-            </div>
-        </div>
-
-        <!-- Card 17: Emotional Damage -->
-        <div class="sound-card" data-category="meme" data-title="Emotional Damage Meme Slap" data-tags="emotional damage meme slap punch reaction viral">
-            <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-emotional_damage" onclick="VidSavorHub.playSound('emotional_damage', 'btn-emotional_damage')" aria-label="Play Emotional Damage"><i class="fa-solid fa-play"></i></button>
-                <div class="sound-info">
-                    <div class="sound-title">Emotional Damage Meme Slap</div>
+                    <div class="sound-title">Heavy Sub Bass Drop</div>
                     <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
                 </div>
             </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:16px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:4px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('emotional_damage', 'Emotional_Damage_Meme_Slap')"><i class="fa-solid fa-download"></i> Download</button>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Heavy Sub Bass Drop', '/static/audio/sfx/sub_bass_drop.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
             </div>
         </div>
 
-        <!-- Card 18: Retro Coin Collect -->
-        <div class="sound-card" data-category="gaming" data-title="8-Bit Retro Coin Collect" data-tags="coin mario retro 8bit pixel gaming arcade point">
+        <!-- Card 12: Heavy Punch Impact Sound -->
+        <div class="sound-card" data-category="impacts action" data-title="Heavy Punch Impact Sound" data-tags="heavy punch impact sound fight action hit body hit smack funny" data-sound-id="punch_impact" data-src="/static/audio/sfx/punch_impact.mp3">
             <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-coin_collect" onclick="VidSavorHub.playSound('coin_collect', 'btn-coin_collect')" aria-label="Play 8-Bit Coin"><i class="fa-solid fa-play"></i></button>
+                <button type="button" class="sound-play-btn" onclick="playSound('punch_impact', '/static/audio/sfx/punch_impact.mp3')" aria-label="Play Heavy Punch Impact Sound"><i class="fa-solid fa-play"></i></button>
                 <div class="sound-info">
-                    <div class="sound-title">8-Bit Retro Coin Collect</div>
+                    <div class="sound-title">Heavy Punch Impact Sound</div>
                     <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
                 </div>
             </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:10px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('coin_collect', 'Retro_Coin_Collect_8Bit')"><i class="fa-solid fa-download"></i> Download</button>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Heavy Punch Impact Sound', '/static/audio/sfx/punch_impact.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
             </div>
         </div>
 
-        <!-- Card 19: Glitch Impact -->
-        <div class="sound-card" data-category="whoosh impact" data-title="Digital Glitch Transition Hit" data-tags="glitch transition noise digital cyber futuristic">
+        <!-- Card 13: Face Slap Humor Sound -->
+        <div class="sound-card" data-category="impacts comedy" data-title="Face Slap Humor Sound" data-tags="face slap humor sound comedic smack funny dramatic fight" data-sound-id="slap_sound" data-src="/static/audio/sfx/slap_sound.mp3">
             <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-glitch_impact" onclick="VidSavorHub.playSound('glitch_impact', 'btn-glitch_impact')" aria-label="Play Glitch Impact"><i class="fa-solid fa-play"></i></button>
+                <button type="button" class="sound-play-btn" onclick="playSound('slap_sound', '/static/audio/sfx/slap_sound.mp3')" aria-label="Play Face Slap Humor Sound"><i class="fa-solid fa-play"></i></button>
                 <div class="sound-info">
-                    <div class="sound-title">Digital Glitch Transition Hit</div>
+                    <div class="sound-title">Face Slap Humor Sound</div>
                     <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
                 </div>
             </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:8px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('glitch_impact', 'Digital_Glitch_Transition_Hit')"><i class="fa-solid fa-download"></i> Download</button>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Face Slap Humor Sound', '/static/audio/sfx/slap_sound.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
             </div>
         </div>
 
-        <!-- Card 20: Cinematic Whoosh -->
-        <div class="sound-card" data-category="whoosh" data-title="Deep Cinematic Swell Whoosh" data-tags="deep cinematic heavy whoosh trailer sound design">
+        <!-- Card 14: Wrong Answer Game Buzzer -->
+        <div class="sound-card" data-category="notification comedy" data-title="Wrong Answer Game Buzzer" data-tags="wrong answer game buzzer fail quiz incorrect red cross buzzer" data-sound-id="wrong_buzzer" data-src="/static/audio/sfx/wrong_buzzer.mp3">
             <div class="sound-card-header">
-                <button type="button" class="sound-play-btn" id="btn-whoosh_cinematic" onclick="VidSavorHub.playSound('whoosh_cinematic', 'btn-whoosh_cinematic')" aria-label="Play Deep Whoosh"><i class="fa-solid fa-play"></i></button>
+                <button type="button" class="sound-play-btn" onclick="playSound('wrong_buzzer', '/static/audio/sfx/wrong_buzzer.mp3')" aria-label="Play Wrong Answer Game Buzzer"><i class="fa-solid fa-play"></i></button>
                 <div class="sound-info">
-                    <div class="sound-title">Deep Cinematic Swell Whoosh</div>
+                    <div class="sound-title">Wrong Answer Game Buzzer</div>
                     <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
                 </div>
             </div>
-            <div class="sound-waveform"><span class="sound-wave-bar" style="height:8px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:10px;"></span></div>
-            <div class="sound-card-footer">
-                <span class="sound-license"><i class="fa-solid fa-check"></i> Free Commercial Use</span>
-                <button type="button" class="sound-download-btn" onclick="VidSavorHub.downloadSound('whoosh_cinematic', 'Deep_Cinematic_Swell_Whoosh')"><i class="fa-solid fa-download"></i> Download</button>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Wrong Answer Game Buzzer', '/static/audio/sfx/wrong_buzzer.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
+            </div>
+        </div>
+
+        <!-- Card 15: Correct Answer Success Chime -->
+        <div class="sound-card" data-category="notification ui" data-title="Correct Answer Success Chime" data-tags="correct answer success chime level up coin win achievement ding" data-sound-id="correct_chime" data-src="/static/audio/sfx/correct_chime.mp3">
+            <div class="sound-card-header">
+                <button type="button" class="sound-play-btn" onclick="playSound('correct_chime', '/static/audio/sfx/correct_chime.mp3')" aria-label="Play Correct Answer Success Chime"><i class="fa-solid fa-play"></i></button>
+                <div class="sound-info">
+                    <div class="sound-title">Correct Answer Success Chime</div>
+                    <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
+                </div>
+            </div>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Correct Answer Success Chime', '/static/audio/sfx/correct_chime.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
+            </div>
+        </div>
+
+        <!-- Card 16: Vinyl Record Scratch Pause -->
+        <div class="sound-card" data-category="impacts comedy" data-title="Vinyl Record Scratch Pause" data-tags="vinyl record scratch pause freeze frame record stop awkward silence comedy" data-sound-id="record_scratch" data-src="/static/audio/sfx/record_scratch.mp3">
+            <div class="sound-card-header">
+                <button type="button" class="sound-play-btn" onclick="playSound('record_scratch', '/static/audio/sfx/record_scratch.mp3')" aria-label="Play Vinyl Record Scratch Pause"><i class="fa-solid fa-play"></i></button>
+                <div class="sound-info">
+                    <div class="sound-title">Vinyl Record Scratch Pause</div>
+                    <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
+                </div>
+            </div>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Vinyl Record Scratch Pause', '/static/audio/sfx/record_scratch.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
+            </div>
+        </div>
+
+        <!-- Card 17: Dramatic Heartbeat Pulse -->
+        <div class="sound-card" data-category="tension drama" data-title="Dramatic Heartbeat Pulse" data-tags="dramatic heartbeat pulse fear suspense shock thrill scary pulse" data-sound-id="heartbeat" data-src="/static/audio/sfx/heartbeat.mp3">
+            <div class="sound-card-header">
+                <button type="button" class="sound-play-btn" onclick="playSound('heartbeat', '/static/audio/sfx/heartbeat.mp3')" aria-label="Play Dramatic Heartbeat Pulse"><i class="fa-solid fa-play"></i></button>
+                <div class="sound-info">
+                    <div class="sound-title">Dramatic Heartbeat Pulse</div>
+                    <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
+                </div>
+            </div>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Dramatic Heartbeat Pulse', '/static/audio/sfx/heartbeat.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
+            </div>
+        </div>
+
+        <!-- Card 18: Clock Ticking Countdown -->
+        <div class="sound-card" data-category="tension ui" data-title="Clock Ticking Countdown" data-tags="clock ticking countdown time running out timer deadline hurry" data-sound-id="clock_ticking" data-src="/static/audio/sfx/clock_ticking.mp3">
+            <div class="sound-card-header">
+                <button type="button" class="sound-play-btn" onclick="playSound('clock_ticking', '/static/audio/sfx/clock_ticking.mp3')" aria-label="Play Clock Ticking Countdown"><i class="fa-solid fa-play"></i></button>
+                <div class="sound-info">
+                    <div class="sound-title">Clock Ticking Countdown</div>
+                    <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
+                </div>
+            </div>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Clock Ticking Countdown', '/static/audio/sfx/clock_ticking.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
+            </div>
+        </div>
+
+        <!-- Card 19: Thunder Strike Shock -->
+        <div class="sound-card" data-category="impacts drama" data-title="Thunder Strike Shock" data-tags="thunder strike lightning storm dramatic shock power flash weather" data-sound-id="thunder" data-src="/static/audio/sfx/thunder.mp3">
+            <div class="sound-card-header">
+                <button type="button" class="sound-play-btn" onclick="playSound('thunder', '/static/audio/sfx/thunder.mp3')" aria-label="Play Thunder Strike Shock"><i class="fa-solid fa-play"></i></button>
+                <div class="sound-info">
+                    <div class="sound-title">Thunder Strike Shock</div>
+                    <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
+                </div>
+            </div>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Thunder Strike Shock', '/static/audio/sfx/thunder.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
+            </div>
+        </div>
+
+        <!-- Card 20: iPhone Message Ping Chime -->
+        <div class="sound-card" data-category="notification ui" data-title="iPhone Message Ping Chime" data-tags="iphone message ping chime smartphone pop up alert chat text notification" data-sound-id="notification_ping" data-src="/static/audio/sfx/notification_ping.mp3">
+            <div class="sound-card-header">
+                <button type="button" class="sound-play-btn" onclick="playSound('notification_ping', '/static/audio/sfx/notification_ping.mp3')" aria-label="Play iPhone Message Ping Chime"><i class="fa-solid fa-play"></i></button>
+                <div class="sound-info">
+                    <div class="sound-title">iPhone Message Ping Chime</div>
+                    <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
+                </div>
+            </div>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('iPhone Message Ping Chime', '/static/audio/sfx/notification_ping.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
+            </div>
+        </div>
+
+        <!-- Card 21: Crowd Applause and Cheering -->
+        <div class="sound-card" data-category="notification comedy" data-title="Crowd Applause and Cheering" data-tags="crowd applause cheering clapping celebration win congratulations success" data-sound-id="applause" data-src="/static/audio/sfx/applause.mp3">
+            <div class="sound-card-header">
+                <button type="button" class="sound-play-btn" onclick="playSound('applause', '/static/audio/sfx/applause.mp3')" aria-label="Play Crowd Applause and Cheering"><i class="fa-solid fa-play"></i></button>
+                <div class="sound-info">
+                    <div class="sound-title">Crowd Applause and Cheering</div>
+                    <div class="sound-meta"><span class="sound-meta-tag">0:01</span> • <span>320kbps MP3</span></div>
+                </div>
+            </div>
+            <div class="sound-waveform"><span class="sound-wave-bar" style="height:6px;"></span><span class="sound-wave-bar" style="height:14px;"></span><span class="sound-wave-bar" style="height:22px;"></span><span class="sound-wave-bar" style="height:18px;"></span><span class="sound-wave-bar" style="height:10px;"></span><span class="sound-wave-bar" style="height:20px;"></span><span class="sound-wave-bar" style="height:12px;"></span><span class="sound-wave-bar" style="height:6px;"></span></div>
+            <div class="sound-actions">
+                <button type="button" class="sound-dl-btn" onclick="downloadAudio('Crowd Applause and Cheering', '/static/audio/sfx/applause.mp3')"><i class="fa-solid fa-download"></i> Download MP3</button>
             </div>
         </div>
     </div>

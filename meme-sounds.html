@@ -159,143 +159,323 @@
     </div>
 
     <!-- CATEGORY TABS -->
-    <div class="category-tabs-scroll">
-        <button type="button" class="category-pill active" data-cat="all"><i class="fa-solid fa-border-all"></i> All Memes</button>
-        <button type="button" class="category-pill" data-cat="indian"><i class="fa-solid fa-masks-theater"></i> Indian &amp; Bollywood</button>
-        <button type="button" class="category-pill" data-cat="reaction"><i class="fa-solid fa-face-surprise"></i> Reaction &amp; Shock</button>
-        <button type="button" class="category-pill" data-cat="comedy"><i class="fa-solid fa-laugh-squint"></i> Comedy &amp; Fail</button>
-        <button type="button" class="category-pill" data-cat="gaming"><i class="fa-solid fa-gamepad"></i> Gaming &amp; Phonk</button>
+        <div class="category-tabs-scroll">
+        <button type="button" class="category-pill active" data-cat="all"><i class="fa-solid fa-border-all"></i> All Sounds</button>
+        <button type="button" class="category-pill" data-cat="indian"><i class="fa-solid fa-masks-theater"></i> Bollywood &amp; Indian</button>
+        <button type="button" class="category-pill" data-cat="global"><i class="fa-solid fa-earth-americas"></i> Global Memes</button>
+        <button type="button" class="category-pill" data-cat="reaction"><i class="fa-solid fa-face-grin-squint"></i> Reactions</button>
+        <button type="button" class="category-pill" data-cat="gaming"><i class="fa-solid fa-gamepad"></i> Gaming &amp; Anime</button>
     </div>
 </section>
 
 <!-- MAIN SOUNDBOARD GRID -->
 <main class="hub-container">
     <div class="hub-results-header">
-        <div class="hub-results-title" id="resultsCount">20 Instant Meme Sound Buttons</div>
+        <div class="hub-results-title" id="resultsCount">30 Viral Meme Sounds Available</div>
         <button type="button" class="hub-stop-all-btn" onclick="VidSavorHub.stopAllAudio()">
             <i class="fa-solid fa-stop"></i> Stop Audio
         </button>
     </div>
 
     <div class="soundboard-grid" id="memeSoundboardGrid">
-        <!-- Button 1: Vine Boom -->
-        <div class="soundboard-card" data-category="reaction" data-title="Vine Boom Sound Effect" data-tags="vine boom reverb shock dramatic loud">
-            <button type="button" class="soundboard-btn" id="sb-vine_boom" style="background: linear-gradient(135deg, #ef4444, #b91c1c);" onclick="VidSavorHub.playSound('vine_boom', 'sb-vine_boom')" aria-label="Play Vine Boom">
+        <!-- Button 1: Aayein (Baigan) -->
+        <div class="soundboard-card" data-category="indian viral" data-title="Aayein Baigan Meme" data-tags="aayein baigan bihar viral boy funny school interview" data-sound-id="aayein" data-src="/static/audio/memes/aayein.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);" onclick="playSound('aayein', '/static/audio/memes/aayein.mp3')" aria-label="Play Aayein (Baigan)">
+                <i class="fa-solid fa-microphone"></i>
+            </button>
+            <div class="soundboard-title">Aayein (Baigan)</div>
+            <div class="soundboard-tag">Indian Viral</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Aayein Baigan Meme', '/static/audio/memes/aayein.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 2: Tu Samjha? -->
+        <div class="soundboard-card" data-category="indian bollywood" data-title="Tu Samjha Nahi Tu Samjha Nahi" data-tags="tu samjha nahi akshay kumar de dana dan funny dialog" data-sound-id="tu_samjha" data-src="/static/audio/memes/tu_samjha.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #f59e0b, #d97706);" onclick="playSound('tu_samjha', '/static/audio/memes/tu_samjha.mp3')" aria-label="Play Tu Samjha?">
+                <i class="fa-solid fa-brain"></i>
+            </button>
+            <div class="soundboard-title">Tu Samjha?</div>
+            <div class="soundboard-tag">Bollywood</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Tu Samjha Nahi Tu Samjha Nahi', '/static/audio/memes/tu_samjha.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 3: Aye Chup Re Baba -->
+        <div class="soundboard-card" data-category="indian bollywood" data-title="Aye Chup Re Re Baba Phir Hera Pheri" data-tags="hera pheri babu bhaiya shyam raju chup re baba funny" data-sound-id="phir_hera_pheri" data-src="/static/audio/memes/phir_hera_pheri.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #10b981, #059669);" onclick="playSound('phir_hera_pheri', '/static/audio/memes/phir_hera_pheri.mp3')" aria-label="Play Aye Chup Re Baba">
+                <i class="fa-solid fa-face-rolling-eyes"></i>
+            </button>
+            <div class="soundboard-title">Aye Chup Re Baba</div>
+            <div class="soundboard-tag">Hera Pheri</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Aye Chup Re Re Baba Phir Hera Pheri', '/static/audio/memes/phir_hera_pheri.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 4: Paisa Hi Paisa Hoga -->
+        <div class="soundboard-card" data-category="indian bollywood" data-title="Paisa Hi Paisa Hoga Babu Bhaiya" data-tags="paisa hi paisa hoga akshay kumar hera pheri 25 din me paisa double" data-sound-id="paisa_hi_paisa" data-src="/static/audio/memes/paisa_hi_paisa.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #10b981, #047857);" onclick="playSound('paisa_hi_paisa', '/static/audio/memes/paisa_hi_paisa.mp3')" aria-label="Play Paisa Hi Paisa Hoga">
+                <i class="fa-solid fa-sack-dollar"></i>
+            </button>
+            <div class="soundboard-title">Paisa Hi Paisa Hoga</div>
+            <div class="soundboard-tag">Hera Pheri</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Paisa Hi Paisa Hoga Babu Bhaiya', '/static/audio/memes/paisa_hi_paisa.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 5: Wah Kya Scene Hai -->
+        <div class="soundboard-card" data-category="indian viral" data-title="Wah Kya Scene Hai Modi Ji" data-tags="wah kya scene hai narendra modi speech funny reaction" data-sound-id="wah_kya_scene_hai" data-src="/static/audio/memes/wah_kya_scene_hai.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #f97316, #c2410c);" onclick="playSound('wah_kya_scene_hai', '/static/audio/memes/wah_kya_scene_hai.mp3')" aria-label="Play Wah Kya Scene Hai">
+                <i class="fa-solid fa-award"></i>
+            </button>
+            <div class="soundboard-title">Wah Kya Scene Hai</div>
+            <div class="soundboard-tag">Indian Viral</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Wah Kya Scene Hai Modi Ji', '/static/audio/memes/wah_kya_scene_hai.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 6: Is Sajjan Ko Kya Takleef -->
+        <div class="soundboard-card" data-category="indian viral" data-title="Is Sajjan Ko Kya Takleef Hai Bhai" data-tags="is sajjan ko kya takleef hai bhai modi ji speech meme" data-sound-id="is_sajjan_ko_kya_takleef_hai" data-src="/static/audio/memes/is_sajjan_ko_kya_takleef_hai.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #ea580c, #9a3412);" onclick="playSound('is_sajjan_ko_kya_takleef_hai', '/static/audio/memes/is_sajjan_ko_kya_takleef_hai.mp3')" aria-label="Play Is Sajjan Ko Kya Takleef">
+                <i class="fa-solid fa-circle-question"></i>
+            </button>
+            <div class="soundboard-title">Is Sajjan Ko Kya Takleef</div>
+            <div class="soundboard-tag">Indian Viral</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Is Sajjan Ko Kya Takleef Hai Bhai', '/static/audio/memes/is_sajjan_ko_kya_takleef_hai.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 7: Jalwa Hai Humara -->
+        <div class="soundboard-card" data-category="indian bollywood" data-title="Jalwa Hai Humara Mirzapur Kaleen Bhaiya" data-tags="jalwa hai humara kaleen bhaiya mirzapur swag attitude" data-sound-id="jalwa_hai_humara" data-src="/static/audio/memes/jalwa_hai_humara.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #b91c1c, #7f1d1d);" onclick="playSound('jalwa_hai_humara', '/static/audio/memes/jalwa_hai_humara.mp3')" aria-label="Play Jalwa Hai Humara">
+                <i class="fa-solid fa-fire"></i>
+            </button>
+            <div class="soundboard-title">Jalwa Hai Humara</div>
+            <div class="soundboard-tag">Mirzapur</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Jalwa Hai Humara Mirzapur Kaleen Bhaiya', '/static/audio/memes/jalwa_hai_humara.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 8: Cheating Karta Hai Tu -->
+        <div class="soundboard-card" data-category="indian bollywood" data-title="Cheating Karta Hai Tu Cheating Karta Hai" data-tags="cheating karta hai tu akshay kumar funny cry" data-sound-id="cheating_karta_hai" data-src="/static/audio/memes/cheating_karta_hai.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #e11d48, #9f1239);" onclick="playSound('cheating_karta_hai', '/static/audio/memes/cheating_karta_hai.mp3')" aria-label="Play Cheating Karta Hai Tu">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </button>
+            <div class="soundboard-title">Cheating Karta Hai Tu</div>
+            <div class="soundboard-tag">Bollywood</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Cheating Karta Hai Tu Cheating Karta Hai', '/static/audio/memes/cheating_karta_hai.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 9: Toh Kaise Hain Aap Log -->
+        <div class="soundboard-card" data-category="indian youtube" data-title="Toh Kaise Hain Aap Log CarryMinati" data-tags="carryminati toh kaise hain aap log intro roaster" data-sound-id="carryminati_toh_kaise_hai" data-src="/static/audio/memes/carryminati_toh_kaise_hai.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #0284c7, #0369a1);" onclick="playSound('carryminati_toh_kaise_hai', '/static/audio/memes/carryminati_toh_kaise_hai.mp3')" aria-label="Play Toh Kaise Hain Aap Log">
+                <i class="fa-solid fa-headset"></i>
+            </button>
+            <div class="soundboard-title">Toh Kaise Hain Aap Log</div>
+            <div class="soundboard-tag">Gaming/YouTuber</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Toh Kaise Hain Aap Log CarryMinati', '/static/audio/memes/carryminati_toh_kaise_hai.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 10: Khatam Tata Bye Bye -->
+        <div class="soundboard-card" data-category="indian viral" data-title="Khatam Tata Bye Bye Rahul Gandhi" data-tags="khatam tata bye bye rahul gandhi speech funny ending" data-sound-id="khatam_tata_bye_bye" data-src="/static/audio/memes/khatam_tata_bye_bye.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #64748b, #334155);" onclick="playSound('khatam_tata_bye_bye', '/static/audio/memes/khatam_tata_bye_bye.mp3')" aria-label="Play Khatam Tata Bye Bye">
+                <i class="fa-solid fa-hand"></i>
+            </button>
+            <div class="soundboard-title">Khatam Tata Bye Bye</div>
+            <div class="soundboard-tag">Indian Viral</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Khatam Tata Bye Bye Rahul Gandhi', '/static/audio/memes/khatam_tata_bye_bye.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 11: Dhoti Khol Raha Hai -->
+        <div class="soundboard-card" data-category="indian bollywood" data-title="Arey Baap Re Ye Toh Dhoti Khol Raha Hai" data-tags="arey baap re ye toh dhoti khol raha hai chup chup ke rajpal yadav" data-sound-id="dhoti_khol_raha_hai" data-src="/static/audio/memes/dhoti_khol_raha_hai.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #ca8a04, #854d0e);" onclick="playSound('dhoti_khol_raha_hai', '/static/audio/memes/dhoti_khol_raha_hai.mp3')" aria-label="Play Dhoti Khol Raha Hai">
+                <i class="fa-solid fa-masks-theater"></i>
+            </button>
+            <div class="soundboard-title">Dhoti Khol Raha Hai</div>
+            <div class="soundboard-tag">Bollywood</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Arey Baap Re Ye Toh Dhoti Khol Raha Hai', '/static/audio/memes/dhoti_khol_raha_hai.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 12: Arey Kehna Kya Chahte Ho -->
+        <div class="soundboard-card" data-category="indian bollywood" data-title="Arey Kehna Kya Chahte Ho 3 Idiots" data-tags="arey kehna kya chahte ho 3 idiots silencer chatur" data-sound-id="kehna_kya_chahte_ho" data-src="/static/audio/memes/kehna_kya_chahte_ho.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #0d9488, #115e59);" onclick="playSound('kehna_kya_chahte_ho', '/static/audio/memes/kehna_kya_chahte_ho.mp3')" aria-label="Play Arey Kehna Kya Chahte Ho">
+                <i class="fa-solid fa-comment-dots"></i>
+            </button>
+            <div class="soundboard-title">Arey Kehna Kya Chahte Ho</div>
+            <div class="soundboard-tag">Bollywood</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Arey Kehna Kya Chahte Ho 3 Idiots', '/static/audio/memes/kehna_kya_chahte_ho.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 13: Vine Boom -->
+        <div class="soundboard-card" data-category="global reaction" data-title="Vine Boom Sound Effect" data-tags="vine boom reverb shock dramatic loud impact sound" data-sound-id="vine_boom" data-src="/static/audio/memes/vine_boom.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #ef4444, #b91c1c);" onclick="playSound('vine_boom', '/static/audio/memes/vine_boom.mp3')" aria-label="Play Vine Boom">
                 <i class="fa-solid fa-bomb"></i>
             </button>
             <div class="soundboard-title">Vine Boom</div>
             <div class="soundboard-tag">Reaction</div>
-            <button type="button" class="soundboard-dl-btn" onclick="VidSavorHub.downloadSound('vine_boom', 'Vine_Boom_Meme_Sound')"><i class="fa-solid fa-download"></i> MP3</button>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Vine Boom Sound Effect', '/static/audio/memes/vine_boom.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
         </div>
 
-        <!-- Button 2: Bruh Sound Effect #2 -->
-        <div class="soundboard-card" data-category="reaction comedy" data-title="Bruh Sound Effect #2" data-tags="bruh reaction head shake viral voice">
-            <button type="button" class="soundboard-btn" id="sb-bruh" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);" onclick="VidSavorHub.playSound('bruh_sound', 'sb-bruh')" aria-label="Play Bruh">
+        <!-- Button 14: Bruh Sound Effect -->
+        <div class="soundboard-card" data-category="global reaction" data-title="Bruh Sound Effect" data-tags="bruh reaction head shake viral voice meme sound" data-sound-id="bruh" data-src="/static/audio/memes/bruh.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);" onclick="playSound('bruh', '/static/audio/memes/bruh.mp3')" aria-label="Play Bruh Sound Effect">
                 <i class="fa-solid fa-face-meh"></i>
             </button>
-            <div class="soundboard-title">Bruh #2</div>
+            <div class="soundboard-title">Bruh Sound Effect</div>
             <div class="soundboard-tag">Reaction</div>
-            <button type="button" class="soundboard-dl-btn" onclick="VidSavorHub.downloadSound('bruh_sound', 'Bruh_Sound_Effect_2')"><i class="fa-solid fa-download"></i> MP3</button>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Bruh Sound Effect', '/static/audio/memes/bruh.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
         </div>
 
-        <!-- Button 3: Emotional Damage -->
-        <div class="soundboard-card" data-category="reaction comedy" data-title="Emotional Damage Slap" data-tags="emotional damage slap steven he reaction meme">
-            <button type="button" class="soundboard-btn" id="sb-damage" style="background: linear-gradient(135deg, #ec4899, #be185d);" onclick="VidSavorHub.playSound('emotional_damage', 'sb-damage')" aria-label="Play Emotional Damage">
+        <!-- Button 15: Emotional Damage! -->
+        <div class="soundboard-card" data-category="global reaction" data-title="Emotional Damage Sound Effect" data-tags="emotional damage steven he asian dad shoe slap viral" data-sound-id="emotional_damage" data-src="/static/audio/memes/emotional_damage.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #ec4899, #be185d);" onclick="playSound('emotional_damage', '/static/audio/memes/emotional_damage.mp3')" aria-label="Play Emotional Damage!">
                 <i class="fa-solid fa-heart-crack"></i>
             </button>
-            <div class="soundboard-title">Emotional Damage</div>
+            <div class="soundboard-title">Emotional Damage!</div>
             <div class="soundboard-tag">Reaction</div>
-            <button type="button" class="soundboard-dl-btn" onclick="VidSavorHub.downloadSound('emotional_damage', 'Emotional_Damage_Meme_Sound')"><i class="fa-solid fa-download"></i> MP3</button>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Emotional Damage Sound Effect', '/static/audio/memes/emotional_damage.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
         </div>
 
-        <!-- Button 4: Sad Emotional Violin -->
-        <div class="soundboard-card" data-category="indian comedy" data-title="Sad Indian Flute & Violin Sorrow" data-tags="sad violin flute desi emotional tragedy comedy">
-            <button type="button" class="soundboard-btn" id="sb-sad_violin" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);" onclick="VidSavorHub.playSound('sad_violin', 'sb-sad_violin')" aria-label="Play Sad Violin">
-                <i class="fa-solid fa-guitar"></i>
+        <!-- Button 16: Sad Violin -->
+        <div class="soundboard-card" data-category="global drama" data-title="Sad Violin Meme Sound" data-tags="sad violin crying emotional sorrow fail heartbreak" data-sound-id="sad_violin" data-src="/static/audio/memes/sad_violin.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #6366f1, #4338ca);" onclick="playSound('sad_violin', '/static/audio/memes/sad_violin.mp3')" aria-label="Play Sad Violin">
+                <i class="fa-solid fa-music"></i>
             </button>
-            <div class="soundboard-title">Sad Emotional Violin</div>
-            <div class="soundboard-tag">Indian &amp; Desi</div>
-            <button type="button" class="soundboard-dl-btn" onclick="VidSavorHub.downloadSound('sad_violin', 'Sad_Emotional_Violin_Meme')"><i class="fa-solid fa-download"></i> MP3</button>
+            <div class="soundboard-title">Sad Violin</div>
+            <div class="soundboard-tag">Drama</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Sad Violin Meme Sound', '/static/audio/memes/sad_violin.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
         </div>
 
-        <!-- Button 5: Sad Trombone Fail -->
-        <div class="soundboard-card" data-category="comedy" data-title="Sad Trombone Wah Wah Fail" data-tags="wah wah trombone fail lose comedy">
-            <button type="button" class="soundboard-btn" id="sb-trombone" style="background: linear-gradient(135deg, #f59e0b, #d97706);" onclick="VidSavorHub.playSound('sad_trombone', 'sb-trombone')" aria-label="Play Sad Trombone">
-                <i class="fa-solid fa-face-frown"></i>
-            </button>
-            <div class="soundboard-title">Sad Trombone Fail</div>
-            <div class="soundboard-tag">Comedy</div>
-            <button type="button" class="soundboard-dl-btn" onclick="VidSavorHub.downloadSound('sad_trombone', 'Sad_Trombone_Fail_Sound')"><i class="fa-solid fa-download"></i> MP3</button>
-        </div>
-
-        <!-- Button 6: Metal Pipe Clang -->
-        <div class="soundboard-card" data-category="reaction comedy" data-title="Metal Pipe Falling Clang" data-tags="metal pipe clang crash iron meme loud">
-            <button type="button" class="soundboard-btn" id="sb-pipe" style="background: linear-gradient(135deg, #64748b, #334155);" onclick="VidSavorHub.playSound('metal_pipe', 'sb-pipe')" aria-label="Play Metal Pipe">
-                <i class="fa-solid fa-bell"></i>
+        <!-- Button 17: Metal Pipe Falling -->
+        <div class="soundboard-card" data-category="global reaction" data-title="Metal Pipe Falling Sound Effect" data-tags="metal pipe clang loud funny reverberation earrape" data-sound-id="metal_pipe" data-src="/static/audio/memes/metal_pipe.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #71717a, #3f3f46);" onclick="playSound('metal_pipe', '/static/audio/memes/metal_pipe.mp3')" aria-label="Play Metal Pipe Falling">
+                <i class="fa-solid fa-bars"></i>
             </button>
             <div class="soundboard-title">Metal Pipe Falling</div>
             <div class="soundboard-tag">Reaction</div>
-            <button type="button" class="soundboard-dl-btn" onclick="VidSavorHub.downloadSound('metal_pipe', 'Metal_Pipe_Falling_Meme')"><i class="fa-solid fa-download"></i> MP3</button>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Metal Pipe Falling Sound Effect', '/static/audio/memes/metal_pipe.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
         </div>
 
-        <!-- Button 7: MLG Triple Air Horn -->
-        <div class="soundboard-card" data-category="gaming comedy" data-title="MLG Air Horn Triple Blast" data-tags="mlg air horn gaming hype party loud">
-            <button type="button" class="soundboard-btn" id="sb-airhorn" style="background: linear-gradient(135deg, #10b981, #047857);" onclick="VidSavorHub.playSound('mlg_airhorn', 'sb-airhorn')" aria-label="Play Air Horn">
+        <!-- Button 18: FBI Open Up! -->
+        <div class="soundboard-card" data-category="global meme" data-title="FBI Open Up Door Kick Sound" data-tags="fbi open up siren police door kick explosion flashbang" data-sound-id="fbi_open_up" data-src="/static/audio/memes/fbi_open_up.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #1e3a8a, #172554);" onclick="playSound('fbi_open_up', '/static/audio/memes/fbi_open_up.mp3')" aria-label="Play FBI Open Up!">
+                <i class="fa-solid fa-shield-halved"></i>
+            </button>
+            <div class="soundboard-title">FBI Open Up!</div>
+            <div class="soundboard-tag">Meme</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('FBI Open Up Door Kick Sound', '/static/audio/memes/fbi_open_up.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 19: Robert B. Weide Ending -->
+        <div class="soundboard-card" data-category="global meme" data-title="Directed by Robert B Weide Ending Theme" data-tags="directed by robert b weide curb your enthusiasm ending credits fail" data-sound-id="directed_by_robert" data-src="/static/audio/memes/directed_by_robert.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #d97706, #b45309);" onclick="playSound('directed_by_robert', '/static/audio/memes/directed_by_robert.mp3')" aria-label="Play Robert B. Weide Ending">
+                <i class="fa-solid fa-clapperboard"></i>
+            </button>
+            <div class="soundboard-title">Robert B. Weide Ending</div>
+            <div class="soundboard-tag">Ending</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Directed by Robert B Weide Ending Theme', '/static/audio/memes/directed_by_robert.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 20: Windows XP Error -->
+        <div class="soundboard-card" data-category="global gaming" data-title="Windows XP Critical Error Sound" data-tags="windows xp error critical stop crash alert ding" data-sound-id="windows_error" data-src="/static/audio/memes/windows_error.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #dc2626, #991b1b);" onclick="playSound('windows_error', '/static/audio/memes/windows_error.mp3')" aria-label="Play Windows XP Error">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </button>
+            <div class="soundboard-title">Windows XP Error</div>
+            <div class="soundboard-tag">Tech</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Windows XP Critical Error Sound', '/static/audio/memes/windows_error.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 21: MLG Air Horn -->
+        <div class="soundboard-card" data-category="global gaming" data-title="MLG Air Horn Triple Blast" data-tags="air horn mlg 360 noscope montage dubstep hype" data-sound-id="airhorn" data-src="/static/audio/memes/airhorn.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #059669, #065f46);" onclick="playSound('airhorn', '/static/audio/memes/airhorn.mp3')" aria-label="Play MLG Air Horn">
                 <i class="fa-solid fa-bullhorn"></i>
             </button>
             <div class="soundboard-title">MLG Air Horn</div>
             <div class="soundboard-tag">Gaming</div>
-            <button type="button" class="soundboard-dl-btn" onclick="VidSavorHub.downloadSound('mlg_airhorn', 'MLG_Air_Horn_Blast')"><i class="fa-solid fa-download"></i> MP3</button>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('MLG Air Horn Triple Blast', '/static/audio/memes/airhorn.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
         </div>
 
-        <!-- Button 8: 808 Sub Boom Drop -->
-        <div class="soundboard-card" data-category="reaction gaming" data-title="808 Deep Sub Boom" data-tags="808 sub bass boom dramatic thud shock">
-            <button type="button" class="soundboard-btn" id="sb-subdrop" style="background: linear-gradient(135deg, #18181b, #000000);" onclick="VidSavorHub.playSound('sub_bass_drop', 'sb-subdrop')" aria-label="Play 808 Sub Boom">
-                <i class="fa-solid fa-burst"></i>
+        <!-- Button 22: Coffin Dance -->
+        <div class="soundboard-card" data-category="global viral" data-title="Coffin Dance Astronomia Meme Song" data-tags="coffin dance astronomia pallbearers edm funeral fail" data-sound-id="coffin_dance" data-src="/static/audio/memes/coffin_dance.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #0f172a, #1e293b);" onclick="playSound('coffin_dance', '/static/audio/memes/coffin_dance.mp3')" aria-label="Play Coffin Dance">
+                <i class="fa-solid fa-skull"></i>
             </button>
-            <div class="soundboard-title">808 Sub Boom Drop</div>
-            <div class="soundboard-tag">Bass Drop</div>
-            <button type="button" class="soundboard-dl-btn" onclick="VidSavorHub.downloadSound('sub_bass_drop', '808_Deep_Sub_Boom_Drop')"><i class="fa-solid fa-download"></i> MP3</button>
+            <div class="soundboard-title">Coffin Dance</div>
+            <div class="soundboard-tag">Music</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Coffin Dance Astronomia Meme Song', '/static/audio/memes/coffin_dance.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
         </div>
 
-        <!-- Button 9: Cartoon Spring Boing -->
-        <div class="soundboard-card" data-category="comedy" data-title="Cartoon Spring Boing" data-tags="boing spring jump cartoon comedy bounce">
-            <button type="button" class="soundboard-btn" id="sb-boing" style="background: linear-gradient(135deg, #06b6d4, #0891b2);" onclick="VidSavorHub.playSound('cartoon_boing', 'sb-boing')" aria-label="Play Cartoon Boing">
-                <i class="fa-solid fa-angles-up"></i>
+        <!-- Button 23: Oh No No No Laugh -->
+        <div class="soundboard-card" data-category="global viral" data-title="Oh No No No TikTok Laugh Meme" data-tags="oh no no no laugh wheeze funny tiktok high pitched" data-sound-id="oh_no_laugh" data-src="/static/audio/memes/oh_no_laugh.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #f43f5e, #be123c);" onclick="playSound('oh_no_laugh', '/static/audio/memes/oh_no_laugh.mp3')" aria-label="Play Oh No No No Laugh">
+                <i class="fa-solid fa-face-laugh-squint"></i>
             </button>
-            <div class="soundboard-title">Cartoon Boing</div>
+            <div class="soundboard-title">Oh No No No Laugh</div>
+            <div class="soundboard-tag">Laugh</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Oh No No No TikTok Laugh Meme', '/static/audio/memes/oh_no_laugh.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 24: Among Us Kill -->
+        <div class="soundboard-card" data-category="global gaming" data-title="Among Us Imposter Kill Sound" data-tags="among us kill stab imposter crewmate spaceship task" data-sound-id="among_us_kill" data-src="/static/audio/memes/among_us_kill.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #b91c1c, #450a0a);" onclick="playSound('among_us_kill', '/static/audio/memes/among_us_kill.mp3')" aria-label="Play Among Us Kill">
+                <i class="fa-solid fa-ghost"></i>
+            </button>
+            <div class="soundboard-title">Among Us Kill</div>
+            <div class="soundboard-tag">Gaming</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Among Us Imposter Kill Sound', '/static/audio/memes/among_us_kill.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 25: Minecraft Oof -->
+        <div class="soundboard-card" data-category="global gaming" data-title="Minecraft Classic Hurt Oof Sound" data-tags="minecraft oof hurt steve death damage fall" data-sound-id="minecraft_oof" data-src="/static/audio/memes/minecraft_oof.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #15803d, #14532d);" onclick="playSound('minecraft_oof', '/static/audio/memes/minecraft_oof.mp3')" aria-label="Play Minecraft Oof">
+                <i class="fa-solid fa-cube"></i>
+            </button>
+            <div class="soundboard-title">Minecraft Oof</div>
+            <div class="soundboard-tag">Gaming</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Minecraft Classic Hurt Oof Sound', '/static/audio/memes/minecraft_oof.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 26: Fairy Wow Sound -->
+        <div class="soundboard-card" data-category="global anime" data-title="Anime Kawaii Wow Sound Effect" data-tags="anime wow kawaii girl fairy magical reaction" data-sound-id="wow_sound" data-src="/static/audio/memes/wow_sound.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #a855f7, #7e22ce);" onclick="playSound('wow_sound', '/static/audio/memes/wow_sound.mp3')" aria-label="Play Fairy Wow Sound">
+                <i class="fa-solid fa-wand-magic"></i>
+            </button>
+            <div class="soundboard-title">Fairy Wow Sound</div>
+            <div class="soundboard-tag">Anime</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Anime Kawaii Wow Sound Effect', '/static/audio/memes/wow_sound.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 27: RUN! Beat Drop -->
+        <div class="soundboard-card" data-category="global viral" data-title="Run AWOLNATION Beat Drop Sound Effect" data-tags="run awolnation beat drop chase danger suspense escape" data-sound-id="run_awolnation" data-src="/static/audio/memes/run_awolnation.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #b45309, #78350f);" onclick="playSound('run_awolnation', '/static/audio/memes/run_awolnation.mp3')" aria-label="Play RUN! Beat Drop">
+                <i class="fa-solid fa-person-running"></i>
+            </button>
+            <div class="soundboard-title">RUN! Beat Drop</div>
+            <div class="soundboard-tag">Action</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Run AWOLNATION Beat Drop Sound Effect', '/static/audio/memes/run_awolnation.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 28: What Da Dog Doin? -->
+        <div class="soundboard-card" data-category="global viral" data-title="What Da Dog Doin Meme Sound" data-tags="what da dog doin mints vine dog funny question" data-sound-id="what_the_dog_doin" data-src="/static/audio/memes/what_the_dog_doin.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #0284c7, #075985);" onclick="playSound('what_the_dog_doin', '/static/audio/memes/what_the_dog_doin.mp3')" aria-label="Play What Da Dog Doin?">
+                <i class="fa-solid fa-dog"></i>
+            </button>
+            <div class="soundboard-title">What Da Dog Doin?</div>
+            <div class="soundboard-tag">Animals</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('What Da Dog Doin Meme Sound', '/static/audio/memes/what_the_dog_doin.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 29: Hehe Boi -->
+        <div class="soundboard-card" data-category="global reaction" data-title="Hehe Boi Ainsley Harriott Grin" data-tags="hehe boi ainsley harriott cunning grin evil laugh cooking" data-sound-id="hehe_boi" data-src="/static/audio/memes/hehe_boi.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #ea580c, #9a3412);" onclick="playSound('hehe_boi', '/static/audio/memes/hehe_boi.mp3')" aria-label="Play Hehe Boi">
+                <i class="fa-solid fa-face-smile-wink"></i>
+            </button>
+            <div class="soundboard-title">Hehe Boi</div>
+            <div class="soundboard-tag">Reaction</div>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Hehe Boi Ainsley Harriott Grin', '/static/audio/memes/hehe_boi.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
+        </div>
+
+        <!-- Button 30: Why Are You Running? -->
+        <div class="soundboard-card" data-category="global comedy" data-title="Why Are You Running Sound Effect" data-tags="why are you running african movie chase comedy screaming" data-sound-id="why_are_you_running" data-src="/static/audio/memes/why_are_you_running.mp3">
+            <button type="button" class="soundboard-btn" style="background: linear-gradient(135deg, #16a34a, #166534);" onclick="playSound('why_are_you_running', '/static/audio/memes/why_are_you_running.mp3')" aria-label="Play Why Are You Running?">
+                <i class="fa-solid fa-person-walking-dashed-line-arrow-right"></i>
+            </button>
+            <div class="soundboard-title">Why Are You Running?</div>
             <div class="soundboard-tag">Comedy</div>
-            <button type="button" class="soundboard-dl-btn" onclick="VidSavorHub.downloadSound('cartoon_boing', 'Cartoon_Spring_Boing_Sound')"><i class="fa-solid fa-download"></i> MP3</button>
-        </div>
-
-        <!-- Button 10: Digital Glitch Impact -->
-        <div class="soundboard-card" data-category="reaction gaming" data-title="Digital Glitch Noise" data-tags="glitch noise static error broken futuristic">
-            <button type="button" class="soundboard-btn" id="sb-glitch" style="background: linear-gradient(135deg, #a855f7, #7e22ce);" onclick="VidSavorHub.playSound('glitch_impact', 'sb-glitch')" aria-label="Play Glitch Noise">
-                <i class="fa-solid fa-wave-square"></i>
-            </button>
-            <div class="soundboard-title">Digital Glitch Noise</div>
-            <div class="soundboard-tag">Gaming</div>
-            <button type="button" class="soundboard-dl-btn" onclick="VidSavorHub.downloadSound('glitch_impact', 'Digital_Glitch_Noise_Meme')"><i class="fa-solid fa-download"></i> MP3</button>
-        </div>
-
-        <!-- Button 11: 8-Bit Retro Coin -->
-        <div class="soundboard-card" data-category="gaming" data-title="8-Bit Level Up Coin" data-tags="coin point mario gaming 8bit retro win">
-            <button type="button" class="soundboard-btn" id="sb-coin" style="background: linear-gradient(135deg, #eab308, #ca8a04);" onclick="VidSavorHub.playSound('coin_collect', 'sb-coin')" aria-label="Play 8-Bit Coin">
-                <i class="fa-solid fa-coins"></i>
-            </button>
-            <div class="soundboard-title">8-Bit Coin Collect</div>
-            <div class="soundboard-tag">Gaming</div>
-            <button type="button" class="soundboard-dl-btn" onclick="VidSavorHub.downloadSound('coin_collect', '8Bit_Retro_Coin_Collect')"><i class="fa-solid fa-download"></i> MP3</button>
-        </div>
-
-        <!-- Button 12: Cinematic Swell Riser -->
-        <div class="soundboard-card" data-category="reaction" data-title="Cinematic Tension Riser" data-tags="riser build tension suspense trailer dramatic">
-            <button type="button" class="soundboard-btn" id="sb-riser" style="background: linear-gradient(135deg, #4338ca, #312e81);" onclick="VidSavorHub.playSound('cinematic_riser', 'sb-riser')" aria-label="Play Tension Riser">
-                <i class="fa-solid fa-chart-line"></i>
-            </button>
-            <div class="soundboard-title">Tension Riser Swell</div>
-            <div class="soundboard-tag">Suspense</div>
-            <button type="button" class="soundboard-dl-btn" onclick="VidSavorHub.downloadSound('cinematic_riser', 'Cinematic_Tension_Riser')"><i class="fa-solid fa-download"></i> MP3</button>
+            <button type="button" class="soundboard-dl-btn" onclick="downloadAudio('Why Are You Running Sound Effect', '/static/audio/memes/why_are_you_running.mp3')"><i class="fa-solid fa-download"></i> MP3</button>
         </div>
     </div>
 </main>

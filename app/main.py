@@ -269,7 +269,7 @@ async def proxy_download(
 
     target_url = unpack_token_url(target_url)
 
-    raw_filename = filename or request.query_params.get("filename", "vidsavor_video.mp4")
+    raw_filename = filename or request.query_params.get("filename") or request.query_params.get("title") or "vidsavor_video.mp4"
     clean_filename = urllib.parse.unquote(raw_filename).replace('"', '').replace('\r', '').replace('\n', '').strip()
     if not clean_filename:
         clean_filename = "vidsavor_video.mp4"
